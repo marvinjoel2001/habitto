@@ -8,6 +8,7 @@ class CustomButton extends StatelessWidget {
   final double? width;
   final double? height;
   final bool isLoading;
+  final EdgeInsetsGeometry? padding;
   
   const CustomButton({
     Key? key,
@@ -18,37 +19,43 @@ class CustomButton extends StatelessWidget {
     this.width,
     this.height,
     this.isLoading = false,
+    this.padding,
   }) : super(key: key);
   
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      height: height ?? 48,
+    return Container(
+      width: width ?? double.infinity,
+      height: height ?? 56,
+      padding: padding,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? Theme.of(context).primaryColor,
-          foregroundColor: textColor ?? Colors.white,
+          backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.primary,
+          foregroundColor: textColor ?? Colors.black,
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
         child: isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
+            ? SizedBox(
+                width: 24,
+                height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    textColor ?? Colors.black,
+                  ),
                 ),
               )
             : Text(
                 text,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: textColor ?? Colors.white,
+                  color: textColor ?? Colors.black,
                 ),
               ),
       ),
