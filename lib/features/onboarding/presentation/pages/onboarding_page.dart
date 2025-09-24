@@ -22,7 +22,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _initializeVideo() {
-    _videoController = VideoPlayerController.asset('assets/videos/splash1.mp4')
+    _videoController = VideoPlayerController.asset('assets/videos/splash.mp4')
       ..initialize().then((_) {
         setState(() {});
         _videoController!.play();
