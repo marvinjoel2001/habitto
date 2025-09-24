@@ -114,8 +114,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withOpacity(0.3),
-                Colors.black.withOpacity(0.7),
+                Colors.black.withAlpha((0.5 * 255).round()),
+                Colors.black.withAlpha((0.9 * 255).round()),
               ],
             ),
           ),
@@ -124,9 +124,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(flex: 2),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.20), // Espacio pequeño desde arriba
               Text(
                 'Encuentra tu nuevo hogar fácilmente',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -140,12 +139,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
               Text(
                 'Alquileres y anticréticos verificados en un solo lugar.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withAlpha(230),
                   fontSize: 18,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const Spacer(flex: 3),
+              const Spacer(), // Esto empuja el contenido hacia arriba
             ],
           ),
         ),
