@@ -14,55 +14,60 @@ class CustomBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 80,
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(40),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(
-            context,
-            0,
-            Icons.home_outlined,
-            Icons.home,
-            'Home',
-          ),
-          _buildNavItem(
-            context,
-            1,
-            Icons.search_outlined,
-            Icons.search,
-            'Buscar',
-          ),
-          if (showAddButton)
-            _buildAddButton(context),
-          _buildNavItem(
-            context,
-            2,
-            Icons.chat_bubble_outline,
-            Icons.chat_bubble,
-            'Chat',
-          ),
-          _buildNavItem(
-            context,
-            3,
-            Icons.person_outline,
-            Icons.person,
-            'Perfil',
-          ),
-        ],
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        height: 80,
+        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.9), // Semi-transparente
+          borderRadius: BorderRadius.circular(40),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              spreadRadius: 2,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavItem(
+              context,
+              0,
+              Icons.home_outlined,
+              Icons.home,
+              'Home',
+            ),
+            _buildNavItem(
+              context,
+              1,
+              Icons.search_outlined,
+              Icons.search,
+              'Buscar',
+            ),
+            if (showAddButton)
+              _buildAddButton(context),
+            _buildNavItem(
+              context,
+              2,
+              Icons.chat_bubble_outline,
+              Icons.chat_bubble,
+              'Chat',
+            ),
+            _buildNavItem(
+              context,
+              3,
+              Icons.person_outline,
+              Icons.person,
+              'Perfil',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -104,7 +109,7 @@ class CustomBottomNavigation extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFF00), // Fondo amarillo
+            color: const Color(0xFFFFEB3B), // Fondo amarillo
             borderRadius: BorderRadius.circular(25),
           ),
           child: Row(
@@ -130,19 +135,19 @@ class CustomBottomNavigation extends StatelessWidget {
       );
     }
     
-    // Si no está seleccionado, mostrar solo el ícono circular
+    // Si no está seleccionado, mostrar solo el ícono circular con fondo transparente
     return GestureDetector(
       onTap: () => onTap(index),
       child: Container(
         width: 50,
         height: 50,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.2), // Fondo semi-transparente
           shape: BoxShape.circle,
         ),
         child: Icon(
           inactiveIcon,
-          color: Colors.black,
+          color: Colors.white,
           size: 24,
         ),
       ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/custom_bottom_navigation.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
-import '../../../search/presentation/pages/search_page.dart';
+import '../../../search/presentation/pages/search_page.dart' as search;
+import '../../../chat/presentation/pages/chat_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -23,7 +24,7 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> get _pages => [
     const HomeContent(),
-    const SearchPage(),
+    const search.SearchPage(),
     const ChatPage(),
     profile.ProfilePage(
       onModeChanged: _onUserModeChanged,
@@ -37,6 +38,8 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: true, // Permite que el body se extienda detrás de la barra de navegación
       body: _pages[_currentIndex],
       bottomNavigationBar: CustomBottomNavigation(
         currentIndex: _currentIndex,
@@ -56,11 +59,12 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+    return Container(
+      color: Colors.white, // Cambiar de Scaffold a Container transparente
+      child: SafeArea(
+        bottom: false, // No aplicar SafeArea en la parte inferior
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 0), // Quitar padding inferior
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -163,6 +167,7 @@ class HomeContent extends StatelessWidget {
               // Lista de propiedades
               Expanded(
                 child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 120), // Añadir padding inferior aquí
                   itemCount: 3,
                   itemBuilder: (context, index) {
                     return Container(
@@ -253,29 +258,4 @@ class HomeContent extends StatelessWidget {
   }
 }
 
-// Páginas placeholder para las otras pestañas
-class SearchPage extends StatelessWidget {
-  const SearchPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Página de Búsqueda'),
-      ),
-    );
-  }
-}
-
-class ChatPage extends StatelessWidget {
-  const ChatPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Página de Chat'),
-      ),
-    );
-  }
-}
+// Eliminamos la clase ChatPage placeholder ya que ahora tenemos la implementación real

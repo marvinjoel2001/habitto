@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:video_player/video_player.dart';
 import '../../../../shared/theme/app_theme.dart';
 
 class SearchPage extends StatefulWidget {
@@ -16,6 +17,11 @@ class _SearchPageState extends State<SearchPage> {
   Set<Marker> _markers = {};
   PropertyInfo? _selectedProperty;
   bool _isLoading = true;
+  
+  // Variables para el video
+  VideoPlayerController? _videoController;
+  bool _showVideo = true;
+  bool _videoInitialized = false;
 
   // Datos de ejemplo de propiedades
   final List<PropertyData> _properties = [
@@ -51,7 +57,49 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
+    _initializeVideo();
     _getCurrentLocation();
+  }
+
+  Future<void> _initializeVideo() async {
+    _videoController = VideoPlayerController.asset('assets/videos/Video_Drone_Santa_Cruz.mp4');
+    
+    try {
+      await _videoController!.initialize();
+      setState(() {
+        _videoInitialized = true;
+      });
+      
+      // Reproducir el video automáticamente
+      _videoController!.play();
+      
+      // Escuchar cuando termine el video
+      _videoController!.addListener(() {
+        if (_videoController!.value.position >= _videoController!.value.duration) {
+          setState(() {
+            _showVideo = false;
+          });
+        }
+      });
+    } catch (e) {
+      // Si hay error con el video, mostrar directamente el contenido
+      setState(() {
+        _showVideo = false;
+      });
+    }
+  }
+
+  void _skipVideo() {
+    setState(() {
+      _showVideo = false;
+    });
+    _videoController?.pause();
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    super.dispose();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -159,6 +207,61 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Si se debe mostrar el video, mostrar pantalla completa del video
+    if (_showVideo) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            // Video en pantalla completa
+            if (_videoInitialized && _videoController != null)
+              SizedBox.expand(
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _videoController!.value.size.width,
+                    height: _videoController!.value.size.height,
+                    child: VideoPlayer(_videoController!),
+                  ),
+                ),
+              )
+            else
+              const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                ),
+              ),
+            
+            // Botón para saltar el video
+            Positioned(
+              top: 50,
+              right: 20,
+              child: SafeArea(
+                child: GestureDetector(
+                  onTap: _skipVideo,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Saltar',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Contenido principal de la página de búsqueda
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
       body: SafeArea(
