@@ -7,8 +7,6 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:video_player/video_player.dart';
 
-// --- CLASE THEME SIMULADA PARA QUE EL CÓDIGO FUNCIONE ---
-// En tu proyecto real, asegúrate de tener este import correcto.
 // import '../../../../shared/theme/app_theme.dart';
 class AppTheme {
   static const Color primaryColor = Color(0xFFFDB813);
@@ -31,7 +29,7 @@ class _SearchPageState extends State<SearchPage> {
 
   // Estado de la UI
   geo.Position? _currentPosition;
-  PropertyInfo? _selectedProperty;  
+  PropertyInfo? _selectedProperty;
   bool _isLoading = true;
 
   // Lógica del video de introducción
