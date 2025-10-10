@@ -43,9 +43,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-    } else {
-      // Navegar al login
-      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
@@ -81,11 +78,32 @@ class _OnboardingPageState extends State<OnboardingPage> {
             bottom: 40,
             left: 24,
             right: 24,
-            child: CustomButton(
-              text: _currentPage == 3 ? 'Comenzar' : 'Siguiente',
-              onPressed: _nextPage,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
+            child: _currentPage == 3
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CustomButton(
+                        text: 'Iniciar sesión',
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(context, '/login');
+                        },
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(height: 12),
+                      CustomButton(
+                        text: 'Registrarse',
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(context, '/register');
+                        },
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                      ),
+                    ],
+                  )
+                : CustomButton(
+                    text: 'Siguiente',
+                    onPressed: _nextPage,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  ),
           ),
         ],
       ),
@@ -255,7 +273,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 borderRadius: BorderRadius.circular(16),
                 child: Image.asset(
                   'assets/images/seguridad.png',
-                  fit: BoxFit.contain,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
@@ -312,7 +330,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 borderRadius: BorderRadius.circular(16),
                 child: Image.asset(
                   'assets/images/conexion.png',
-                  fit: BoxFit.contain,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
