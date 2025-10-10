@@ -28,6 +28,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Expone el token como recurso Android (string)
+        val mapboxToken: String = (project.findProperty("MAPBOX_ACCESS_TOKEN") as String?) ?: ""
+        resValue("string", "mapbox_access_token", mapboxToken)
+        // También disponible como manifestPlaceholders (si algún lib lo necesita)
+        manifestPlaceholders["com.mapbox.token"] = mapboxToken
     }
 
     buildTypes {
