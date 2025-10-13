@@ -14,27 +14,25 @@ class StepProgressIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Column(
       children: [
-        // Barra de progreso
         Container(
           height: 4,
           margin: const EdgeInsets.symmetric(horizontal: 24),
           child: LinearProgressIndicator(
             value: (currentStep + 1) / totalSteps,
-            backgroundColor: Colors.grey[300],
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00FF00)),
+            backgroundColor: Colors.white.withOpacity(0.25),
+            valueColor: AlwaysStoppedAnimation<Color>(primary),
           ),
         ),
         const SizedBox(height: 16),
-        
-        // Títulos de los pasos
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: List.generate(totalSteps, (index) {
             final isActive = index <= currentStep;
             final isCurrent = index == currentStep;
-            
+
             return Expanded(
               child: Column(
                 children: [
@@ -43,12 +41,8 @@ class StepProgressIndicator extends StatelessWidget {
                     height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isActive 
-                          ? const Color(0xFF00FF00) 
-                          : Colors.grey[300],
-                      border: isCurrent 
-                          ? Border.all(color: const Color(0xFF00FF00), width: 2)
-                          : null,
+                      color: isActive ? primary : Colors.white.withOpacity(0.2),
+                      border: isCurrent ? Border.all(color: primary, width: 2) : null,
                     ),
                     child: Center(
                       child: Text(

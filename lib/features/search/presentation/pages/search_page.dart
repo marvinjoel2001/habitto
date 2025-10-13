@@ -1,13 +1,14 @@
 // Clase: SearchPage
 
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:video_player/video_player.dart';
+import 'package:habitto/shared/theme/app_theme.dart';
 
-// import '../../../../shared/theme/app_theme.dart';
 class AppTheme {
   static const Color primaryColor = Color(0xFFFDB813);
   static const Color grayColor = Colors.grey;
@@ -15,7 +16,7 @@ class AppTheme {
 // ---------------------------------------------------
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({Key? key}) : super(key: key);
+  const SearchPage({super.key});
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -204,29 +205,33 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     if (_showVideo) {
-      return Scaffold(/* ... El código del video no cambia ... */);
+      return const Scaffold(/* ... El código del video no cambia ... */);
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor,
+      // Fondo toma el primary del theme para mantener la intención de color original
+      backgroundColor: Theme.of(context).colorScheme.primary,
       body: SafeArea(
         child: Column(
           children: [
-            // Header y Filtros (no cambian)
             _buildHeader(),
             _buildFilters(),
-
-            // Mapa refactorizado
             Expanded(
               child: Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
+                  // Borde sutil para efecto glass
+                  border: Border.all(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.25),
+                  ),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4))
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
                 child: ClipRRect(
@@ -251,34 +256,70 @@ class _SearchPageState extends State<SearchPage> {
                           onTapListener: (context) =>
                               setState(() => _selectedProperty = null),
                         ),
+                      // Overlay glass sobre el mapa (blur muy sutil + tinte del primary)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                            child: Container(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.06),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Botón de centrar ubicación con estilo glass
                       Positioned(
                         bottom: _selectedProperty != null ? 210 : 20,
                         right: 20,
-                        child: FloatingActionButton(
-                          mini: true,
-                          backgroundColor: AppTheme.primaryColor,
-                          onPressed: () {
-                            if (_currentPosition != null &&
-                                _mapboxMap != null) {
-                              _mapboxMap!.flyTo(
-                                CameraOptions(
-                                  center: Point(
-                                    coordinates: Position(
-                                      _currentPosition!.longitude,
-                                      _currentPosition!.latitude,
-                                    ),
-                                  ),
-                                  zoom: 14,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surface
+                                    .withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.35),
                                 ),
-                                MapAnimationOptions(
-                                  duration: 1000,
-                                  startDelay: 0,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.my_location,
+                                  color: Colors.black,
                                 ),
-                              );
-                            }
-                          },
-                          child:
-                              const Icon(Icons.my_location, color: Colors.black),
+                                onPressed: () {
+                                  if (_currentPosition != null &&
+                                      _mapboxMap != null) {
+                                    _mapboxMap!.flyTo(
+                                      CameraOptions(
+                                        center: Point(
+                                          coordinates: Position(
+                                            _currentPosition!.longitude,
+                                            _currentPosition!.latitude,
+                                          ),
+                                        ),
+                                        zoom: 14,
+                                      ),
+                                      MapAnimationOptions(
+                                        duration: 1000,
+                                        startDelay: 0,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -286,8 +327,6 @@ class _SearchPageState extends State<SearchPage> {
                 ),
               ),
             ),
-
-            // Card de propiedad seleccionada (no cambia)
             if (_selectedProperty != null) _buildPropertyCard(),
           ],
         ),
@@ -329,28 +368,49 @@ class _SearchPageState extends State<SearchPage> {
           Row(
             children: [
               IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back, color: Colors.black)),
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+              ),
               const Expanded(
-                  child: Text('Búsqueda',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black),
-                      textAlign: TextAlign.center)),
+                child: Text(
+                  'Búsqueda',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
               const SizedBox(width: 48),
             ],
           ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(25)),
-            child: const TextField(
-                decoration: InputDecoration(
+          // Barra de búsqueda con efecto glass
+          ClipRRect(
+            borderRadius: BorderRadius.circular(25),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).colorScheme.surface.withOpacity(0.20),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.30),
+                  ),
+                ),
+                child: const TextField(
+                  decoration: InputDecoration(
                     hintText: 'Busca por zona, precio o tipo',
                     border: InputBorder.none,
-                    icon: Icon(Icons.search, color: Colors.grey))),
+                    icon: Icon(Icons.search, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -377,93 +437,134 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildFilterChip(String label, bool isSelected) {
+    final primary = Theme.of(context).colorScheme.primary;
+
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
-      child: Chip(
-        label: Text(label,
-            style: TextStyle(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Chip(
+            label: Text(
+              label,
+              style: TextStyle(
                 color: Colors.black,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal)),
-        backgroundColor:
-            isSelected ? Colors.white : Colors.white.withOpacity(0.8),
-        shape: StadiumBorder(
-            side: BorderSide(
-                color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                width: 2)),
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            backgroundColor: isSelected
+                ? primary.withOpacity(0.22)
+                : Colors.white.withOpacity(0.18),
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: isSelected
+                    ? primary.withOpacity(0.45)
+                    : Colors.white.withOpacity(0.25),
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildPropertyCard() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(_selectedProperty!.imageUrl,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.home, size: 30)),
+    final cs = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.primary.withOpacity(0.25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_selectedProperty!.title,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(_selectedProperty!.price,
-                        style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-              IconButton(
-                  onPressed: () => setState(() => _selectedProperty = null),
-                  icon: const Icon(Icons.close)),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(_selectedProperty!.description,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {/* Navegar a detalles de la propiedad */},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      _selectedProperty!.imageUrl,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.home, size: 30),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _selectedProperty!.title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          _selectedProperty!.price,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: cs.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => _selectedProperty = null),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
               ),
-              child: const Text('Ver Más',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
+              const SizedBox(height: 12),
+              Text(
+                _selectedProperty!.description,
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {/* Navegar a detalles de la propiedad */},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: cs.primary,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Ver Más',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
@@ -13,7 +15,7 @@ class AddPropertyPage extends StatefulWidget {
 class _AddPropertyPageState extends State<AddPropertyPage> {
   int _currentStep = 0;
   final PageController _pageController = PageController();
-  
+
   // Controladores para los formularios
   final _propertyTypeController = TextEditingController();
   final _bedroomsController = TextEditingController(text: '3');
@@ -109,9 +111,12 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   Widget _buildHeader() {
     return Container(
       height: 80 + MediaQuery.of(context).padding.top,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFA8E6CE), Color(0xFF7EDBB0)],
+          colors: [
+            Theme.of(context).colorScheme.primary.withOpacity(0.85),
+            Theme.of(context).colorScheme.primary,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -174,61 +179,51 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         children: [
           const Text(
             'Comencemos con lo básico. Proporcione los detalles esenciales de su propiedad.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-              height: 1.5,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
           ),
           const SizedBox(height: 32),
-          
-          // Tipo de Propiedad
           const Text(
             'Tipo de Propiedad',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F8F0),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _selectedPropertyType,
-                isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down),
-                items: ['Casa', 'Departamento', 'Oficina', 'Local Comercial']
-                    .map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedPropertyType = newValue!;
-                  });
-                },
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedPropertyType,
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+                    items: ['Casa', 'Departamento', 'Oficina', 'Local Comercial'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedPropertyType = newValue!;
+                      });
+                    },
+                  ),
+                ),
               ),
             ),
           ),
           const SizedBox(height: 24),
-          
-          // Dormitorios
           const Text(
-            'Dormitorios',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
+            'Baños',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           Row(
@@ -275,17 +270,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ],
           ),
           const SizedBox(height: 24),
-          
-          // Baños
-          const Text(
-            'Baños',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 12),
+          // Reemplazar el container central por glass
           Row(
             children: [
               IconButton(
@@ -301,18 +286,22 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 color: Colors.grey,
               ),
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F8F0),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    _bathrooms.toString(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                      ),
+                      child: Text(
+                        _bathrooms.toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
@@ -325,13 +314,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   });
                 },
                 icon: const Icon(Icons.add_circle_outline),
-                color: const Color(0xFFA8E6CE),
+                color: Theme.of(context).colorScheme.primary,
               ),
             ],
           ),
           const SizedBox(height: 24),
-          
-          // Área
           const Text(
             'Área (m²)',
             style: TextStyle(

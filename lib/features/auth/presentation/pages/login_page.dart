@@ -18,25 +18,23 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   void _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+    setState(() {
+      _isLoading = true;
+    });
 
-      // Simular delay de login
-      await Future.delayed(const Duration(seconds: 1));
+    // Simular delay de login
+    await Future.delayed(const Duration(seconds: 1));
 
-      // Por ahora permitir el acceso sin validación
-      Navigator.pushReplacementNamed(context, '/home');
+    // Ir al home siempre (por ahora sin validar)
+    Navigator.pushReplacementNamed(context, '/home');
 
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
-  // Dentro de la clase que define tu pantalla de Login (ej. LoginPage)
-  // Método: build(BuildContext context)
+
+  // Dentro de _LoginPageState -> método build(BuildContext context)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,28 +49,40 @@ class _LoginPageState extends State<LoginPage> {
             width: double.infinity,
             height: double.infinity,
           ),
-
-          // Eliminamos el overlay para que el BackdropFilter bluree la imagen real detrás
-          // (si lo quieres de vuelta, avísame y lo ponemos con menos opacidad para no afectar el glass)
-
+          // Overlay con tinte verde (usando el color primario del tema)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary.withOpacity(0.25),
+                    Colors.black.withOpacity(0.10),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
+          // Contenedor glass un poco más arriba y más compacto
           SafeArea(
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+                // Subimos el contenedor (antes 24/30), ahora 56
+                padding: const EdgeInsets.only(bottom: 56),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                     child: Container(
                       width: MediaQuery.of(context).size.width * 0.9,
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                       decoration: BoxDecoration(
-                        // Un poco más sutil para que el glass se vea limpio y el fondo nítido
-                        color: Colors.white.withOpacity(0.12),
+                        color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.35),
+                          color: Colors.white.withOpacity(0.25),
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -85,12 +95,13 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           Center(
                             child: Text(
                               'Bienvenido a\nHabitto',
                               style: TextStyle(
-                                fontSize: 32,
+                                // título más pequeño para ocupar menos vertical
+                                fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                                 height: 1.2,
@@ -105,7 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 18),
                           // Campo de email
                           CustomTextField(
                             controller: _emailController,
@@ -118,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           // Campo de contraseña
                           CustomTextField(
                             controller: _passwordController,
@@ -131,7 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
@@ -142,43 +153,37 @@ class _LoginPageState extends State<LoginPage> {
                                 '¿Olvidaste tu contraseña?',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
-                                  fontSize: 14,
+                                  fontSize: 13,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          // Botón de iniciar sesión (usa colores del tema)
+                          const SizedBox(height: 16),
+                          // Botón de iniciar sesión
                           CustomButton(
                             text: 'Iniciar Sesión',
                             onPressed: _handleLogin,
                             isLoading: _isLoading,
-                            backgroundColor:
-                                    Theme.of(context).colorScheme.primary,
+                            backgroundColor: Theme.of(context).colorScheme.primary,
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
                           Row(
                             children: [
-                              Expanded(
-                                  child: Divider(
-                                      color: Colors.white.withOpacity(0.4))),
+                              Expanded(child: Divider(color: Colors.white.withOpacity(0.4))),
                               Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
                                 child: Text(
                                   'O inicia sesión con',
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.9),
-                                    fontSize: 14,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
-                              Expanded(
-                                  child: Divider(
-                                      color: Colors.white.withOpacity(0.4))),
+                              Expanded(child: Divider(color: Colors.white.withOpacity(0.4))),
                             ],
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -200,46 +205,44 @@ class _LoginPageState extends State<LoginPage> {
                                   },
                                 ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '¿No tienes una cuenta? ',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    // Navegar a registro
+                                  },
+                                  child: Text(
+                                    'Regístrate',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.secondary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    '¿No tienes una cuenta? ',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      // Navegar a registro
-                                    },
-                                    child: Text(
-                                      'Regístrate',
-                                      style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .secondary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
 
             ),
+          ),
           ),
         ],
       ),

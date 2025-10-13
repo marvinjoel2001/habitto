@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import '../../../../shared/widgets/custom_bottom_navigation.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
 import '../../../search/presentation/pages/search_page.dart' as search;
 import '../../../chat/presentation/pages/chat_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -23,23 +24,24 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<Widget> get _pages => [
-    const HomeContent(),
-    const search.SearchPage(),
-    const ChatPage(),
-    profile.ProfilePage(
-      onModeChanged: _onUserModeChanged,
-    ),
-  ];
+        const HomeContent(),
+        const search.SearchPage(),
+        const ChatPage(),
+        profile.ProfilePage(
+          onModeChanged: _onUserModeChanged,
+        ),
+      ];
 
-  bool get _showAddButton => 
-    _userMode == profile.UserMode.propietario || 
-    _userMode == profile.UserMode.agente;
+  bool get _showAddButton =>
+      _userMode == profile.UserMode.propietario ||
+      _userMode == profile.UserMode.agente;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      extendBody: true, // Permite que el body se extienda detrás de la barra de navegación
+      extendBody:
+          true, // Permite que el body se extienda detrás de la barra de navegación
       body: _pages[_currentIndex],
       bottomNavigationBar: CustomBottomNavigation(
         currentIndex: _currentIndex,
@@ -55,16 +57,20 @@ class _HomePageState extends State<HomePage> {
 }
 
 class HomeContent extends StatelessWidget {
-  const HomeContent({Key? key}) : super(key: key);
+  const HomeContent({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white, // Cambiar de Scaffold a Container transparente
+      color: Colors.white,
       child: SafeArea(
-        bottom: false, // No aplicar SafeArea en la parte inferior
+        bottom: false,
         child: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 0), // Quitar padding inferior
+          padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 0), // Quitar padding inferior
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -107,24 +113,32 @@ class HomeContent extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              
-              // Barra de búsqueda
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Buscar propiedades...',
-                    border: InputBorder.none,
-                    icon: Icon(Icons.search, color: Colors.grey),
+              // Barra de búsqueda con glassmorphism
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.3), width: 1),
+                    ),
+                    child: const TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Buscar propiedades...',
+                        border: InputBorder.none,
+                        icon: Icon(Icons.search, color: Colors.white),
+                        hintStyle: TextStyle(color: Colors.white70),
+                      ),
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-              
               // Categorías
               const Text(
                 'Categorías',
@@ -144,7 +158,7 @@ class HomeContent extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Propiedades destacadas
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -163,11 +177,12 @@ class HomeContent extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               // Lista de propiedades
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 120), // Añadir padding inferior aquí
+                  padding: const EdgeInsets.only(
+                      bottom: 120), // Añadir padding inferior aquí
                   itemCount: 3,
                   itemBuilder: (context, index) {
                     return Container(
@@ -177,44 +192,53 @@ class HomeContent extends StatelessWidget {
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(12),
                         image: DecorationImage(
-                          image: AssetImage('assets/images/casa${index + 1}.jpg'),
+                          image:
+                              AssetImage('assets/images/casa${index + 1}.jpg'),
                           fit: BoxFit.cover,
                         ),
                       ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.7),
-                            ],
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Casa en Equipetrol ${index + 1}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Align(
+                          alignment: Alignment.bottomLeft,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: BackdropFilter(
+                              filter:
+                                  ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.25),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.25),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Casa en Equipetrol ${index + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      '\$${(800 + index * 200)}/mes',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Text(
-                                '\$${(800 + index * 200)}/mes',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -232,17 +256,21 @@ class HomeContent extends StatelessWidget {
   Widget _buildCategoryItem(IconData icon, String label) {
     return Column(
       children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: const Color(0xFFA8E6CF),
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Icon(
-            icon,
-            color: Colors.black,
-            size: 30,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.20),
+                borderRadius: BorderRadius.circular(30),
+                border:
+                    Border.all(color: Colors.white.withOpacity(0.25), width: 1),
+              ),
+              child: Icon(icon, color: Colors.white, size: 30),
+            ),
           ),
         ),
         const SizedBox(height: 8),

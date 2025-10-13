@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 
 class SocialLoginButton extends StatelessWidget {
   final IconData icon;
@@ -20,41 +21,44 @@ class SocialLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 50,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? const Color(0xFFF0F8F0),
-          foregroundColor: textColor ?? Colors.black,
-          elevation: 0,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Colors.grey[300]!,
-              width: 1,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: iconColor ?? Colors.black,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: textColor ?? Colors.black,
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white.withOpacity(0.15),
+              foregroundColor: textColor ?? Colors.white,
+              elevation: 0,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
               ),
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: iconColor ?? Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: textColor ?? Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

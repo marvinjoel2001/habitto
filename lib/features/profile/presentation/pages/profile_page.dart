@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/profile_mode_chip.dart';
 import '../../../../shared/widgets/property_card.dart';
@@ -7,7 +8,7 @@ enum UserMode { inquilino, propietario, agente }
 
 class ProfilePage extends StatefulWidget {
   final Function(UserMode)? onModeChanged;
-  
+
   const ProfilePage({
     Key? key,
     this.onModeChanged,
@@ -48,7 +49,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         _currentMode = mode;
       });
       _animationController.forward();
-      
+
       // Notificar el cambio de modo al padre
       if (widget.onModeChanged != null) {
         widget.onModeChanged!(mode);
@@ -84,8 +85,15 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   Widget _buildHeader() {
     return Container(
       height: 80 + MediaQuery.of(context).padding.top,
-      decoration: const BoxDecoration(
-        color: Color(0xFFA8E6CE),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary.withOpacity(0.85),
+            Theme.of(context).colorScheme.primary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       child: SafeArea(
         child: Padding(
@@ -150,127 +158,138 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   }
 
   Widget _buildUserInfo() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Column(
-        children: [
-          // Foto de perfil
-          Stack(
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFFA8E6CE),
-                    width: 3,
-                  ),
-                ),
-                child: const CircleAvatar(
-                  radius: 37,
-                  backgroundImage: AssetImage('assets/images/unnamed.png'),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFA8E6CE),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    size: 14,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
           ),
-          const SizedBox(height: 16),
-          
-          // Nombre y verificación
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Column(
             children: [
-              Text(
-                _getUserName(),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFA8E6CE),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check, size: 12, color: Colors.white),
-                    SizedBox(width: 4),
-                    Text(
-                      'Verificado',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
+              // Foto de perfil
+              Stack(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFA8E6CE),
+                        width: 3,
                       ),
                     ),
-                  ],
+                    child: const CircleAvatar(
+                      radius: 37,
+                      backgroundImage: AssetImage('assets/images/unnamed.png'),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFA8E6CE),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Nombre y verificación
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _getUserName(),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check, size: 12, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text(
+                          'Verificado',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Información de contacto
+              Text(
+                _getUserId(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _getUserEmail(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _getUserPhone(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Botón Editar Perfil
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.5,
+                child: CustomButton(
+                  text: 'Editar Perfil',
+                  onPressed: () {
+                    // Navegar a editar perfil
+                  },
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  textColor: Colors.white,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          
-          // Información de contacto
-          Text(
-            _getUserId(),
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _getUserEmail(),
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _getUserPhone(),
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 24),
-          
-          // Botón Editar Perfil
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.5,
-            child: CustomButton(
-              text: 'Editar Perfil',
-              onPressed: () {
-                // Navegar a editar perfil
-              },
-              backgroundColor: const Color(0xFFA8E6CE),
-              textColor: Colors.white,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -325,64 +344,71 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     ];
 
     return alquileres.map((alquiler) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    alquiler['nombre']!,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        alquiler['nombre']!,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        alquiler['precio']!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFA8E6CE),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    alquiler['precio']!,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFA8E6CE),
+                  child: Text(
+                    'Ver Detalles',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 12,
                     ),
                   ),
-                ],
-              ),
-            ),
-            OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFA8E6CE)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-              child: const Text(
-                'Ver Detalles',
-                style: TextStyle(
-                  color: Color(0xFFA8E6CE),
-                  fontSize: 12,
-                ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }).toList();
@@ -404,81 +430,79 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
     return propiedades.map((propiedad) {
       final isOcupada = propiedad['estado'] == 'Ocupada';
-      
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                propiedad['imagen']!,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    propiedad['nombre']!,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isOcupada ? Colors.red : const Color(0xFFA8E6CE),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      propiedad['estado']!,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA8E6CE),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                shape: RoundedRectangleBorder(
+            child: Row(
+              children: [
+                ClipRRect(
                   borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    propiedad['imagen']!,
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Gestionar',
-                style: TextStyle(fontSize: 12),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        propiedad['nombre']!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isOcupada
+                              ? Colors.red
+                              : Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          propiedad['estado']!,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Gestionar', style: TextStyle(fontSize: 12)),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }).toList();

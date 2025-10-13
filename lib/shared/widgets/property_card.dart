@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import '../theme/app_theme.dart';
 
 class PropertyCard extends StatelessWidget {
@@ -27,130 +28,132 @@ class PropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: AppTheme.whiteColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              // Imagen de la propiedad
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppTheme.grayColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Image.asset(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppTheme.grayColor,
-                        child: const Icon(
-                          Icons.home,
-                          color: Colors.grey,
-                          size: 32,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              
-              // Información de la propiedad
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.blackColor,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    
-                    // Estado de la propiedad
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: statusColor,
-                        ),
-                      ),
-                    ),
-                    
-                    if (showActions) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          if (onEdit != null)
-                            _ActionButton(
-                              icon: Icons.edit,
-                              label: 'Editar',
-                              onTap: onEdit!,
-                              color: AppTheme.primaryColor,
-                            ),
-                          if (onEdit != null && onDelete != null)
-                            const SizedBox(width: 8),
-                          if (onDelete != null)
-                            _ActionButton(
-                              icon: Icons.delete_outline,
-                              label: 'Eliminar',
-                              onTap: onDelete!,
-                              color: Colors.red[300]!,
-                            ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.10),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // Imagen de la propiedad
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppTheme.grayColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Image.asset(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: AppTheme.grayColor,
+                            child: const Icon(
+                              Icons.home,
+                              color: Colors.grey,
+                              size: 32,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Información de la propiedad
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.blackColor,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        // Estado de la propiedad
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: statusColor.withOpacity(0.4), width: 1),
+                          ),
+                          child: Text(
+                            status,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: statusColor,
+                            ),
+                          ),
+                        ),
+                        if (showActions) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              if (onEdit != null)
+                                _ActionButton(
+                                  icon: Icons.edit,
+                                  label: 'Editar',
+                                  onTap: onEdit!,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              if (onEdit != null && onDelete != null)
+                                const SizedBox(width: 8),
+                              if (onDelete != null)
+                                _ActionButton(
+                                  icon: Icons.delete_outline,
+                                  label: 'Eliminar',
+                                  onTap: onDelete!,
+                                  color: Colors.red[300]!,
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
