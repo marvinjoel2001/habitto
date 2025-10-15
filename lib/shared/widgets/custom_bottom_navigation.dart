@@ -16,27 +16,25 @@ class CustomBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
+    return SafeArea(
+      top: false,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(40),
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             height: 80,
-            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 0),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withOpacity(0.25),
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withValues(alpha: 0.18),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withValues(alpha: 0.25),
                   spreadRadius: 1,
                   blurRadius: 10,
                   offset: const Offset(0, 4),
@@ -55,8 +53,8 @@ class CustomBottomNavigation extends StatelessWidget {
             ),
           ),
         ),
-      )
-      );
+      ),
+    );
   }
 
   Widget _buildAddButton(BuildContext context) {
@@ -95,10 +93,10 @@ class CustomBottomNavigation extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.20),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.40),
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
               width: 1,
             ),
           ),
@@ -129,9 +127,9 @@ class CustomBottomNavigation extends StatelessWidget {
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
         ).copyWith(
-          color: Colors.white.withOpacity(0.18),
+          color: Colors.white.withValues(alpha: 0.18),
           border: Border.all(
-            color: Colors.white.withOpacity(0.25),
+            color: Colors.white.withValues(alpha: 0.25),
             width: 1,
           ),
         ),

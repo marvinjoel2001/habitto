@@ -22,11 +22,11 @@ class AppTheme {
       onSecondary: blackColor,
       error: errorColor,
       onError: whiteColor,
-      surface: whiteColor,
+      surface: grayColor,
       onSurface: blackColor,
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: whiteColor,
+      backgroundColor: Colors.white,
       foregroundColor: Colors.black,
       elevation: 0,
       centerTitle: true,
@@ -52,12 +52,7 @@ class AppTheme {
         borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
     ),
-    bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: whiteColor,
-      selectedItemColor: primaryColor,
-      unselectedItemColor: Colors.grey[600],
-      type: BottomNavigationBarType.fixed,
-    ),
+    // ELIMINAR bottomNavigationBarTheme ya que usas CustomBottomNavigation
   );
 
   // 🌚 Dark Theme
@@ -103,11 +98,6 @@ class AppTheme {
         borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
     ),
-    bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: blackColor,
-      selectedItemColor: primaryColor,
-      unselectedItemColor: Colors.grey[500],
-      type: BottomNavigationBarType.fixed,
-    ),
+    // ELIMINAR bottomNavigationBarTheme ya que usas CustomBottomNavigation
   );
 }

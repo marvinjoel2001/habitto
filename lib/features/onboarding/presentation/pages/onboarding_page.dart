@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'dart:ui';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/progress_indicator.dart';
 
@@ -10,15 +11,31 @@ class OnboardingPage extends StatefulWidget {
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> {
+class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStateMixin {
   PageController _pageController = PageController();
   int _currentPage = 0;
   VideoPlayerController? _videoController;
+
+  // NUEVO: Control de animación para el contenido
+  bool _showContent = false;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _initializeVideo();
+    _initializeAnimations();
+
+    // NUEVO: Mostrar contenido después de 10 segundos
+    Future.delayed(const Duration(seconds: 7), () {
+      if (mounted && _currentPage == 0) {
+        setState(() {
+          _showContent = true;
+        });
+        _fadeController.forward();
+      }
+    });
   }
 
   void _initializeVideo() {
@@ -27,13 +44,30 @@ class _OnboardingPageState extends State<OnboardingPage> {
         setState(() {});
         _videoController!.play();
         _videoController!.setLooping(true);
+        _videoController!.setVolume(1.0); // Sonido inicial activado
       });
+  }
+
+  void _initializeAnimations() {
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
   }
 
   @override
   void dispose() {
     _videoController?.dispose();
     _pageController.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
@@ -46,6 +80,35 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
+  void _handlePageChange(int index) {
+    setState(() {
+      _currentPage = index;
+    });
+
+    // Resetear animación si volvemos a la primera página
+    if (index == 0) {
+      _showContent = false;
+      _fadeController.reset();
+      Future.delayed(const Duration(seconds: 10), () {
+        if (mounted && _currentPage == 0) {
+          setState(() {
+            _showContent = true;
+          });
+          _fadeController.forward();
+        }
+      });
+    }
+
+    // Controlar el sonido del video según la página
+    if (_videoController != null && _videoController!.value.isInitialized) {
+      if (index == 0) {
+        _videoController!.setVolume(1.0); // Sonido activado en la primera página
+      } else {
+        _videoController!.setVolume(0.0); // Sonido silenciado en otras páginas
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,11 +116,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         children: [
           PageView(
             controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
+            onPageChanged: _handlePageChange,
             children: [
               _buildWelcomePage(),
               _buildSearchPage(),
@@ -65,46 +124,121 @@ class _OnboardingPageState extends State<OnboardingPage> {
               _buildConnectionPage(),
             ],
           ),
-          Positioned(
-            bottom: 100,
-            left: 0,
-            right: 0,
-            child: CustomProgressIndicator(
-              currentStep: _currentPage,
-              totalSteps: 4,
+          // Indicador de progreso SIN glassmorphismo para evitar superposición
+          // SOLO mostrar si NO estamos en página 0 O si ya se mostró el contenido
+          if (_currentPage != 3 && (_currentPage != 0 || _showContent))
+            Positioned(
+              bottom: 120,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: CustomProgressIndicator(
+                  currentStep: _currentPage,
+                  totalSteps: 4,
+                ),
+              ),
             ),
-          ),
-          Positioned(
-            bottom: 40,
-            left: 24,
-            right: 24,
-            child: _currentPage == 3
-                ? Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CustomButton(
-                        text: 'Iniciar sesión',
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                        backgroundColor: Theme.of(context).colorScheme.primary,
+          // Botones con glassmorphismo
+          // SOLO mostrar si NO estamos en página 0 O si ya se mostró el contenido
+          if (_currentPage != 0 || _showContent)
+            Positioned(
+              bottom: 40,
+              left: 24,
+              right: 24,
+              child: _currentPage == 0 && _showContent
+                  ? // ANIMACIÓN para la primera página
+                  AnimatedBuilder(
+                      animation: _fadeAnimation,
+                      builder: (context, child) {
+                        return Opacity(
+                          opacity: _fadeAnimation.value,
+                          child: Transform.translate(
+                            offset: Offset(0, 50 * (1 - _fadeAnimation.value)),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Colors.white.withOpacity(0.2),
+                                        Colors.white.withOpacity(0.1),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: CustomButton(
+                                    text: 'Siguiente',
+                                    onPressed: _nextPage,
+                                    backgroundColor: Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : // SIN animación para otras páginas
+                  ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withOpacity(0.2),
+                                Colors.white.withOpacity(0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: _currentPage == 3
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CustomButton(
+                                      text: 'Iniciar sesión',
+                                      onPressed: () {
+                                        Navigator.pushReplacementNamed(context, '/login');
+                                      },
+                                      backgroundColor: Theme.of(context).colorScheme.primary,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    CustomButton(
+                                      text: 'Registrarse',
+                                      onPressed: () {
+                                        Navigator.pushReplacementNamed(context, '/register');
+                                      },
+                                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                                    ),
+                                  ],
+                                )
+                              : CustomButton(
+                                  text: 'Siguiente',
+                                  onPressed: _nextPage,
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                ),
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      CustomButton(
-                        text: 'Registrarse',
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/register');
-                        },
-                        backgroundColor: Theme.of(context).colorScheme.secondary,
-                      ),
-                    ],
-                  )
-                : CustomButton(
-                    text: 'Siguiente',
-                    onPressed: _nextPage,
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                  ),
-          ),
+                    ),
+            ),
         ],
       ),
     );
@@ -113,7 +247,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget _buildWelcomePage() {
     return Stack(
       children: [
-        // Video de fondo
+        // Video de fondo LIMPIO - sin overlay oscuro
         if (_videoController != null && _videoController!.value.isInitialized)
           Positioned.fill(
             child: FittedBox(
@@ -125,101 +259,131 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
             ),
           ),
-        // Overlay con degradado
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withAlpha((0.5 * 255).round()),
-                Colors.black.withAlpha((0.9 * 255).round()),
-              ],
-            ),
-          ),
-        ),
-        // Contenido
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            children: [
-              SizedBox(height: MediaQuery.of(context).size.height * 0.20), // Espacio pequeño desde arriba
-              Text(
-                'Encuentra tu nuevo hogar fácilmente',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 32,
+
+        // NUEVO: Contenido que aparece después de 10 segundos con animación
+        if (_showContent)
+          AnimatedBuilder(
+            animation: _fadeAnimation,
+            builder: (context, child) {
+              return Opacity(
+                opacity: _fadeAnimation.value,
+                child: Transform.translate(
+                  offset: Offset(0, 50 * (1 - _fadeAnimation.value)),
+                  child: Container(
+                    // Overlay con degradado glassmorphic (solo cuando aparece el contenido)
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.3 * _fadeAnimation.value),
+                          Colors.black.withOpacity(0.7 * _fadeAnimation.value),
+                        ],
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.20),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(25),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                              child: Container(
+                                padding: const EdgeInsets.all(30),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.white.withOpacity(0.25),
+                                      Colors.white.withOpacity(0.1),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(25),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.4),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Encuentra tu nuevo hogar fácilmente',
+                                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        fontSize: 32,
+                                        shadows: [
+                                          Shadow(
+                                            offset: const Offset(0, 2),
+                                            blurRadius: 4,
+                                            color: Colors.black.withOpacity(0.3),
+                                          ),
+                                        ],
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Alquileres y anticréticos verificados en un solo lugar.',
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 18,
+                                        shadows: [
+                                          Shadow(
+                                            offset: const Offset(0, 1),
+                                            blurRadius: 2,
+                                            color: Colors.black.withOpacity(0.3),
+                                          ),
+                                        ],
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Alquileres y anticréticos verificados en un solo lugar.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.white.withAlpha(230),
-                  fontSize: 18,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const Spacer(), // Esto empuja el contenido hacia arriba
-            ],
+              );
+            },
           ),
-        ),
       ],
     );
   }
 
   Widget _buildSearchPage() {
     return Container(
-      color: Colors.white,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue.shade50,
+            Colors.white,
+            Colors.purple.shade50,
+          ],
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(flex: 2),
-            Text(
-              'Busca con filtros avanzados',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-                fontSize: 28,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Ubicación, precio, tipo de propiedad, habitaciones y más.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[700],
-                fontSize: 16,
-              ),
-              textAlign: TextAlign.center,
+            _buildGlassmorphicTextContainer(
+              title: 'Busca con filtros avanzados',
+              subtitle: 'Ubicación, precio, tipo de propiedad, habitaciones y más.',
             ),
             const SizedBox(height: 40),
-            Container(
-              height: 300,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  'assets/images/mapa.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
+            _buildGlassmorphicImageContainer('assets/images/mapa.png'),
             const Spacer(flex: 3),
           ],
         ),
@@ -229,54 +393,29 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   Widget _buildSecurityPage() {
     return Container(
-      color: Colors.white,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [
+            Colors.green.shade50,
+            Colors.white,
+            Colors.teal.shade50,
+          ],
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(flex: 2),
-            Text(
-              'Publicaciones verificadas',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-                fontSize: 28,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Inquilinos y propietarios con identidad confirmada.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[700],
-                fontSize: 16,
-              ),
-              textAlign: TextAlign.center,
+            _buildGlassmorphicTextContainer(
+              title: 'Publicaciones verificadas',
+              subtitle: 'Inquilinos y propietarios con identidad confirmada.',
             ),
             const SizedBox(height: 40),
-            Container(
-              height: 300,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  'assets/images/seguridad.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
+            _buildGlassmorphicImageContainer('assets/images/seguridad.png'),
             const Spacer(flex: 3),
           ],
         ),
@@ -286,56 +425,123 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   Widget _buildConnectionPage() {
     return Container(
-      color: Colors.white,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.orange.shade50,
+            Colors.white,
+            Colors.pink.shade50,
+          ],
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(flex: 2),
-            Text(
-              'Conecta con propietarios y agentes',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-                fontSize: 28,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Chatea, agenda visitas y aplica desde la app.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[700],
-                fontSize: 16,
-              ),
-              textAlign: TextAlign.center,
+            _buildGlassmorphicTextContainer(
+              title: 'Conecta con propietarios y agentes',
+              subtitle: 'Chatea, agenda visitas y aplica desde la app.',
             ),
             const SizedBox(height: 40),
-            Container(
-              height: 300,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  'assets/images/conexion.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
+            _buildGlassmorphicImageContainer('assets/images/conexion.png'),
             const Spacer(flex: 3),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassmorphicTextContainer({required String title, required String subtitle}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.3),
+                Colors.white.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.4),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  fontSize: 28,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Colors.grey[700],
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassmorphicImageContainer(String imagePath) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(25),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          height: 300,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.2),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(23),
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
       ),
     );

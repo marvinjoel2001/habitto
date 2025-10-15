@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
+import 'package:habitto/features/chat/presentation/pages/conversation_page.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({Key? key}) : super(key: key);
@@ -9,7 +11,7 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
-  
+
   // Datos hardcodeados para los mensajes
   final List<ChatMessage> _messages = [
     ChatMessage(
@@ -80,6 +82,44 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Column(
         children: [
+          // Barra de búsqueda estilo glass
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color:
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.30),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Buscar conversaciones...',
+                      border: InputBorder.none,
+                      icon: Icon(Icons.search, color: Colors.black54),
+                      hintStyle: TextStyle(color: Colors.black87),
+                    ),
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -96,87 +136,115 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildMessageTile(ChatMessage message) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: message.id == '1' ? const Color(0xFFE8F5E8) : Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          // Avatar
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.grey[300],
-                child: message.avatarUrl.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: _buildAvatarImage(message),
-                      )
-                    : Icon(
-                        Icons.person,
-                        color: Colors.grey[600],
-                        size: 28,
-                      ),
-              ),
-              if (message.isOnline)
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                  ),
-                ),
-            ],
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ConversationPage(title: message.senderName),
           ),
-          const SizedBox(width: 12),
-          // Contenido del mensaje
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        );
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha:
+                    message.id == '1' ? 0.35 : 0.25),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Avatar
+                Stack(
                   children: [
-                    Text(
-                      message.senderName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.grey[300],
+                      child: message.avatarUrl.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: _buildAvatarImage(message),
+                            )
+                          : Icon(
+                              Icons.person,
+                              color: Colors.grey[600],
+                              size: 28,
+                            ),
                     ),
-                    Text(
-                      message.time,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                    if (message.isOnline)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  message.message,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                    height: 1.3,
+                const SizedBox(width: 12),
+                // Contenido del mensaje
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            message.senderName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                          Text(
+                            message.time,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        message.message,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[800],
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -185,7 +253,7 @@ class _ChatPageState extends State<ChatPage> {
     // Como no tenemos las imágenes reales, usamos colores de fondo diferentes
     Color avatarColor;
     IconData avatarIcon;
-    
+
     switch (message.senderName) {
       case 'Agente Inmobiliario':
         avatarColor = const Color(0xFF4CAF50);

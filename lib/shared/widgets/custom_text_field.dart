@@ -36,7 +36,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       validator: widget.validator,
       style: const TextStyle(
         fontSize: 16,
-        color: Colors.black,
+        color: Colors.white,
       ),
       decoration: InputDecoration(
         hintText: widget.hintText,

@@ -40,8 +40,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      extendBody:
-          true, // Permite que el body se extienda detrás de la barra de navegación
+      extendBody: true, // Cambiar a false para evitar que el body se extienda detrás
       body: _pages[_currentIndex],
       bottomNavigationBar: CustomBottomNavigation(
         currentIndex: _currentIndex,
@@ -62,7 +61,17 @@ class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      // Fondo con degradado sutil para que el glass se perciba mejor
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white,
+            Theme.of(context).colorScheme.primary.withOpacity(0.08),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -113,7 +122,7 @@ class HomeContent extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              // Barra de búsqueda con glassmorphism
+              // Barra de búsqueda con glassmorphism (restaurada y con mejor contraste)
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: BackdropFilter(
@@ -121,19 +130,25 @@ class HomeContent extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color:
+                          Theme.of(context).colorScheme.surface.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: Colors.white.withOpacity(0.3), width: 1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.30),
+                        width: 1,
+                      ),
                     ),
                     child: const TextField(
                       decoration: InputDecoration(
                         hintText: 'Buscar propiedades...',
                         border: InputBorder.none,
-                        icon: Icon(Icons.search, color: Colors.white),
-                        hintStyle: TextStyle(color: Colors.white70),
+                        icon: Icon(Icons.search, color: Colors.black54),
+                        hintStyle: TextStyle(color: Colors.black87),
                       ),
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: Colors.black),
                     ),
                   ),
                 ),
@@ -151,10 +166,10 @@ class HomeContent extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildCategoryItem(Icons.home, 'Casas'),
-                  _buildCategoryItem(Icons.apartment, 'Apartamentos'),
-                  _buildCategoryItem(Icons.business, 'Oficinas'),
-                  _buildCategoryItem(Icons.store, 'Locales'),
+                  _buildCategoryItem('assets/icons/icon_house.png', 'Casas', context),
+                  _buildCategoryItem('assets/icons/icon_aparment.png', 'Apartamentos', context),
+                  _buildCategoryItem('assets/icons/icon_office.png', 'Oficinas', context),
+                  _buildCategoryItem('assets/icons/icon_shop.png', 'Locales', context),
                 ],
               ),
               const SizedBox(height: 24),
@@ -209,10 +224,10 @@ class HomeContent extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.25),
+                                  color: Colors.black.withValues(alpha: 0.25),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: Colors.white.withOpacity(0.25),
+                                    color: Colors.white.withValues(alpha: 0.25),
                                     width: 1,
                                   ),
                                 ),
@@ -253,23 +268,49 @@ class HomeContent extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryItem(IconData icon, String label) {
+  Widget _buildCategoryItem(String imagePath, String label, BuildContext context) {
     return Column(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.20),
-                borderRadius: BorderRadius.circular(30),
-                border:
-                    Border.all(color: Colors.white.withOpacity(0.25), width: 1),
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    spreadRadius: 0,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: Colors.white, size: 30),
+              child: Center(
+                child: Image.asset(
+                  imagePath,
+                  width: 35,
+                  height: 35,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    print('ERROR CARGANDO: $imagePath');
+                    print('DETALLE ERROR: $error');
+                    return Icon(
+                      Icons.error_outline,
+                      color: Colors.white.withOpacity(0.8),
+                      size: 30,
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),
@@ -286,4 +327,3 @@ class HomeContent extends StatelessWidget {
   }
 }
 
-// Eliminamos la clase ChatPage placeholder ya que ahora tenemos la implementación real
