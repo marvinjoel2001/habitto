@@ -166,10 +166,10 @@ class HomeContent extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildCategoryItem('assets/icons/icon_house.png', 'Casas', context),
-                  _buildCategoryItem('assets/icons/icon_aparment.png', 'Apartamentos', context),
-                  _buildCategoryItem('assets/icons/icon_office.png', 'Oficinas', context),
-                  _buildCategoryItem('assets/icons/icon_shop.png', 'Locales', context),
+                  _buildCategoryItem('assets/icons/iconhouse.png', 'Casas', context),
+                  _buildCategoryItem('assets/icons/iconaparment.png', 'Apartamentos', context),
+                  _buildCategoryItem('assets/icons/iconoffice.png', 'Oficinas', context),
+                  _buildCategoryItem('assets/icons/iconshop.png', 'Locales', context),
                 ],
               ),
               const SizedBox(height: 24),
@@ -271,46 +271,40 @@ class HomeContent extends StatelessWidget {
   Widget _buildCategoryItem(String imagePath, String label, BuildContext context) {
     return Column(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    spreadRadius: 0,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                spreadRadius: 0,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              child: Center(
-                child: Image.asset(
-                  imagePath,
-                  width: 35,
-                  height: 35,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    print('ERROR CARGANDO: $imagePath');
-                    print('DETALLE ERROR: $error');
-                    return Icon(
-                      Icons.error_outline,
-                      color: Colors.white.withOpacity(0.8),
-                      size: 30,
-                    );
-                  },
-                ),
-              ),
+            ],
+          ),
+          child: Center(
+            child: Image.asset(
+              imagePath,
+              width: 32,
+              height: 32,
+              fit: BoxFit.contain, // Cambio de cover a contain para iconos
+              errorBuilder: (context, error, stackTrace) {
+                print('ERROR CARGANDO: $imagePath');
+                print('DETALLE ERROR: $error');
+                return Icon(
+                  Icons.error_outline,
+                  color: Colors.grey[600],
+                  size: 24,
+                );
+              },
             ),
           ),
         ),
