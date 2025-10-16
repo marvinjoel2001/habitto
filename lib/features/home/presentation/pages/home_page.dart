@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 import '../../../../shared/widgets/custom_bottom_navigation.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
 import '../../../search/presentation/pages/search_page.dart' as search;
@@ -153,7 +154,7 @@ class HomeContent extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               // Categorías
               const Text(
                 'Categorías',
@@ -172,7 +173,7 @@ class HomeContent extends StatelessWidget {
                   _buildCategoryItem('assets/icons/iconshop.png', 'Locales', context),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Propiedades destacadas
               Row(
@@ -191,7 +192,7 @@ class HomeContent extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               // Lista de propiedades
               Expanded(
@@ -269,48 +270,125 @@ class HomeContent extends StatelessWidget {
   }
 
   Widget _buildCategoryItem(String imagePath, String label, BuildContext context) {
+    return _FloatingCategoryItem(
+      imagePath: imagePath,
+      label: label,
+    );
+  }
+}
+
+class _FloatingCategoryItem extends StatefulWidget {
+  final String imagePath;
+  final String label;
+
+  const _FloatingCategoryItem({
+    required this.imagePath,
+    required this.label,
+  });
+
+  @override
+  State<_FloatingCategoryItem> createState() => _FloatingCategoryItemState();
+}
+
+class _FloatingCategoryItemState extends State<_FloatingCategoryItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat();
+
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 2 * math.pi,
+    ).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                spreadRadius: 0,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(0, 3 * math.sin(_animation.value)),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      spreadRadius: 0,
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                    child: Container(
+                      width: 60,
+                      height: 60,
+
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: BackdropFilter(
+                          filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Image.asset(
+                              widget.imagePath,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                print('Error cargando imagen: ${widget.imagePath}');
+                                print('Detalle del error: $error');
+                                return const Icon(
+                                  Icons.error_outline,
+                                  color: Colors.red,
+                                  size: 24,
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ],
-          ),
-          child: Center(
-            child: Image.asset(
-              imagePath,
-              width: 32,
-              height: 32,
-              fit: BoxFit.contain, // Cambio de cover a contain para iconos
-              errorBuilder: (context, error, stackTrace) {
-                print('ERROR CARGANDO: $imagePath');
-                print('DETALLE ERROR: $error');
-                return Icon(
-                  Icons.error_outline,
-                  color: Colors.grey[600],
-                  size: 24,
-                );
-              },
-            ),
-          ),
+            );
+          },
         ),
         const SizedBox(height: 8),
         Text(
-          label,
+          widget.label,
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,

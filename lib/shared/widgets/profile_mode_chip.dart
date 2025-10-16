@@ -28,19 +28,21 @@ class ProfileModeChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
               color: isActive
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.25)
-                  : Colors.white.withOpacity(0.12),
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.35)
+                  : Colors.white.withOpacity(0.20),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
-                width: 1,
+                color: isActive
+                    ? Theme.of(context).colorScheme.primary.withOpacity(0.8)
+                    : Colors.white.withOpacity(0.40),
+                width: 1.5,
               ),
             ),
             child: Center(
               child: Text(
                 text,
                 style: TextStyle(
-                  color: isActive ? Colors.white : Theme.of(context).colorScheme.primary,
+                  color: isActive ? Colors.white : Colors.black87,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),

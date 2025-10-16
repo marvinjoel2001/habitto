@@ -60,64 +60,91 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildModeSelector(),
-                  _buildUserInfo(),
-                  _buildModeContent(),
-                  _buildAdditionalButtons(),
-                  const SizedBox(height: 100), // Espacio para bottom navigation
-                ],
-              ),
+      backgroundColor: Colors.transparent,
+      body: Container(
+        // Fondo con degradado sutil igual al home
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white,
+              Theme.of(context).colorScheme.primary.withOpacity(0.08),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                _buildModeSelector(),
+                _buildUserInfo(),
+                _buildModeContent(),
+                _buildAdditionalButtons(),
+                const SizedBox(height: 100), // Espacio para bottom navigation
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildHeader() {
     return Container(
-      height: 80 + MediaQuery.of(context).padding.top,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.85),
-            Theme.of(context).colorScheme.primary,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 8,
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 1,
               ),
-              const Expanded(
-                child: Text(
-                  'Mi Perfil',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: 'Roboto',
-                  ),
-                  textAlign: TextAlign.center,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  spreadRadius: 1,
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Mi Perfil',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Roboto',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 48), // Para centrar el título
+                ],
               ),
-              const SizedBox(width: 48), // Para centrar el título
-            ],
+            ),
           ),
         ),
       ),
@@ -165,9 +192,9 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.20), width: 1),
           ),
           child: Column(
             children: [
@@ -307,7 +334,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 16),
@@ -352,9 +379,9 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withOpacity(0.25),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              border: Border.all(color: Colors.white.withOpacity(0.40), width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.08),

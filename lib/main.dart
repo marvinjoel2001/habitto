@@ -40,7 +40,7 @@ class HabittoApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
-      initialRoute: '/',
+      initialRoute: '/home',
       routes: {
         '/': (context) => const OnboardingPage(),
         '/login': (context) => const LoginPage(),
