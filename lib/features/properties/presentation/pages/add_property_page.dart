@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/step_progress_indicator.dart';
+import '../../../../shared/theme/app_theme.dart';
+
+
 
 class AddPropertyPage extends StatefulWidget {
   const AddPropertyPage({Key? key}) : super(key: key);
@@ -195,9 +198,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: AppTheme.whiteColor.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                  border: Border.all(color: AppTheme.whiteColor.withOpacity(0.3), width: 1),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(

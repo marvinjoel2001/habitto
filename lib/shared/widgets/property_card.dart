@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../shared/theme/app_theme.dart';
 import 'dart:ui' as ui;
-import '../theme/app_theme.dart';
+
 
 class PropertyCard extends StatelessWidget {
   final String imageUrl;
@@ -35,17 +36,17 @@ class PropertyCard extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.10),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
+          color: AppTheme.whiteColor.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.whiteColor.withOpacity(0.3), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.blackColor.withOpacity(0.10),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(12),
@@ -69,9 +70,9 @@ class PropertyCard extends StatelessWidget {
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
                             color: AppTheme.grayColor,
-                            child: const Icon(
+                            child: Icon(
                               Icons.home,
-                              color: Colors.grey,
+                              color: AppTheme.whiteColor.withOpacity(0.7),
                               size: 32,
                             ),
                           );
@@ -101,7 +102,7 @@ class PropertyCard extends StatelessWidget {
                             subtitle!,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: AppTheme.whiteColor.withOpacity(0.6),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -143,7 +144,7 @@ class PropertyCard extends StatelessWidget {
                                   icon: Icons.delete_outline,
                                   label: 'Eliminar',
                                   onTap: onDelete!,
-                                  color: Colors.red[300]!,
+                                  color: AppTheme.errorColor,
                                 ),
                             ],
                           ),

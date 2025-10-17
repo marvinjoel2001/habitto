@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import '../../../../shared/widgets/custom_bottom_navigation.dart';
+import '../../../../shared/theme/app_theme.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
 import '../../../search/presentation/pages/search_page.dart' as search;
 import '../../../chat/presentation/pages/chat_page.dart';
@@ -62,17 +63,8 @@ class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Fondo con degradado sutil para que el glass se perciba mejor
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.white,
-            Theme.of(context).colorScheme.primary.withOpacity(0.08),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
+      // Usando el gradiente del tema
+      decoration: AppTheme.getProfileBackground(),
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -96,14 +88,14 @@ class HomeContent extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
+                          color: Colors.black.withValues(alpha: 0.7),
                         ),
                       ),
                       Text(
                         'Encuentra tu hogar ideal',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey[600],
+                          color: Colors.black.withValues(alpha: 0.3),
                         ),
                       ),
                     ],
@@ -112,7 +104,7 @@ class HomeContent extends StatelessWidget {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFA8E6CF),
+                      color: AppTheme.primaryColor, // Color mint del tema
                       borderRadius: BorderRadius.circular(25),
                     ),
                     child: const Icon(
@@ -123,33 +115,43 @@ class HomeContent extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              // Barra de búsqueda con glassmorphism (restaurada y con mejor contraste)
+              // Barra de búsqueda con glassmorphism similar al bottom navigation
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(25),
                 child: BackdropFilter(
-                  filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color:
-                          Theme.of(context).colorScheme.surface.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.black.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(25),
                       border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.30),
+                        color: Colors.white.withValues(alpha: 0.25),
                         width: 1,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          spreadRadius: 1,
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: const TextField(
+                    child: TextField(
                       decoration: InputDecoration(
                         hintText: 'Buscar propiedades...',
                         border: InputBorder.none,
-                        icon: Icon(Icons.search, color: Colors.black54),
-                        hintStyle: TextStyle(color: Colors.black87),
+                        focusedBorder: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        fillColor: Colors.transparent,
+                        filled: true,
+                        icon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                       ),
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
@@ -161,6 +163,7 @@ class HomeContent extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
@@ -184,12 +187,16 @@ class HomeContent extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
-                    child: const Text('Ver todas'),
-                  ),
+                      onPressed: () {},
+                      child: const Text(
+                        'Ver todas',
+                        style: TextStyle(color: AppTheme.primaryColor),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -392,6 +399,7 @@ class _FloatingCategoryItemState extends State<_FloatingCategoryItem>
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
+            color: Colors.white,
           ),
         ),
       ],

@@ -7,13 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:video_player/video_player.dart';
-import 'package:habitto/shared/theme/app_theme.dart';
+import '../../../../shared/theme/app_theme.dart';
 
-class AppTheme {
-  static const Color primaryColor = Color(0xFFFDB813);
-  static const Color grayColor = Colors.grey;
-}
-// ---------------------------------------------------
+
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -162,14 +158,14 @@ class _SearchPageState extends State<SearchPage> {
 
     // Círculo principal del marcador (amarillo como el tema)
     final circlePaint = Paint()
-      ..color = const Color(0xFFFDB813).withOpacity(0.95)
+      ..color = AppTheme.primaryColor.withOpacity(0.95)
       ..style = PaintingStyle.fill;
     final center = Offset(size / 2, size / 2);
     canvas.drawCircle(center, size * 0.36, circlePaint);
 
     // Borde sutil
     final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(0.8)
+      ..color = AppTheme.whiteColor.withOpacity(0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
     canvas.drawCircle(center, size * 0.36, borderPaint);
@@ -444,15 +440,15 @@ class _SearchPageState extends State<SearchPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: cs.surface.withOpacity(0.20),
+            color: cs.surface.withValues(alpha: 0.20),
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: cs.primary.withOpacity(0.30)),
+            border: Border.all(color: cs.primary.withValues(alpha: 0.30)),
           ),
-          child: const TextField(
+          child: TextField(
             decoration: InputDecoration(
               hintText: 'Buscar por zona, precio o tipo',
               border: InputBorder.none,
-              icon: Icon(Icons.search, color: Colors.grey),
+              icon: Icon(Icons.search, color: AppTheme.whiteColor.withValues(alpha: 0.7)),
             ),
           ),
         ),
@@ -490,17 +486,17 @@ class _SearchPageState extends State<SearchPage> {
           label: Text(
             label,
             style: TextStyle(
-              color: Colors.black,
+              color: AppTheme.blackColor,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
           backgroundColor:
-              isSelected ? primary.withOpacity(0.22) : Colors.white.withOpacity(0.18),
+              isSelected ? primary.withValues(alpha: 0.22) : AppTheme.whiteColor.withValues(alpha: 0.18),
           shape: StadiumBorder(
             side: BorderSide(
               color: isSelected
-                  ? primary.withOpacity(0.45)
-                  : Colors.white.withOpacity(0.25),
+                  ? primary.withValues(alpha: 0.45)
+                  : AppTheme.whiteColor.withValues(alpha: 0.25),
               width: 1.5,
             ),
           ),
@@ -522,19 +518,19 @@ class _SearchPageState extends State<SearchPage> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: cs.surface.withOpacity(0.25),
+                color: cs.surface.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: cs.primary.withOpacity(0.35)),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.35)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: AppTheme.blackColor.withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
                 ],
               ),
               child: IconButton(
-                icon: Icon(icon, color: Colors.black),
+                icon: Icon(icon, color: AppTheme.blackColor),
                 onPressed: onTap,
               ),
             ),
@@ -625,15 +621,15 @@ class _SearchPageState extends State<SearchPage> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.25), // Más opaco para mejor visibilidad
+            color: AppTheme.whiteColor.withValues(alpha: 0.25), // Más opaco para mejor visibilidad
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: cs.primary.withOpacity(0.4),
+              color: cs.primary.withValues(alpha: 0.4),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: AppTheme.blackColor.withValues(alpha: 0.15),
                 blurRadius: 20,
                 offset: const Offset(0, -4),
               ),
@@ -650,10 +646,10 @@ class _SearchPageState extends State<SearchPage> {
                   Expanded(
                     child: Text(
                       _selectedProperty!.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87, // Más visible
+                        color: AppTheme.blackColor.withOpacity(0.87), // Más visible
                       ),
                     ),
                   ),
@@ -662,10 +658,10 @@ class _SearchPageState extends State<SearchPage> {
                     icon: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.1),
+                        color: AppTheme.blackColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(Icons.close, color: Colors.black87, size: 20),
+                      child: Icon(Icons.close, color: AppTheme.blackColor.withValues(alpha: 0.87), size: 20),
                     ),
                   ),
                 ],
@@ -683,7 +679,7 @@ class _SearchPageState extends State<SearchPage> {
                   _selectedProperty!.price,
                   style: const TextStyle(
                     fontSize: 18,
-                    color: Colors.black,
+                    color: AppTheme.blackColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -702,8 +698,8 @@ class _SearchPageState extends State<SearchPage> {
                       Container(
                         width: double.infinity,
                         height: 120,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.home, size: 40, color: Colors.grey),
+                        color: AppTheme.grayColor.withValues(alpha: 0.3),
+                        child: Icon(Icons.home, size: 40, color: AppTheme.grayColor),
                       ),
                 ),
               ),
@@ -713,14 +709,14 @@ class _SearchPageState extends State<SearchPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+                  color: AppTheme.whiteColor.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   _selectedProperty!.description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Colors.black87, // Más visible
+                    color: AppTheme.blackColor.withValues(alpha: 0.87), // Más visible
                     height: 1.4,
                     fontWeight: FontWeight.w500,
                   ),
@@ -735,7 +731,7 @@ class _SearchPageState extends State<SearchPage> {
                   onPressed: () {/* Navegar a detalles de la propiedad */},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,
-                    foregroundColor: Colors.black,
+                    foregroundColor: AppTheme.blackColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

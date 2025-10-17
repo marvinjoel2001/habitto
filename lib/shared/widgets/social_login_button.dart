@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import '../theme/app_theme.dart';
 
 class SocialLoginButton extends StatelessWidget {
   final IconData icon;
@@ -29,31 +30,31 @@ class SocialLoginButton extends StatelessWidget {
           height: 50,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+            border: Border.all(color: AppTheme.whiteColor.withOpacity(0.3), width: 1),
           ),
           child: ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.15),
-              foregroundColor: textColor ?? Colors.white,
+              backgroundColor: AppTheme.whiteColor.withOpacity(0.15),
+              foregroundColor: textColor ?? AppTheme.whiteColor,
               elevation: 0,
               shadowColor: Colors.transparent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
+                side: BorderSide(color: AppTheme.whiteColor.withOpacity(0.3), width: 1),
               ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: iconColor ?? Colors.white, size: 20),
+                Icon(icon, color: iconColor ?? AppTheme.whiteColor, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   text,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: textColor ?? Colors.white,
+                    color: textColor ?? AppTheme.whiteColor,
                   ),
                 ),
               ],

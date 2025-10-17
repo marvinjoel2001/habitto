@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class CustomTextField extends StatefulWidget {
   final TextEditingController controller;
@@ -36,12 +37,12 @@ class _CustomTextFieldState extends State<CustomTextField> {
       validator: widget.validator,
       style: const TextStyle(
         fontSize: 16,
-        color: Colors.white,
+        color: AppTheme.whiteColor,
       ),
       decoration: InputDecoration(
         hintText: widget.hintText,
         hintStyle: TextStyle(
-          color: Colors.grey[500],
+          color: AppTheme.whiteColor.withOpacity(0.5),
           fontSize: 16,
         ),
         prefixIcon: widget.prefixIcon,
@@ -49,7 +50,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             ? IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey[500],
+                  color: AppTheme.whiteColor.withOpacity(0.5),
                 ),
                 onPressed: () {
                   setState(() {
@@ -59,7 +60,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
               )
             : widget.suffixIcon,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.15),
+        fillColor: AppTheme.whiteColor.withOpacity(0.15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

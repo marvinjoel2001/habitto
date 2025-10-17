@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/theme/app_theme.dart';
 
 class StepProgressIndicator extends StatelessWidget {
   final int currentStep;
@@ -22,7 +23,7 @@ class StepProgressIndicator extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 24),
           child: LinearProgressIndicator(
             value: (currentStep + 1) / totalSteps,
-            backgroundColor: Colors.white.withOpacity(0.25),
+            backgroundColor: AppTheme.whiteColor.withOpacity(0.25),
             valueColor: AlwaysStoppedAnimation<Color>(primary),
           ),
         ),
@@ -41,14 +42,14 @@ class StepProgressIndicator extends StatelessWidget {
                     height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isActive ? primary : Colors.white.withOpacity(0.2),
+                      color: isActive ? primary : AppTheme.whiteColor.withOpacity(0.2),
                       border: isCurrent ? Border.all(color: primary, width: 2) : null,
                     ),
                     child: Center(
                       child: Text(
                         '${index + 1}',
                         style: TextStyle(
-                          color: isActive ? Colors.white : Colors.grey[600],
+                          color: isActive ? AppTheme.whiteColor : AppTheme.whiteColor.withOpacity(0.6),
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -61,7 +62,7 @@ class StepProgressIndicator extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                      color: isActive ? Colors.black : Colors.grey[600],
+                      color: isActive ? AppTheme.blackColor : AppTheme.whiteColor.withOpacity(0.6),
                     ),
                     textAlign: TextAlign.center,
                   ),

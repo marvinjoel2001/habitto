@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/profile_mode_chip.dart';
 import '../../../../shared/widgets/property_card.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 enum UserMode { inquilino, propietario, agente }
 
@@ -60,29 +61,22 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: Container(
-        // Fondo con degradado sutil igual al home
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              Theme.of(context).colorScheme.primary.withOpacity(0.08),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        decoration: AppTheme.getProfileBackground(),
         child: SafeArea(
           child: SingleChildScrollView(
             child: Column(
               children: [
+                _buildModernHeader(),
+                const SizedBox(height: 8),
+                _buildModernModeSelector(),
                 const SizedBox(height: 20),
-                _buildModeSelector(),
-                _buildUserInfo(),
+                _buildModernProfileSection(),
+                const SizedBox(height: 40),
+                _buildModernActionButtons(),
+                const SizedBox(height: 30),
                 _buildModeContent(),
-                _buildAdditionalButtons(),
-                const SizedBox(height: 100), // Espacio para bottom navigation
+                _buildModernBottomButtons(),
               ],
             ),
           ),
@@ -91,97 +85,80 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 16,
-        right: 16,
-        bottom: 8,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.25),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  spreadRadius: 1,
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Expanded(
-                    child: Text(
-                      'Mi Perfil',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Roboto',
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(width: 48), // Para centrar el título
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeSelector() {
-    return Container(
-      padding: const EdgeInsets.all(16),
+  Widget _buildModernHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: ProfileModeChip(
-              text: 'Inquilino',
-              isActive: _currentMode == UserMode.inquilino,
-              onTap: () => _changeMode(UserMode.inquilino),
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Colors.black,
+              size: 24,
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ProfileModeChip(
-              text: 'Propietario',
-              isActive: _currentMode == UserMode.propietario,
-              onTap: () => _changeMode(UserMode.propietario),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ProfileModeChip(
-              text: 'Agente',
-              isActive: _currentMode == UserMode.agente,
-              onTap: () => _changeMode(UserMode.agente),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.more_vert,
+              color: Colors.black,
+              size: 24,
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildModernModeSelector() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: UserMode.values.map((mode) {
+          final isActive = _currentMode == mode;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => _changeMode(mode),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+            color: isActive ? AppTheme.primaryColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+                child: Text(
+                  _getModeDisplayName(mode),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isActive ? Colors.black : Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  String _getModeDisplayName(UserMode mode) {
+    switch (mode) {
+      case UserMode.inquilino:
+        return 'Inquilino';
+      case UserMode.propietario:
+        return 'Propietario';
+      case UserMode.agente:
+        return 'Agente';
+    }
   }
 
   Widget _buildUserInfo() {
@@ -192,27 +169,28 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           decoration: BoxDecoration(
-            
+
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.white.withValues(alpha: 0.20), width: 1),
           ),
-          child: Column(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Foto de perfil
+              // Foto de perfil - Alineada a la izquierda y más grande
               Stack(
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
+                    width: 120,
+                    height: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFFA8E6CE),
+                        color: AppTheme.primaryColor,
                         width: 3,
                       ),
                     ),
                     child: const CircleAvatar(
-                      radius: 37,
+                      radius: 57,
                       backgroundImage: AssetImage('assets/images/unnamed.png'),
                     ),
                   ),
@@ -220,98 +198,107 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                     bottom: 0,
                     right: 0,
                     child: Container(
-                      width: 24,
-                      height: 24,
+                      width: 32,
+                      height: 32,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFA8E6CE),
+                        color: AppTheme.primaryColor,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.camera_alt,
-                        size: 14,
+                        size: 18,
                         color: Colors.white,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(width: 20),
 
-              // Nombre y verificación
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _getUserName(),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
+              // Información del usuario - A la derecha de la foto
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nombre y verificación
+                    Row(
                       children: [
-                        Icon(Icons.check, size: 12, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text(
-                          'Verificado',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Text(
+                            _getUserName(),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check, size: 12, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'Verificado',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
+                    const SizedBox(height: 12),
 
-              // Información de contacto
-              Text(
-                _getUserId(),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _getUserEmail(),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _getUserPhone(),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 24),
+                    // Información de contacto
+                    Text(
+                      _getUserId(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getUserEmail(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getUserPhone(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
 
-              // Botón Editar Perfil
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.5,
-                child: CustomButton(
-                  text: 'Editar Perfil',
-                  onPressed: () {
-                    // Navegar a editar perfil
-                  },
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  textColor: Colors.white,
+                    // Botón Editar Perfil
+                    SizedBox(
+                      width: 140,
+                      child: CustomButton(
+                        text: 'Editar Perfil',
+                        onPressed: () {
+                          // Navegar a editar perfil
+                        },
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        textColor: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -325,14 +312,14 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        margin: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               _getModeTitle(),
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -360,80 +347,102 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     final alquileres = [
       {
         'nombre': 'Casa en el centro',
-        'precio': 'Bs. 2,500',
+        'precio': 'Bs. 2,500/mes',
         'estado': 'Activo',
+        'imagen': 'assets/images/casa1.jpg',
       },
       {
         'nombre': 'Departamento Equipetrol',
-        'precio': 'Bs. 3,800',
+        'precio': 'Bs. 3,800/mes',
         'estado': 'Finalizado',
+        'imagen': 'assets/images/casa2.jpg',
       },
     ];
 
     return alquileres.map((alquiler) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.40), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        alquiler['nombre']!,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        alquiler['precio']!,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFA8E6CE),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Theme.of(context).colorScheme.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      alquiler['imagen']!,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.home, color: Colors.grey),
+                        );
+                      },
                     ),
                   ),
-                  child: Text(
-                    'Ver Detalles',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 12,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          alquiler['nombre']!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          alquiler['precio']!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                    ),
+                    child: const Text(
+                      'Ver Detalles',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -458,76 +467,93 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     return propiedades.map((propiedad) {
       final isOcupada = propiedad['estado'] == 'Ocupada';
 
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-            ),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    propiedad['imagen']!,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                  ),
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        propiedad['nombre']!,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: isOcupada
-                              ? Colors.red
-                              : Theme.of(context).colorScheme.primary,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          propiedad['estado']!,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      propiedad['imagen']!,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                          child: const Icon(Icons.home, color: Colors.grey),
+                        );
+                      },
                     ),
                   ),
-                  child: const Text('Gestionar', style: TextStyle(fontSize: 12)),
-                ),
-              ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          propiedad['nombre']!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isOcupada ? Colors.red : AppTheme.primaryColor,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Text(
+                            propiedad['estado']!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isOcupada ? Colors.white : Colors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Gestionar',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -553,80 +579,95 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
     return propiedadesAsignadas.map((propiedad) {
       return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                propiedad['imagen']!,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
+        margin: const EdgeInsets.only(bottom: 16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    propiedad['nombre']!,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      propiedad['imagen']!,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.home, color: Colors.grey),
+                        );
+                      },
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    propiedad['cliente']!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          propiedad['nombre']!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          propiedad['cliente']!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          propiedad['comision']!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF7FFFD4),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    propiedad['comision']!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFA8E6CE),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7FFFD4),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Contactar',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA8E6CE),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Contactar',
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
+          ),
         ),
       );
     }).toList();
@@ -634,77 +675,97 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   Widget _buildAdditionalButtons() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFA8E6CE)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                child: GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: const Color(0xFF7FFFD4),
+                        width: 1,
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text(
-                    'Ver Reseñas',
-                    style: TextStyle(
-                      color: Color(0xFFA8E6CE),
-                      fontWeight: FontWeight.w600,
+                    child: const Text(
+                      'Ver Reseñas',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF7FFFD4),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFA8E6CE)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                child: GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: const Color(0xFF7FFFD4),
+                        width: 1,
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text(
-                    'Incentivos',
-                    style: TextStyle(
-                      color: Color(0xFFA8E6CE),
-                      fontWeight: FontWeight.w600,
+                    child: const Text(
+                      'Incentivos',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF7FFFD4),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
+            child: GestureDetector(
+              onTap: () {
                 Navigator.pushNamedAndRemoveUntil(
                   context,
                   '/login',
                   (route) => false,
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6B6B),
-                foregroundColor: Colors.white,
+              child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B6B),
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ),
-              child: const Text(
-                'Cerrar Sesión',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                child: const Text(
+                  'Cerrar Sesión',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -715,13 +776,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   }
 
   String _getUserName() {
-    switch (_currentMode) {
-      case UserMode.inquilino:
-      case UserMode.propietario:
-        return 'Ricardo Vargas';
-      case UserMode.agente:
-        return 'Ana Gonzales';
-    }
+    return 'Margaretha Collins';
   }
 
   String _getUserId() {
@@ -738,9 +793,9 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     switch (_currentMode) {
       case UserMode.inquilino:
       case UserMode.propietario:
-        return 'ricardo.v@email.com';
+        return 'margaretha.c@email.com';
       case UserMode.agente:
-        return 'ana.gonzales@email.com';
+        return 'margaretha.collins@email.com';
     }
   }
 
@@ -763,5 +818,349 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       case UserMode.agente:
         return 'Propiedades Asignadas';
     }
+  }
+
+  Widget _buildModernProfileSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Foto de perfil - Alineada a la izquierda
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Stack(
+              children: [
+                Container(
+                  width: 250,
+                  height: 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/unnamed.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey,
+                            ),
+                            child: const Icon(
+                              Icons.person,
+                              size: 80,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 10,
+                  right: 10,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      size: 20,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 30),
+
+          // Información del usuario - DEBAJO de la foto, alineada a la izquierda
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Nombre y verificación
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      _getUserName(),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check, size: 12, color: Colors.black),
+                        SizedBox(width: 4),
+                        Text(
+                          'Verificado',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.black,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Información de contacto
+              Text(
+                _getUserId(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _getUserEmail(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _getUserPhone(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Botón Editar Perfil
+              SizedBox(
+                width: 140,
+                child: CustomButton(
+                  text: 'Editar Perfil',
+                  onPressed: () {
+                    // Navegar a editar perfil
+                  },
+                  backgroundColor: AppTheme.primaryColor,
+                  textColor: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernStatItem(IconData icon, String value, String label) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: const Color(0xFF7FFFD4),
+          size: 24,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withOpacity(0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModernActionButtons() {
+    List<String> options = _getOptionsForCurrentMode();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: options.asMap().entries.map((entry) {
+          int index = entry.key;
+          String option = entry.value;
+          bool isActive = index == 0; // Primer elemento activo por defecto
+
+          return Expanded(
+            child: Container(
+              margin: EdgeInsets.only(right: index < options.length - 1 ? 12 : 0),
+              child: _buildModernActionButton(option, isActive),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  List<String> _getOptionsForCurrentMode() {
+    switch (_currentMode) {
+      case UserMode.inquilino:
+        return ['Pagos', 'Contratos', 'Reportes', 'Historial'];
+      case UserMode.propietario:
+        return ['Propiedades', 'Ingresos', 'Inquilinos', 'Mantenimiento'];
+      case UserMode.agente:
+        return ['Clientes', 'Ventas', 'Comisiones', 'Agenda'];
+    }
+  }
+
+  Widget _buildModernActionButton(String text, bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      decoration: BoxDecoration(
+        color: isActive ? Colors.white : Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(
+          color: isActive ? Colors.transparent : Colors.white.withOpacity(0.3),
+        ),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          style: TextStyle(
+            color: isActive ? Colors.black : Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernBottomButtons() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                      color: const Color(0xFF7FFFD4),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Text(
+                    'Ver Reseñas',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF7FFFD4),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                      color: const Color(0xFF7FFFD4),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Text(
+                    'Incentivos',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF7FFFD4),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF6B6B),
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Text(
+                'Cerrar Sesión',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
