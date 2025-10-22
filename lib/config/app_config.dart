@@ -1,11 +1,23 @@
 class AppConfig {
   static const String appName = 'Habitto';
   static const String version = '1.0.0';
-  
+
   // API Configuration
-  static const String baseUrl = 'https://api.habitto.com';
+  static const String baseUrl = 'http://192.168.1.8:8000';
   static const int timeoutDuration = 30000; // milliseconds
-  
+
+  // API Endpoints
+  static const String usersEndpoint = '/api/users/';
+  static const String profilesEndpoint = '/api/profiles/';
+  static const String propertiesEndpoint = '/api/properties/';
+  static const String amenitiesEndpoint = '/api/amenities/';
+  static const String photosEndpoint = '/api/photos/';
+  static const String loginEndpoint = '/api/login/';
+  static const String logoutEndpoint = '/api/logout/';
+  static const String currentUserEndpoint = '/api/auth/user/';
+  static const String refreshTokenEndpoint = '/api/token/refresh/';
+  static const String currentProfileEndpoint = '/api/profiles/me/';
+
   // Database Configuration
   static const String databaseName = 'habitto.db';
   static const int databaseVersion = 1;

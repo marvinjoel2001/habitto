@@ -1,38 +1,53 @@
 import '../../../../core/models/base_model.dart';
 
 class User extends BaseModel {
-  final String id;
+  final int id;
+  final String username;
   final String email;
-  final String name;
-  final String? profileImage;
-  final DateTime createdAt;
-  
+  final String firstName;
+  final String lastName;
+  final DateTime dateJoined;
+
   User({
     required this.id,
+    required this.username,
     required this.email,
-    required this.name,
-    this.profileImage,
-    required this.createdAt,
+    required this.firstName,
+    required this.lastName,
+    required this.dateJoined,
   });
-  
+
+  String get fullName => '$firstName $lastName';
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
+      username: json['username'],
       email: json['email'],
-      name: json['name'],
-      profileImage: json['profile_image'],
-      createdAt: DateTime.parse(json['created_at']),
+      firstName: json['first_name'],
+      lastName: json['last_name'],
+      dateJoined: DateTime.parse(json['date_joined']),
     );
   }
-  
+
   @override
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'username': username,
       'email': email,
-      'name': name,
-      'profile_image': profileImage,
-      'created_at': createdAt.toIso8601String(),
+      'first_name': firstName,
+      'last_name': lastName,
+      'date_joined': dateJoined.toIso8601String(),
+    };
+  }
+
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'username': username,
+      'email': email,
+      'first_name': firstName,
+      'last_name': lastName,
     };
   }
 }

@@ -6,9 +6,14 @@ import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/register_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/properties/presentation/pages/add_property_page.dart';
+import 'features/auth/data/services/auth_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar autenticación
+  final authService = AuthService();
+  await authService.initializeAuth();
 
   // Configurar orientación de pantalla
   SystemChrome.setPreferredOrientations([
@@ -40,7 +45,7 @@ class HabittoApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
-      initialRoute: '/home',
+      initialRoute: '/',
       routes: {
         '/': (context) => const OnboardingPage(),
         '/login': (context) => const LoginPage(),

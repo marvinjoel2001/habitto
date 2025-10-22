@@ -4,6 +4,9 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/profile_mode_chip.dart';
 import '../../../../shared/widgets/property_card.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../data/services/profile_service.dart';
+import '../../domain/entities/profile.dart';
+import '../../../auth/domain/entities/user.dart';
 
 enum UserMode { inquilino, propietario, agente }
 
@@ -24,6 +27,11 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  final ProfileService _profileService = ProfileService();
+  Profile? _currentProfile;
+  User? _currentUser;
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +42,62 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _animationController.forward();
+    _loadCurrentProfile();
+  }
+
+  Future<void> _loadCurrentProfile() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final response = await _profileService.getCurrentProfile();
+
+      if (response['success'] == true) {
+        // Extract both profile and user data from the response
+        _currentProfile = response['profile'];
+        _currentUser = response['user'];
+
+        // Establecer el modo actual basado en el tipo de usuario
+        if (_currentProfile != null) {
+          _setModeFromUserType(_currentProfile!.userType);
+        } else {
+          // If no profile, default to inquilino
+          _currentMode = UserMode.inquilino;
+        }
+      } else {
+        print('Error cargando perfil: ${response['error']}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error cargando perfil: ${response['error']}')),
+        );
+      }
+    } catch (e) {
+      print('Error cargando perfil: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error cargando perfil: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+      _animationController.forward();
+    }
+  }
+
+  void _setModeFromUserType(String userType) {
+    switch (userType.toLowerCase()) {
+      case 'inquilino':
+        _currentMode = UserMode.inquilino;
+        break;
+      case 'propietario':
+        _currentMode = UserMode.propietario;
+        break;
+      case 'agente':
+        _currentMode = UserMode.agente;
+        break;
+      default:
+        _currentMode = UserMode.inquilino;
+    }
   }
 
   @override
@@ -60,6 +123,19 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        body: Container(
+          decoration: AppTheme.getProfileBackground(),
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: Container(
         decoration: AppTheme.getProfileBackground(),
@@ -233,29 +309,13 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.check, size: 12, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text(
-                                'Verificado',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        if (_isUserVerified()) ...[
+                          const SizedBox(width: 8),
+                          _buildVerificationBadge(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            textColor: Colors.white,
+                          )!,
+                        ],
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -776,37 +836,34 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   }
 
   String _getUserName() {
-    return 'Margaretha Collins';
+    if (_currentUser != null) {
+      final firstName = _currentUser!.firstName.isNotEmpty ? _currentUser!.firstName : '';
+      final lastName = _currentUser!.lastName.isNotEmpty ? _currentUser!.lastName : '';
+      final fullName = '$firstName $lastName'.trim();
+      return fullName.isNotEmpty ? fullName : 'Usuario';
+    }
+    return 'Usuario';
   }
 
   String _getUserId() {
-    switch (_currentMode) {
-      case UserMode.inquilino:
-      case UserMode.propietario:
-        return 'CI: 1234***-8';
-      case UserMode.agente:
-        return 'CI: 987****-1 LP';
+    if (_currentUser != null) {
+      return 'ID: ${_currentUser!.id}';
     }
+    return 'ID: ---';
   }
 
   String _getUserEmail() {
-    switch (_currentMode) {
-      case UserMode.inquilino:
-      case UserMode.propietario:
-        return 'margaretha.c@email.com';
-      case UserMode.agente:
-        return 'margaretha.collins@email.com';
+    if (_currentUser != null && _currentUser!.email.isNotEmpty) {
+      return _currentUser!.email;
     }
+    return 'email@ejemplo.com';
   }
 
   String _getUserPhone() {
-    switch (_currentMode) {
-      case UserMode.inquilino:
-      case UserMode.propietario:
-        return '+591 71234567';
-      case UserMode.agente:
-        return '+591 777 54321';
+    if (_currentProfile != null && _currentProfile!.phone.isNotEmpty) {
+      return _currentProfile!.phone;
     }
+    return '+591 --------';
   }
 
   String _getModeTitle() {
@@ -818,6 +875,39 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       case UserMode.agente:
         return 'Propiedades Asignadas';
     }
+  }
+
+  bool _isUserVerified() {
+    return _currentProfile?.isVerified ?? false;
+  }
+
+  Widget? _buildVerificationBadge({required Color backgroundColor, required Color textColor}) {
+    if (!_isUserVerified()) {
+      return null;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check, size: 12, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            'Verificado',
+            style: TextStyle(
+              fontSize: 10,
+              color: textColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildModernProfileSection() {
@@ -918,29 +1008,13 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check, size: 12, color: Colors.black),
-                        SizedBox(width: 4),
-                        Text(
-                          'Verificado',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.black,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  if (_isUserVerified()) ...[
+                    const SizedBox(width: 8),
+                    _buildVerificationBadge(
+                      backgroundColor: AppTheme.primaryColor,
+                      textColor: Colors.black,
+                    )!,
+                  ],
                 ],
               ),
               const SizedBox(height: 12),

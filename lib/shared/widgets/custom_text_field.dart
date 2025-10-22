@@ -9,6 +9,8 @@ class CustomTextField extends StatefulWidget {
   final String? Function(String?)? validator;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
+  final int maxLines;
+  final VoidCallback? onTap;
 
   const CustomTextField({
     Key? key,
@@ -19,6 +21,8 @@ class CustomTextField extends StatefulWidget {
     this.validator,
     this.prefixIcon,
     this.suffixIcon,
+    this.maxLines = 1,
+    this.onTap,
   }) : super(key: key);
 
   @override
@@ -35,6 +39,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
       obscureText: widget.isPassword ? _obscureText : false,
       keyboardType: widget.keyboardType,
       validator: widget.validator,
+      maxLines: widget.isPassword ? 1 : widget.maxLines,
+      onTap: widget.onTap,
       style: const TextStyle(
         fontSize: 16,
         color: AppTheme.whiteColor,

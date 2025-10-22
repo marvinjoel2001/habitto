@@ -1,12 +1,17 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import '../../../../core/services/api_service.dart';
+import '../../../../config/app_config.dart';
+import '../../domain/entities/property.dart';
+import '../../domain/entities/amenity.dart';
+import '../../domain/entities/payment_method.dart';
+import '../../data/services/property_service.dart';
+import '../../../profile/data/services/profile_service.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/step_progress_indicator.dart';
 import '../../../../shared/theme/app_theme.dart';
-
-
 
 class AddPropertyPage extends StatefulWidget {
   const AddPropertyPage({Key? key}) : super(key: key);
@@ -18,16 +23,56 @@ class AddPropertyPage extends StatefulWidget {
 class _AddPropertyPageState extends State<AddPropertyPage> {
   int _currentStep = 0;
   final PageController _pageController = PageController();
+  final PropertyService _propertyService = PropertyService();
+  final ProfileService _profileService = ProfileService();
 
   // Controladores para los formularios
   final _propertyTypeController = TextEditingController();
   final _bedroomsController = TextEditingController(text: '3');
   final _bathroomsController = TextEditingController(text: '2');
   final _areaController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _guaranteeController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _sizeController = TextEditingController();
+  final _latitudeController = TextEditingController();
+  final _longitudeController = TextEditingController();
+  final _availabilityDateController = TextEditingController();
 
-  String _selectedPropertyType = 'Casa';
+  bool _isLoading = false;
+  bool _isLoadingData = true;
+
+  String _selectedPropertyType = 'casa';
   int _bedrooms = 3;
   int _bathrooms = 2;
+  List<int> _selectedAmenityIds = [];
+  List<int> _selectedPaymentMethodIds = [];
+  
+  List<Amenity> _availableAmenities = [];
+  List<PaymentMethod> _availablePaymentMethods = [];
+  int? _currentUserId;
+
+  // Property type mapping from display to API values
+  final Map<String, String> _propertyTypeMapping = {
+    'Casa': 'casa',
+    'Departamento': 'departamento',
+    'Habitación': 'habitacion',
+    'Anticrético': 'anticretico',
+  };
+
+  final Map<String, String> _propertyTypeDisplayMapping = {
+    'casa': 'Casa',
+    'departamento': 'Departamento',
+    'habitacion': 'Habitación',
+    'anticretico': 'Anticrético',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
 
   @override
   void dispose() {
@@ -35,8 +80,51 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     _bedroomsController.dispose();
     _bathroomsController.dispose();
     _areaController.dispose();
+    _addressController.dispose();
+    _priceController.dispose();
+    _guaranteeController.dispose();
+    _descriptionController.dispose();
+    _sizeController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
+    _availabilityDateController.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadInitialData() async {
+    setState(() {
+      _isLoadingData = true;
+    });
+
+    try {
+      // Load amenities, payment methods, and current user profile
+      final amenitiesResponse = await _propertyService.getAmenities();
+      final paymentMethodsResponse = await _propertyService.getPaymentMethods();
+      final profileResponse = await _profileService.getCurrentProfile();
+
+      if (amenitiesResponse['success']) {
+        _availableAmenities = amenitiesResponse['amenities'];
+      }
+
+      if (paymentMethodsResponse['success']) {
+        _availablePaymentMethods = paymentMethodsResponse['payment_methods']
+            .map<PaymentMethod>((pm) => PaymentMethod.fromJson(pm))
+            .toList();
+      }
+
+      if (profileResponse['success'] && profileResponse['user'] != null) {
+        _currentUserId = profileResponse['user'].id;
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error cargando datos: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoadingData = false;
+      });
+    }
   }
 
   void _nextStep() {
@@ -49,7 +137,6 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Guardar propiedad
       _saveProperty();
     }
   }
@@ -66,48 +153,169 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     }
   }
 
-  void _saveProperty() {
-    // Aquí iría la lógica para guardar la propiedad
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('¡Éxito!'),
-        content: const Text('Propiedad registrada correctamente'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
-            },
-            child: const Text('OK'),
+  Future<void> _saveProperty() async {
+    if (!_validateForm()) return;
+
+    if (_currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: No se pudo obtener la información del usuario')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Prepare property data according to API documentation
+      final propertyData = {
+        'owner': _currentUserId!,
+        'agent': null, // Can be set if there's an agent
+        'type': _selectedPropertyType, // Already in API format (casa, departamento, etc.)
+        'address': _addressController.text.trim(),
+        'latitude': _latitudeController.text.isNotEmpty 
+            ? _latitudeController.text 
+            : "-16.500000",
+        'longitude': _longitudeController.text.isNotEmpty 
+            ? _longitudeController.text 
+            : "-68.150000",
+        'price': _priceController.text,
+        'guarantee': _guaranteeController.text,
+        'description': _descriptionController.text.trim(),
+        'size': double.parse(_areaController.text.isNotEmpty ? _areaController.text : _sizeController.text),
+        'bedrooms': _bedrooms,
+        'bathrooms': _bathrooms,
+        'amenities': _selectedAmenityIds,
+        'availability_date': _availabilityDateController.text.isNotEmpty
+            ? _availabilityDateController.text
+            : DateTime.now().add(const Duration(days: 1)).toIso8601String().split('T')[0],
+        'accepted_payment_methods': _selectedPaymentMethodIds,
+      };
+
+      final response = await _propertyService.createProperty(propertyData);
+
+      if (response['success']) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('¡Éxito!'),
+            content: const Text('Propiedad registrada correctamente'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
+      } else {
+        throw Exception(response['error'] ?? 'Error al crear propiedad');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
+
+  bool _validateForm() {
+    if (_addressController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa la dirección de la propiedad')),
+      );
+      return false;
+    }
+    
+    if (_priceController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa el precio de alquiler')),
+      );
+      return false;
+    }
+    
+    if (_guaranteeController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa el monto de la garantía')),
+      );
+      return false;
+    }
+    
+    if (_descriptionController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa una descripción de la propiedad')),
+      );
+      return false;
+    }
+    
+    if (_areaController.text.isEmpty && _sizeController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa el área de la propiedad')),
+      );
+      return false;
+    }
+
+    // Validate numeric fields
+    if (double.tryParse(_priceController.text) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El precio debe ser un número válido')),
+      );
+      return false;
+    }
+
+    if (double.tryParse(_guaranteeController.text) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La garantía debe ser un número válido')),
+      );
+      return false;
+    }
+
+    final areaText = _areaController.text.isNotEmpty ? _areaController.text : _sizeController.text;
+    if (double.tryParse(areaText) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El área debe ser un número válido')),
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          _buildHeader(),
-          _buildStepIndicator(),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
+      body: _isLoadingData
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : Column(
               children: [
-                _buildStep1(),
-                _buildStep2(),
-                _buildStep3(),
+                _buildHeader(),
+                _buildStepIndicator(),
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _buildStep1(),
+                      _buildStep2(),
+                      _buildStep3(),
+                    ],
+                  ),
+                ),
+                _buildBottomButtons(),
               ],
             ),
-          ),
-          _buildBottomButtons(),
-        ],
-      ),
     );
   }
 
@@ -206,11 +414,15 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   child: DropdownButton<String>(
                     value: _selectedPropertyType,
                     isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-                    items: ['Casa', 'Departamento', 'Oficina', 'Local Comercial'].map((String value) {
+                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
+                    dropdownColor: Colors.white,
+                    items: _propertyTypeMapping.entries.map((entry) {
                       return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
+                        value: entry.value, // API value (casa, departamento, etc.)
+                        child: Text(
+                          entry.key, // Display value (Casa, Departamento, etc.)
+                          style: const TextStyle(color: Colors.black),
+                        ),
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
@@ -225,7 +437,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'Baños',
+            'Habitaciones',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -273,7 +485,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ],
           ),
           const SizedBox(height: 24),
-          // Reemplazar el container central por glass
+          const Text(
+            'Baños',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               IconButton(
@@ -323,7 +539,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'Área (m²)',
+            'Área (m²) *',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -333,7 +549,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           const SizedBox(height: 12),
           CustomTextField(
             controller: _areaController,
-            hintText: 'Ej: 120',
+            hintText: 'Ej: 120.5',
             keyboardType: TextInputType.number,
           ),
         ],
@@ -342,32 +558,168 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   }
 
   Widget _buildStep2() {
-    return const SingleChildScrollView(
-      padding: EdgeInsets.all(24),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Paso 2: Detalles adicionales',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          const Text(
+            'Detalles adicionales de la propiedad',
+            style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
           ),
-          SizedBox(height: 20),
-          Text('Aquí irían más campos como precio, descripción, etc.'),
+          const SizedBox(height: 32),
+          const Text(
+            'Precio de Alquiler (COP)',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          CustomTextField(
+            controller: _priceController,
+            hintText: 'Ej: 1500000',
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Garantía (COP)',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          CustomTextField(
+            controller: _guaranteeController,
+            hintText: 'Ej: 3000000',
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Descripción',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          CustomTextField(
+            controller: _descriptionController,
+            hintText: 'Describe tu propiedad...',
+            maxLines: 3,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Comodidades',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _availableAmenities.map((amenity) {
+              final isSelected = _selectedAmenityIds.contains(amenity.id);
+              return FilterChip(
+                label: Text(amenity.name),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedAmenityIds.add(amenity.id);
+                    } else {
+                      _selectedAmenityIds.remove(amenity.id);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Métodos de Pago Aceptados',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _availablePaymentMethods.map((method) {
+              final isSelected = _selectedPaymentMethodIds.contains(method.id);
+              return FilterChip(
+                label: Text(method.name),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedPaymentMethodIds.add(method.id);
+                    } else {
+                      _selectedPaymentMethodIds.remove(method.id);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildStep3() {
-    return const SingleChildScrollView(
-      padding: EdgeInsets.all(24),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Paso 3: Ubicación',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          const Text(
+            'Ubicación y disponibilidad de la propiedad',
+            style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
           ),
-          SizedBox(height: 20),
-          Text('Aquí iría el mapa y selección de ubicación'),
+          const SizedBox(height: 32),
+          const Text(
+            'Dirección *',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          CustomTextField(
+            controller: _addressController,
+            hintText: 'Ej: Calle Principal 123, Zona Sur, La Paz',
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Latitud',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          CustomTextField(
+            controller: _latitudeController,
+            hintText: 'Ej: -16.5000 (opcional)',
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Longitud',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          CustomTextField(
+            controller: _longitudeController,
+            hintText: 'Ej: -68.1500 (opcional)',
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Fecha de Disponibilidad',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          CustomTextField(
+            controller: _availabilityDateController,
+            hintText: 'YYYY-MM-DD (opcional)',
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now().add(const Duration(days: 1)),
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+              );
+              if (date != null) {
+                _availabilityDateController.text = date.toIso8601String().split('T')[0];
+              }
+            },
+          ),
         ],
       ),
     );
@@ -404,7 +756,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             flex: _currentStep == 0 ? 1 : 1,
             child: CustomButton(
               text: _currentStep == 2 ? 'Finalizar' : 'Siguiente',
-              onPressed: _nextStep,
+              onPressed: _isLoading ? null : _nextStep,
               backgroundColor: const Color(0xFF00FF00),
               textColor: Colors.white,
             ),
