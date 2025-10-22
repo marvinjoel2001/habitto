@@ -7,6 +7,7 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../data/services/profile_service.dart';
 import '../../domain/entities/profile.dart';
 import '../../../auth/domain/entities/user.dart';
+import '../../../auth/data/services/auth_service.dart';
 
 enum UserMode { inquilino, propietario, agente }
 
@@ -28,6 +29,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   late Animation<double> _fadeAnimation;
 
   final ProfileService _profileService = ProfileService();
+  final AuthService _authService = AuthService();
   Profile? _currentProfile;
   User? _currentUser;
   bool _isLoading = true;
@@ -81,6 +83,63 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         _isLoading = false;
       });
       _animationController.forward();
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      // Show confirmation dialog
+      final shouldLogout = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Cerrar Sesión'),
+            content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Cerrar Sesión'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldLogout == true) {
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
+
+        // Perform logout
+        await _authService.logout();
+
+        // Close loading dialog
+        Navigator.of(context).pop();
+
+        // Navigate to login page and clear navigation stack
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/onboarding',
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if it's open
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cerrar sesión: ${e.toString()}')),
+      );
     }
   }
 
@@ -885,7 +944,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     if (!_isUserVerified()) {
       return null;
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -1209,26 +1268,29 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF6B6B),
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+            child: GestureDetector(
+              onTap: _handleLogout,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B6B),
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Text(
+                  'Cerrar Sesión',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
-                ],
-              ),
-              child: const Text(
-                'Cerrar Sesión',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
                 ),
               ),
             ),

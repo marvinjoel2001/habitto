@@ -81,20 +81,47 @@ class ApiService {
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      final data = json.decode(response.body);
-      return {
-        'success': true,
-        'data': data,
-        'statusCode': response.statusCode,
-      };
-    } else {
-      final errorData = json.decode(response.body);
+    try {
+      // Check if response is HTML (error page)
+      if (response.headers['content-type']?.contains('text/html') == true) {
+        return {
+          'success': false,
+          'error': 'Server returned HTML instead of JSON. Check if the server is running and the endpoint is correct.',
+          'statusCode': response.statusCode,
+          'body': response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body,
+        };
+      }
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = json.decode(response.body);
+        return {
+          'success': true,
+          'data': data,
+          'statusCode': response.statusCode,
+        };
+      } else {
+        try {
+          final errorData = json.decode(response.body);
+          return {
+            'success': false,
+            'error': errorData['message'] ?? errorData['detail'] ?? 'Error en la solicitud',
+            'errors': errorData['errors'] ?? {},
+            'statusCode': response.statusCode,
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'error': 'Error parsing response: ${response.body}',
+            'statusCode': response.statusCode,
+          };
+        }
+      }
+    } catch (e) {
       return {
         'success': false,
-        'message': errorData['message'] ?? 'Error en la solicitud',
-        'errors': errorData['errors'] ?? {},
+        'error': 'Error processing response: $e',
         'statusCode': response.statusCode,
+        'body': response.body,
       };
     }
   }

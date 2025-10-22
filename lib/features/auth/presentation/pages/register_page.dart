@@ -65,10 +65,23 @@ class _RegisterPageState extends State<RegisterPage> {
       final response = await _authService.register(user, profile, _passwordController.text);
 
       if (response['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registro exitoso')),
+        // Después del registro exitoso, hacer login automático
+        final loginResponse = await _authService.login(
+          _usernameController.text,
+          _passwordController.text,
         );
-        Navigator.pushReplacementNamed(context, '/login');
+
+        if (loginResponse['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registro exitoso')),
+          );
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registro exitoso. Por favor, inicia sesión.')),
+          );
+          Navigator.pushReplacementNamed(context, '/login');
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(response['error'] ?? 'Error en el registro')),

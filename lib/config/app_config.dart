@@ -3,7 +3,7 @@ class AppConfig {
   static const String version = '1.0.0';
 
   // API Configuration
-  static const String baseUrl = 'http://192.168.1.8:8000';
+  static const String baseUrl = 'http://192.168.1.7:8000';
   static const int timeoutDuration = 30000; // milliseconds
 
   // API Endpoints
@@ -12,7 +12,7 @@ class AppConfig {
   static const String propertiesEndpoint = '/api/properties/';
   static const String amenitiesEndpoint = '/api/amenities/';
   static const String photosEndpoint = '/api/photos/';
-  static const String loginEndpoint = '/api/login/';
+  static const String loginEndpoint = '/api/token/';
   static const String logoutEndpoint = '/api/logout/';
   static const String currentUserEndpoint = '/api/auth/user/';
   static const String refreshTokenEndpoint = '/api/token/refresh/';

@@ -48,7 +48,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   int _bathrooms = 2;
   List<int> _selectedAmenityIds = [];
   List<int> _selectedPaymentMethodIds = [];
-  
+
   List<Amenity> _availableAmenities = [];
   List<PaymentMethod> _availablePaymentMethods = [];
   int? _currentUserId;
@@ -174,11 +174,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         'agent': null, // Can be set if there's an agent
         'type': _selectedPropertyType, // Already in API format (casa, departamento, etc.)
         'address': _addressController.text.trim(),
-        'latitude': _latitudeController.text.isNotEmpty 
-            ? _latitudeController.text 
+        'latitude': _latitudeController.text.isNotEmpty
+            ? _latitudeController.text
             : "-16.500000",
-        'longitude': _longitudeController.text.isNotEmpty 
-            ? _longitudeController.text 
+        'longitude': _longitudeController.text.isNotEmpty
+            ? _longitudeController.text
             : "-68.150000",
         'price': _priceController.text,
         'guarantee': _guaranteeController.text,
@@ -233,28 +233,28 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       );
       return false;
     }
-    
+
     if (_priceController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor ingresa el precio de alquiler')),
       );
       return false;
     }
-    
+
     if (_guaranteeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor ingresa el monto de la garantía')),
       );
       return false;
     }
-    
+
     if (_descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor ingresa una descripción de la propiedad')),
       );
       return false;
     }
-    
+
     if (_areaController.text.isEmpty && _sizeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor ingresa el área de la propiedad')),
@@ -293,29 +293,33 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: _isLoadingData
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Column(
-              children: [
-                _buildHeader(),
-                _buildStepIndicator(),
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      _buildStep1(),
-                      _buildStep2(),
-                      _buildStep3(),
-                    ],
-                  ),
+      body: Container(
+        decoration: AppTheme.getProfileBackground(),
+        child: _isLoadingData
+            ? const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                 ),
-                _buildBottomButtons(),
-              ],
-            ),
+              )
+            : Column(
+                children: [
+                  _buildHeader(),
+                  _buildStepIndicator(),
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        _buildStep1(),
+                        _buildStep2(),
+                        _buildStep3(),
+                      ],
+                    ),
+                  ),
+                  _buildBottomButtons(),
+                ],
+              ),
+      ),
     );
   }
 
@@ -325,8 +329,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.85),
-            Theme.of(context).colorScheme.primary,
+            AppTheme.primaryColor.withOpacity(0.9),
+            AppTheme.secondaryColor.withOpacity(0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -338,14 +342,14 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: const Icon(Icons.arrow_back, color: AppTheme.darkGrayBase),
                 onPressed: () => Navigator.pop(context),
               ),
               const Expanded(
                 child: Text(
                   'Detalles de la Propiedad',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.darkGrayBase,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -359,7 +363,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 child: const Text(
                   'Guardar y salir',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.darkGrayBase,
                     fontSize: 14,
                   ),
                 ),
@@ -388,162 +392,194 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Comencemos con lo básico. Proporcione los detalles esenciales de su propiedad.',
-            style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
+            style: TextStyle(
+              fontSize: 16,
+              color: AppTheme.whiteColor.withOpacity(0.8),
+              height: 1.5
+            ),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'Tipo de Propiedad',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.whiteColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.whiteColor.withOpacity(0.3), width: 1),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedPropertyType,
-                    isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-                    dropdownColor: Colors.white,
-                    items: _propertyTypeMapping.entries.map((entry) {
-                      return DropdownMenuItem<String>(
-                        value: entry.value, // API value (casa, departamento, etc.)
-                        child: Text(
-                          entry.key, // Display value (Casa, Departamento, etc.)
-                          style: const TextStyle(color: Colors.black),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedPropertyType = newValue!;
-                      });
-                    },
+          Container(
+            decoration: AppTheme.getGlassCard(),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedPropertyType,
+                      isExpanded: true,
+                      icon: Icon(Icons.keyboard_arrow_down, color: AppTheme.whiteColor),
+                      dropdownColor: AppTheme.mediumGray,
+                      items: _propertyTypeMapping.entries.map((entry) {
+                        return DropdownMenuItem<String>(
+                          value: entry.value, // API value (casa, departamento, etc.)
+                          child: Text(
+                            entry.key, // Display value (Casa, Departamento, etc.)
+                            style: TextStyle(color: AppTheme.whiteColor),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedPropertyType = newValue!;
+                        });
+                      },
+                    ),
                   ),
                 ),
               ),
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Habitaciones',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              IconButton(
-                onPressed: () {
-                  if (_bedrooms > 1) {
-                    setState(() {
-                      _bedrooms--;
-                      _bedroomsController.text = _bedrooms.toString();
-                    });
-                  }
-                },
-                icon: const Icon(Icons.remove_circle_outline),
-                color: Colors.grey,
+              Container(
+                decoration: AppTheme.getGlassCard(),
+                child: IconButton(
+                  onPressed: () {
+                    if (_bedrooms > 1) {
+                      setState(() {
+                        _bedrooms--;
+                        _bedroomsController.text = _bedrooms.toString();
+                      });
+                    }
+                  },
+                  icon: Icon(Icons.remove_circle_outline, color: AppTheme.whiteColor.withOpacity(0.7)),
+                ),
               ),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F8F0),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    _bedrooms.toString(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: AppTheme.getGlassCard(),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          _bedrooms.toString(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.whiteColor,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _bedrooms++;
-                    _bedroomsController.text = _bedrooms.toString();
-                  });
-                },
-                icon: const Icon(Icons.add_circle_outline),
-                color: const Color(0xFFA8E6CE),
+              Container(
+                decoration: AppTheme.getGlassCard(),
+                child: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _bedrooms++;
+                      _bedroomsController.text = _bedrooms.toString();
+                    });
+                  },
+                  icon: Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Baños',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              IconButton(
-                onPressed: () {
-                  if (_bathrooms > 1) {
-                    setState(() {
-                      _bathrooms--;
-                      _bathroomsController.text = _bathrooms.toString();
-                    });
-                  }
-                },
-                icon: const Icon(Icons.remove_circle_outline),
-                color: Colors.grey,
+              Container(
+                decoration: AppTheme.getGlassCard(),
+                child: IconButton(
+                  onPressed: () {
+                    if (_bathrooms > 1) {
+                      setState(() {
+                        _bathrooms--;
+                        _bathroomsController.text = _bathrooms.toString();
+                      });
+                    }
+                  },
+                  icon: Icon(Icons.remove_circle_outline, color: AppTheme.whiteColor.withOpacity(0.7)),
+                ),
               ),
               Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-                      ),
-                      child: Text(
-                        _bathrooms.toString(),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: AppTheme.getGlassCard(),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          _bathrooms.toString(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.whiteColor,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _bathrooms++;
-                    _bathroomsController.text = _bathrooms.toString();
-                  });
-                },
-                icon: const Icon(Icons.add_circle_outline),
-                color: Theme.of(context).colorScheme.primary,
+              Container(
+                decoration: AppTheme.getGlassCard(),
+                child: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _bathrooms++;
+                      _bathroomsController.text = _bathrooms.toString();
+                    });
+                  },
+                  icon: Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Área (m²) *',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: AppTheme.whiteColor,
             ),
           ),
           const SizedBox(height: 12),
@@ -563,25 +599,37 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Detalles adicionales de la propiedad',
-            style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
+          Text(
+            'Ahora agreguemos los detalles financieros y características especiales.',
+            style: TextStyle(
+              fontSize: 16,
+              color: AppTheme.whiteColor.withOpacity(0.8),
+              height: 1.5
+            ),
           ),
           const SizedBox(height: 32),
-          const Text(
-            'Precio de Alquiler (COP)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          Text(
+            'Precio de Alquiler (COP) *',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           CustomTextField(
             controller: _priceController,
-            hintText: 'Ej: 1500000',
+            hintText: 'Ej: 2500000',
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Garantía (COP)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           CustomTextField(
@@ -590,9 +638,13 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Descripción',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           CustomTextField(
@@ -601,9 +653,13 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             maxLines: 3,
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Comodidades',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -611,25 +667,43 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             runSpacing: 8,
             children: _availableAmenities.map((amenity) {
               final isSelected = _selectedAmenityIds.contains(amenity.id);
-              return FilterChip(
-                label: Text(amenity.name),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedAmenityIds.add(amenity.id);
-                    } else {
-                      _selectedAmenityIds.remove(amenity.id);
-                    }
-                  });
-                },
+              return Container(
+                decoration: isSelected
+                  ? AppTheme.getMintButtonDecoration()
+                  : AppTheme.getGlassCard(),
+                child: FilterChip(
+                  label: Text(
+                    amenity.name,
+                    style: TextStyle(
+                      color: isSelected ? AppTheme.darkGrayBase : AppTheme.whiteColor,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  selected: isSelected,
+                  backgroundColor: Colors.transparent,
+                  selectedColor: Colors.transparent,
+                  checkmarkColor: AppTheme.darkGrayBase,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedAmenityIds.add(amenity.id);
+                      } else {
+                        _selectedAmenityIds.remove(amenity.id);
+                      }
+                    });
+                  },
+                ),
               );
             }).toList(),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Métodos de Pago Aceptados',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -637,18 +711,32 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             runSpacing: 8,
             children: _availablePaymentMethods.map((method) {
               final isSelected = _selectedPaymentMethodIds.contains(method.id);
-              return FilterChip(
-                label: Text(method.name),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedPaymentMethodIds.add(method.id);
-                    } else {
-                      _selectedPaymentMethodIds.remove(method.id);
-                    }
-                  });
-                },
+              return Container(
+                decoration: isSelected
+                  ? AppTheme.getMintButtonDecoration()
+                  : AppTheme.getGlassCard(),
+                child: FilterChip(
+                  label: Text(
+                    method.name,
+                    style: TextStyle(
+                      color: isSelected ? AppTheme.darkGrayBase : AppTheme.whiteColor,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  selected: isSelected,
+                  backgroundColor: Colors.transparent,
+                  selectedColor: Colors.transparent,
+                  checkmarkColor: AppTheme.darkGrayBase,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedPaymentMethodIds.add(method.id);
+                      } else {
+                        _selectedPaymentMethodIds.remove(method.id);
+                      }
+                    });
+                  },
+                ),
               );
             }).toList(),
           ),
@@ -663,14 +751,22 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Ubicación y disponibilidad de la propiedad',
-            style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
+            style: TextStyle(
+              fontSize: 16,
+              color: AppTheme.whiteColor.withOpacity(0.8),
+              height: 1.5
+            ),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'Dirección *',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           CustomTextField(
@@ -678,9 +774,13 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             hintText: 'Ej: Calle Principal 123, Zona Sur, La Paz',
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Latitud',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           CustomTextField(
@@ -689,9 +789,13 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Longitud',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           CustomTextField(
@@ -700,9 +804,13 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Fecha de Disponibilidad',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.whiteColor
+            ),
           ),
           const SizedBox(height: 12),
           CustomTextField(
@@ -714,6 +822,19 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 initialDate: DateTime.now().add(const Duration(days: 1)),
                 firstDate: DateTime.now(),
                 lastDate: DateTime.now().add(const Duration(days: 365)),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: ColorScheme.dark(
+                        primary: AppTheme.primaryColor,
+                        onPrimary: AppTheme.darkGrayBase,
+                        surface: AppTheme.mediumGray,
+                        onSurface: AppTheme.whiteColor,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
               );
               if (date != null) {
                 _availabilityDateController.text = date.toIso8601String().split('T')[0];
@@ -728,25 +849,39 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   Widget _buildBottomButtons() {
     return Container(
       padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent,
+            AppTheme.darkGrayBase.withOpacity(0.3),
+          ],
+        ),
+      ),
       child: Row(
         children: [
           if (_currentStep > 0)
             Expanded(
-              child: OutlinedButton(
-                onPressed: _previousStep,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFA8E6CE)),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: AppTheme.getGlassCard(),
+                child: OutlinedButton(
+                  onPressed: _previousStep,
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    side: BorderSide(color: AppTheme.whiteColor.withOpacity(0.3)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Anterior',
-                  style: TextStyle(
-                    color: Color(0xFFA8E6CE),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  child: Text(
+                    'Anterior',
+                    style: TextStyle(
+                      color: AppTheme.whiteColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -754,11 +889,14 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           if (_currentStep > 0) const SizedBox(width: 16),
           Expanded(
             flex: _currentStep == 0 ? 1 : 1,
-            child: CustomButton(
-              text: _currentStep == 2 ? 'Finalizar' : 'Siguiente',
-              onPressed: _isLoading ? null : _nextStep,
-              backgroundColor: const Color(0xFF00FF00),
-              textColor: Colors.white,
+            child: Container(
+              decoration: AppTheme.getMintButtonDecoration(),
+              child: CustomButton(
+                text: _currentStep == 2 ? 'Finalizar' : 'Siguiente',
+                onPressed: _isLoading ? null : _nextStep,
+                backgroundColor: Colors.transparent,
+                textColor: AppTheme.darkGrayBase,
+              ),
             ),
           ),
         ],
