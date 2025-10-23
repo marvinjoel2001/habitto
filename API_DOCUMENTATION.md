@@ -146,6 +146,21 @@ Gestiona los usuarios del sistema usando el modelo User de Django.
 - **Autenticación**: Requerida (solo el propio usuario o admin).
 - **Response (204 No Content)**: Sin contenido en la respuesta.
 
+### `GET /api/users/me/`
+- **Descripción**: Obtiene la información del usuario actual autenticado.
+- **Autenticación**: Requerida (JWT Token).
+- **Response (200 OK)**:
+  ```json
+  {
+    "id": 1,
+    "username": "usuario1",
+    "email": "usuario1@example.com",
+    "first_name": "Juan",
+    "last_name": "Pérez",
+    "date_joined": "2025-10-22T10:00:00Z"
+  }
+  ```
+
 ## 2. Endpoints de Perfiles de Usuario (`/api/profiles/`)
 
 Gestiona los perfiles asociados a los usuarios con información adicional.
@@ -217,6 +232,36 @@ Gestiona los perfiles asociados a los usuarios con información adicional.
 - **Descripción**: Obtiene los detalles de un perfil específico.
 - **Autenticación**: Requerida.
 - **Response (200 OK)**: Igual estructura que POST response.
+
+### `GET /api/profiles/me/`
+- **Descripción**: Obtiene el perfil del usuario actual autenticado.
+- **Autenticación**: Requerida (JWT Token).
+- **Response (200 OK)**:
+  ```json
+  {
+    "id": 1,
+    "user": {
+      "id": 1,
+      "username": "usuario1",
+      "email": "usuario1@example.com",
+      "first_name": "Juan",
+      "last_name": "Pérez",
+      "date_joined": "2025-10-22T10:00:00Z"
+    },
+    "user_type": "inquilino",
+    "phone": "+59112345678",
+    "is_verified": false,
+    "created_at": "2025-10-22T10:00:00Z",
+    "updated_at": "2025-10-22T10:00:00Z",
+    "favorites": [1, 2]
+  }
+  ```
+- **Response (404 Not Found)**: Si el usuario no tiene un perfil creado.
+  ```json
+  {
+    "detail": "El usuario no tiene un perfil creado"
+  }
+  ```
 
 ### `PUT/PATCH /api/profiles/{id}/`
 - **Descripción**: Actualiza un perfil existente.

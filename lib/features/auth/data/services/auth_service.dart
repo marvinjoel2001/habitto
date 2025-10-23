@@ -4,10 +4,25 @@ import '../../../../core/services/token_storage.dart';
 import '../../../profile/domain/entities/profile.dart';
 import '../../domain/entities/user.dart';
 
+/// Servicio de autenticación - Capa de negocio
+/// Responsabilidad: Implementar la lógica de negocio para autenticación
+/// - Conoce las rutas de la API específicas de auth
+/// - Maneja la serialización de datos de negocio
+/// - Convierte respuestas JSON a entidades de dominio
 class AuthService {
-  final ApiService _apiService = ApiService();
-  final TokenStorage _tokenStorage = TokenStorage();
+  final ApiService _apiService;
+  final TokenStorage _tokenStorage;
 
+  AuthService({
+    ApiService? apiService,
+    TokenStorage? tokenStorage,
+  })  : _apiService = apiService ?? ApiService(),
+        _tokenStorage = tokenStorage ?? TokenStorage();
+
+  /// Iniciar sesión con credenciales
+  /// Ruta: POST /api/login/
+  /// Datos de negocio: username, password
+  /// Retorna: tokens de acceso y refresh
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
       final response = await _apiService.post(AppConfig.loginEndpoint, {
@@ -18,119 +33,139 @@ class AuthService {
       if (response['success'] && response['data'] != null) {
         final data = response['data'];
 
-        // Save tokens
+        // Validar formato de respuesta
         if (data['access'] != null && data['refresh'] != null) {
+          // Guardar tokens usando TokenStorage
           await _tokenStorage.saveTokens(data['access'], data['refresh']);
-          _apiService.setAuthToken(data['access']);
 
           return {
             'success': true,
             'access_token': data['access'],
             'refresh_token': data['refresh'],
+            'message': 'Inicio de sesión exitoso',
           };
         } else {
           return {
             'success': false,
-            'error': 'Invalid token response format',
+            'error': 'Formato de respuesta de tokens inválido',
           };
         }
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Invalid credentials',
+          'error': response['error'] ?? 'Credenciales inválidas',
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error: $e',
+        'error': 'Error de autenticación: $e',
       };
     }
   }
 
+  /// Registrar nuevo usuario con perfil
+  /// Ruta: POST /api/users/
+  /// Datos de negocio: User entity + Profile data + password
+  /// Retorna: Usuario creado (el perfil se crea automáticamente)
   Future<Map<String, dynamic>> register(User user, Profile profile, String password) async {
     try {
-      // Crear el usuario con password según la documentación de la API
+      // Preparar datos de negocio para la API
       final userData = user.toCreateJson();
-      userData['password'] = password; // Agregar password requerido por la API
-      
-      final userResponse = await _apiService.post(AppConfig.usersEndpoint, userData);
+      userData['password'] = password;
+      userData['user_type'] = profile.userType;
+      userData['phone'] = profile.phone;
 
-      if (userResponse['success'] && userResponse['data'] != null) {
-        final userId = userResponse['data']['id'];
+      final response = await _apiService.post(AppConfig.usersEndpoint, userData);
 
-        // Crear el perfil asociado - según la API, no necesitamos pasar el user ID explícitamente
-        // ya que se crea para el usuario autenticado
-        final profileData = profile.toCreateJson();
-        
-        final profileResponse = await _apiService.post(AppConfig.profilesEndpoint, profileData);
+      if (response['success'] && response['data'] != null) {
+        // Convertir respuesta JSON a entidad de dominio
+        final createdUser = User.fromJson(response['data']);
 
-        if (profileResponse['success']) {
-          return {
-            'success': true,
-            'user': userResponse['data'],
-            'profile': profileResponse['data'],
-          };
-        } else {
-          return {
-            'success': false,
-            'error': profileResponse['error'] ?? 'Failed to create profile',
-          };
-        }
+        return {
+          'success': true,
+          'user': createdUser,
+          'message': 'Usuario registrado exitosamente',
+        };
       } else {
         return {
           'success': false,
-          'error': userResponse['error'] ?? 'Failed to create user',
+          'error': response['error'] ?? 'Error al crear usuario',
+          'errors': response['errors'] ?? {},
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Registration error: $e',
+        'error': 'Error de registro: $e',
       };
     }
   }
 
+  /// Obtener usuario actual autenticado
+  /// Ruta: GET /api/users/me/
+  /// Retorna: User entity del usuario actual
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
       final response = await _apiService.get(AppConfig.currentUserEndpoint);
-      return response;
+
+      if (response['success'] && response['data'] != null) {
+        // Convertir respuesta JSON a entidad de dominio
+        final currentUser = User.fromJson(response['data']);
+
+        return {
+          'success': true,
+          'user': currentUser,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ?? 'Error al obtener usuario actual',
+        };
+      }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Error getting current user: $e',
+        'error': 'Error obteniendo usuario: $e',
       };
     }
   }
 
-  Future<void> logout() async {
+  /// Cerrar sesión
+  /// Ruta: POST /api/logout/
+  /// Limpia tokens locales independientemente del resultado de la API
+  Future<Map<String, dynamic>> logout() async {
     try {
+      // Intentar notificar al servidor sobre el logout
       await _apiService.post(AppConfig.logoutEndpoint, {});
     } catch (e) {
-      // Continue with logout even if API call fails
+      // Continuar con logout local aunque falle la API
     } finally {
+      // Siempre limpiar tokens locales
       await _tokenStorage.clearTokens();
-      _apiService.clearAuthToken();
+      await _apiService.clearAuthToken();
     }
+
+    return {
+      'success': true,
+      'message': 'Sesión cerrada exitosamente',
+    };
   }
 
-  Future<void> initializeAuth() async {
-    final accessToken = await _tokenStorage.getAccessToken();
-    if (accessToken != null) {
-      _apiService.setAuthToken(accessToken);
-    }
-  }
-
+  /// Verificar si el usuario está autenticado
+  /// Verifica la existencia y validez del token local
   Future<bool> isAuthenticated() async {
     final accessToken = await _tokenStorage.getAccessToken();
     return accessToken != null && await _tokenStorage.isTokenValid();
   }
 
-  void setAuthToken(String token) {
-    _apiService.setAuthToken(token);
-  }
-
-  void clearAuthToken() {
-    _apiService.clearAuthToken();
+  /// Inicializar autenticación al arrancar la app
+  /// Restaura el estado de autenticación desde el almacenamiento local
+  Future<void> initializeAuth() async {
+    final accessToken = await _tokenStorage.getAccessToken();
+    if (accessToken != null && await _tokenStorage.isTokenValid()) {
+      // El token será añadido automáticamente por el interceptor de ApiService
+      // No necesitamos hacer nada más aquí
+    }
   }
 }

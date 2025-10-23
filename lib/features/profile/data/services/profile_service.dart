@@ -1,11 +1,15 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'dart:io';
 import '../../../../config/app_config.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/services/token_storage.dart';
 import '../../domain/entities/profile.dart';
 import '../../../auth/domain/entities/user.dart';
 
+/// Servicio de perfil - Capa de negocio
+/// Responsabilidad: Implementar la lógica de negocio para perfiles de usuario
+/// - Conoce las rutas de la API específicas de perfiles
+/// - Maneja la serialización de datos de negocio
+/// - Convierte respuestas JSON a entidades de dominio
 class ProfileService {
   final ApiService _apiService;
   final TokenStorage _tokenStorage;
@@ -16,101 +20,73 @@ class ProfileService {
   })  : _apiService = apiService ?? ApiService(),
         _tokenStorage = tokenStorage ?? TokenStorage();
 
-  /// Get current user's profile
+  /// Obtener perfil del usuario actual
+  /// Ruta: GET /api/profiles/me/
+  /// Retorna: Profile entity y User entity del usuario actual
   Future<Map<String, dynamic>> getCurrentProfile() async {
     try {
-      // Try to use the specific profile endpoint first if available
-      try {
-        final profileMeResponse = await _apiService.get(AppConfig.currentProfileEndpoint);
-        if (profileMeResponse['success'] && profileMeResponse['data'] != null) {
-          final profileData = profileMeResponse['data'];
-          return {
-            'success': true,
-            'profile': Profile.fromJson(profileData),
-            'user': User.fromJson(profileData['user']),
-          };
-        }
-      } catch (e) {
-        print('Profile /me endpoint not available, trying alternative method: $e');
-      }
+      final response = await _apiService.get(AppConfig.currentProfileEndpoint);
 
-      // Fallback: Get current user data first
-      final userResponse = await _apiService.get(AppConfig.currentUserEndpoint);
+      if (response['success'] && response['data'] != null) {
+        final userProfile = response['data'];
 
-      if (userResponse['success'] && userResponse['data'] != null) {
-        final userData = userResponse['data'];
-        final userId = userData['id'];
+        // Convertir respuestas JSON a entidades de dominio
+        final profile = Profile.fromJson(userProfile);
+        final user = User.fromJson(userProfile['user']);
 
-        // Now try to get the user's profile from the profiles list
-        try {
-          final profileResponse = await _apiService.get(AppConfig.profilesEndpoint);
-          if (profileResponse['success'] && profileResponse['data'] != null) {
-            final results = profileResponse['data']['results'] as List?;
-            if (results != null && results.isNotEmpty) {
-              // Find the profile for the current user
-              final userProfile = results.firstWhere(
-                (profile) => profile['user']['id'] == userId,
-                orElse: () => null,
-              );
-
-              if (userProfile != null) {
-                return {
-                  'success': true,
-                  'profile': Profile.fromJson(userProfile),
-                  'user': User.fromJson(userProfile['user']),
-                };
-              }
-            }
-          }
-        } catch (e) {
-          print('Error fetching profile list: $e');
-        }
-
-        // If we can't find a profile, return just the user data
         return {
           'success': true,
-          'profile': null,
-          'user': User.fromJson(userData),
+          'profile': profile,
+          'user': user,
         };
       } else {
         return {
           'success': false,
-          'error': userResponse['error'] ?? 'Failed to get user data',
+          'error': response['error'] ?? 'Error al obtener el perfil',
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error: $e',
+        'error': 'Error obteniendo perfil: $e',
       };
     }
   }
 
-  /// Get profile by ID
+  /// Obtener perfil por ID
+  /// Ruta: GET /api/profiles/{id}/
+  /// Datos de negocio: ID del perfil
+  /// Retorna: Profile entity
   Future<Map<String, dynamic>> getProfileById(int profileId) async {
     try {
       final response = await _apiService.get('${AppConfig.profilesEndpoint}$profileId/');
 
-      if (response['success']) {
+      if (response['success'] && response['data'] != null) {
+        // Convertir respuesta JSON a entidad de dominio
+        final profile = Profile.fromJson(response['data']);
+
         return {
           'success': true,
-          'profile': Profile.fromJson(response['data']),
+          'profile': profile,
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Failed to get profile',
+          'error': response['error'] ?? 'Error al obtener perfil',
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error: $e',
+        'error': 'Error obteniendo perfil: $e',
       };
     }
   }
 
-  /// Update profile
+  /// Actualizar perfil
+  /// Ruta: PUT /api/profiles/{id}/
+  /// Datos de negocio: ID del perfil y datos a actualizar
+  /// Retorna: Profile entity actualizado
   Future<Map<String, dynamic>> updateProfile(int profileId, Map<String, dynamic> profileData) async {
     try {
       final response = await _apiService.put(
@@ -118,26 +94,34 @@ class ProfileService {
         profileData,
       );
 
-      if (response['success']) {
+      if (response['success'] && response['data'] != null) {
+        // Convertir respuesta JSON a entidad de dominio
+        final updatedProfile = Profile.fromJson(response['data']);
+
         return {
           'success': true,
-          'profile': Profile.fromJson(response['data']),
+          'profile': updatedProfile,
+          'message': 'Perfil actualizado exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Failed to update profile',
+          'error': response['error'] ?? 'Error al actualizar perfil',
+          'errors': response['errors'] ?? {},
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error: $e',
+        'error': 'Error actualizando perfil: $e',
       };
     }
   }
 
-  /// Verify profile
+  /// Verificar perfil
+  /// Ruta: POST /api/profiles/{id}/verify/
+  /// Datos de negocio: ID del perfil
+  /// Retorna: Mensaje de confirmación
   Future<Map<String, dynamic>> verifyProfile(int profileId) async {
     try {
       final response = await _apiService.post('${AppConfig.profilesEndpoint}$profileId/verify/', {});
@@ -145,26 +129,28 @@ class ProfileService {
       if (response['success']) {
         return {
           'success': true,
-          'message': 'Profile verified successfully',
+          'message': 'Perfil verificado exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Failed to verify profile',
+          'error': response['error'] ?? 'Error al verificar perfil',
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'error': 'Network error: $e',
+        'error': 'Error verificando perfil: $e',
       };
     }
   }
 
-  /// Add property to favorites
+  /// Agregar propiedad a favoritos
+  /// Lógica de negocio: Obtener favoritos actuales, agregar nuevo ID, actualizar perfil
+  /// Datos de negocio: ID del perfil y ID de la propiedad
   Future<Map<String, dynamic>> addToFavorites(int profileId, int propertyId) async {
     try {
-      // First get current profile to get existing favorites
+      // Obtener perfil actual para obtener favoritos existentes
       final currentProfileResult = await getProfileById(profileId);
       if (!currentProfileResult['success']) {
         return currentProfileResult;
@@ -173,23 +159,27 @@ class ProfileService {
       final Profile currentProfile = currentProfileResult['profile'];
       final List<int> favorites = List<int>.from(currentProfile.favorites ?? []);
 
+      // Lógica de negocio: No agregar duplicados
       if (!favorites.contains(propertyId)) {
         favorites.add(propertyId);
       }
 
+      // Actualizar perfil con nuevos favoritos
       return await updateProfile(profileId, {'favorites': favorites});
     } catch (e) {
       return {
         'success': false,
-        'error': 'Failed to add to favorites: $e',
+        'error': 'Error agregando a favoritos: $e',
       };
     }
   }
 
-  /// Remove property from favorites
+  /// Remover propiedad de favoritos
+  /// Lógica de negocio: Obtener favoritos actuales, remover ID, actualizar perfil
+  /// Datos de negocio: ID del perfil y ID de la propiedad
   Future<Map<String, dynamic>> removeFromFavorites(int profileId, int propertyId) async {
     try {
-      // First get current profile to get existing favorites
+      // Obtener perfil actual para obtener favoritos existentes
       final currentProfileResult = await getProfileById(profileId);
       if (!currentProfileResult['success']) {
         return currentProfileResult;
@@ -198,13 +188,51 @@ class ProfileService {
       final Profile currentProfile = currentProfileResult['profile'];
       final List<int> favorites = List<int>.from(currentProfile.favorites ?? []);
 
+      // Lógica de negocio: Remover de favoritos
       favorites.remove(propertyId);
 
+      // Actualizar perfil con favoritos actualizados
       return await updateProfile(profileId, {'favorites': favorites});
     } catch (e) {
       return {
         'success': false,
-        'error': 'Failed to remove from favorites: $e',
+        'error': 'Error removiendo de favoritos: $e',
+      };
+    }
+  }
+
+  /// Actualizar imagen de perfil
+  /// Ruta: PATCH /api/profiles/{id}/
+  /// Datos de negocio: ID del perfil y archivo de imagen
+  /// Retorna: Profile entity actualizado
+  Future<Map<String, dynamic>> updateProfilePicture(int profileId, File imageFile) async {
+    try {
+      final response = await _apiService.uploadFile(
+        '${AppConfig.profilesEndpoint}$profileId/',
+        'profile_image',
+        imageFile,
+        method: 'PATCH',
+      );
+
+      if (response['success'] && response['data'] != null) {
+        // Convertir respuesta JSON a entidad de dominio
+        final updatedProfile = Profile.fromJson(response['data']);
+
+        return {
+          'success': true,
+          'profile': updatedProfile,
+          'message': 'Imagen de perfil actualizada exitosamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ?? 'Error al actualizar imagen de perfil',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error actualizando imagen: $e',
       };
     }
   }

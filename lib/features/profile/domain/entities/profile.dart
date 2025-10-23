@@ -10,6 +10,7 @@ class Profile extends BaseModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<int> favorites;
+  final String? profileImage;
 
   Profile({
     required this.id,
@@ -20,6 +21,7 @@ class Profile extends BaseModel {
     required this.createdAt,
     required this.updatedAt,
     required this.favorites,
+    this.profileImage,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class Profile extends BaseModel {
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       favorites: List<int>.from(json['favorites'] ?? []),
+      profileImage: json['profile_image'],
     );
   }
 
@@ -46,6 +49,7 @@ class Profile extends BaseModel {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'favorites': favorites,
+      'profile_image': profileImage,
     };
   }
 

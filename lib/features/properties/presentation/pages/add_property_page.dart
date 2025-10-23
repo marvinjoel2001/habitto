@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import '../../../../core/services/api_service.dart';
 import '../../../../config/app_config.dart';
 import '../../domain/entities/property.dart';
 import '../../domain/entities/amenity.dart';

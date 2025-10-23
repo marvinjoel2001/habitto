@@ -8,6 +8,7 @@ import '../../data/services/profile_service.dart';
 import '../../domain/entities/profile.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../auth/data/services/auth_service.dart';
+import 'edit_profile_page.dart';
 
 enum UserMode { inquilino, propietario, agente }
 
@@ -180,6 +181,29 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     }
   }
 
+  Future<void> _editProfile() async {
+    if (_currentProfile == null || _currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo cargar la información del perfil')),
+      );
+      return;
+    }
+
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditProfilePage(
+          profile: _currentProfile!,
+          user: _currentUser!,
+        ),
+      ),
+    );
+
+    // Si se actualizó el perfil, recargar los datos
+    if (result == true) {
+      _loadCurrentProfile();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -324,9 +348,9 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                         width: 3,
                       ),
                     ),
-                    child: const CircleAvatar(
+                    child: CircleAvatar(
                       radius: 57,
-                      backgroundImage: AssetImage('assets/images/unnamed.png'),
+                      backgroundImage: _getProfileImage(),
                     ),
                   ),
                   Positioned(
@@ -925,6 +949,32 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     return '+591 --------';
   }
 
+  String _getUserType() {
+    if (_currentProfile != null) {
+      switch (_currentProfile!.userType) {
+        case 'inquilino':
+          return 'Inquilino';
+        case 'propietario':
+          return 'Propietario';
+        case 'agente':
+          return 'Agente';
+        default:
+          return 'Usuario';
+      }
+    }
+    return 'Usuario';
+  }
+
+  ImageProvider _getProfileImage() {
+    // Verificar si el usuario tiene una foto de perfil
+    if (_currentProfile?.profileImage != null && _currentProfile!.profileImage!.isNotEmpty) {
+      return NetworkImage(_currentProfile!.profileImage!);
+    }
+
+    // Si no tiene foto de perfil, mostrar la imagen por defecto
+    return const AssetImage('assets/images/userempty.png');
+  }
+
   String _getModeTitle() {
     switch (_currentMode) {
       case UserMode.inquilino:
@@ -1001,22 +1051,13 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                   child: Padding(
                     padding: const EdgeInsets.all(6),
                     child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/unnamed.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.grey,
-                            ),
-                            child: const Icon(
-                              Icons.person,
-                              size: 80,
-                              color: Colors.white,
-                            ),
-                          );
-                        },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: _getProfileImage(),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1024,24 +1065,27 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                 Positioned(
                   bottom: 10,
                   right: 10,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      size: 20,
-                      color: Colors.black,
+                  child: GestureDetector(
+                    onTap: _editProfile,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        size: 20,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                 ),
@@ -1079,6 +1123,15 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               const SizedBox(height: 12),
 
               // Información de contacto
+              Text(
+                _getUserType(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF7FFFD4),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
               Text(
                 _getUserId(),
                 style: TextStyle(
