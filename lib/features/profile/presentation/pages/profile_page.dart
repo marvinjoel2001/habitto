@@ -1162,9 +1162,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                 width: 140,
                 child: CustomButton(
                   text: 'Editar Perfil',
-                  onPressed: () {
-                    // Navegar a editar perfil
-                  },
+                  onPressed: _editProfile,
                   backgroundColor: AppTheme.primaryColor,
                   textColor: Colors.black,
                 ),

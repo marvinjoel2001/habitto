@@ -83,16 +83,125 @@ class ProfileService {
     }
   }
 
+  /// Actualizar perfil del usuario actual
+  /// Ruta: PUT/PATCH /api/profiles/update_me/
+  /// Datos de negocio: Datos del perfil a actualizar
+  /// Retorna: Profile entity actualizado
+  Future<Map<String, dynamic>> updateCurrentProfile(Map<String, dynamic> profileData, {File? profileImage}) async {
+    try {
+      Map<String, dynamic> response;
+
+      if (profileImage != null) {
+        // Si hay imagen, usar multipart/form-data
+        final additionalFields = <String, String>{};
+        profileData.forEach((key, value) {
+          additionalFields[key] = value.toString();
+        });
+
+        response = await _apiService.uploadFile(
+          AppConfig.updateProfileEndpoint,
+          'profile_picture',
+          profileImage,
+          method: 'PATCH',
+          additionalFields: additionalFields,
+        );
+      } else {
+        // Si no hay imagen, usar JSON
+        response = await _apiService.patch(
+          AppConfig.updateProfileEndpoint,
+          profileData,
+        );
+      }
+
+      if (response['success'] && response['data'] != null) {
+        // Convertir respuesta JSON a entidad de dominio
+        final updatedProfile = Profile.fromJson(response['data']);
+
+        return {
+          'success': true,
+          'profile': updatedProfile,
+          'message': 'Perfil actualizado exitosamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ?? 'Error al actualizar perfil',
+          'errors': response['errors'] ?? {},
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error actualizando perfil: $e',
+      };
+    }
+  }
+
+  /// Subir imagen de perfil del usuario actual
+  /// Ruta: POST /api/profiles/upload_profile_picture/
+  /// Datos de negocio: Archivo de imagen
+  /// Retorna: Profile entity actualizado
+  Future<Map<String, dynamic>> uploadCurrentProfilePicture(File imageFile) async {
+    try {
+      final response = await _apiService.uploadFile(
+        AppConfig.uploadProfilePictureEndpoint,
+        'profile_picture',
+        imageFile,
+        method: 'POST',
+      );
+
+      if (response['success'] && response['data'] != null) {
+        // Convertir respuesta JSON a entidad de dominio
+        final updatedProfile = Profile.fromJson(response['data']);
+
+        return {
+          'success': true,
+          'profile': updatedProfile,
+          'message': 'Imagen de perfil actualizada exitosamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ?? 'Error al actualizar imagen de perfil',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error actualizando imagen: $e',
+      };
+    }
+  }
+
   /// Actualizar perfil
   /// Ruta: PUT /api/profiles/{id}/
   /// Datos de negocio: ID del perfil y datos a actualizar
   /// Retorna: Profile entity actualizado
-  Future<Map<String, dynamic>> updateProfile(int profileId, Map<String, dynamic> profileData) async {
+  Future<Map<String, dynamic>> updateProfile(int profileId, Map<String, dynamic> profileData, {File? profileImage}) async {
     try {
-      final response = await _apiService.put(
-        '${AppConfig.profilesEndpoint}$profileId/',
-        profileData,
-      );
+      Map<String, dynamic> response;
+
+      if (profileImage != null) {
+        // Si hay imagen, usar multipart/form-data
+        final additionalFields = <String, String>{};
+        profileData.forEach((key, value) {
+          additionalFields[key] = value.toString();
+        });
+
+        response = await _apiService.uploadFile(
+          '${AppConfig.profilesEndpoint}$profileId/',
+          'profile_picture',
+          profileImage,
+          method: 'PUT',
+          additionalFields: additionalFields,
+        );
+      } else {
+        // Si no hay imagen, usar JSON
+        response = await _apiService.put(
+          '${AppConfig.profilesEndpoint}$profileId/',
+          profileData,
+        );
+      }
 
       if (response['success'] && response['data'] != null) {
         // Convertir respuesta JSON a entidad de dominio
@@ -209,7 +318,7 @@ class ProfileService {
     try {
       final response = await _apiService.uploadFile(
         '${AppConfig.profilesEndpoint}$profileId/',
-        'profile_image',
+        'profile_picture',
         imageFile,
         method: 'PATCH',
       );

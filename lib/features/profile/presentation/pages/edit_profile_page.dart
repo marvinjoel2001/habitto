@@ -28,6 +28,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _firstNameController;
   late TextEditingController _lastNameController;
   late TextEditingController _phoneController;
+  late TextEditingController _userTypeController;
 
   File? _selectedImage;
   bool _isLoading = false;
@@ -38,6 +39,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _firstNameController = TextEditingController(text: widget.user.firstName);
     _lastNameController = TextEditingController(text: widget.user.lastName);
     _phoneController = TextEditingController(text: widget.profile.phone);
+    _userTypeController = TextEditingController(text: widget.profile.userType);
   }
 
   @override
@@ -45,6 +47,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
+    _userTypeController.dispose();
     super.dispose();
   }
 
@@ -79,30 +82,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
 
     try {
-      // Actualizar información del perfil
+      // Actualizar información del perfil usando el endpoint update_me
       final profileData = {
         'phone': _phoneController.text.trim(),
+        'user_type': _userTypeController.text,
       };
 
-      final profileResult = await _profileService.updateProfile(
-        widget.profile.id,
+      final profileResult = await _profileService.updateCurrentProfile(
         profileData,
+        profileImage: _selectedImage,
       );
 
       if (!profileResult['success']) {
         throw Exception(profileResult['error']);
-      }
-
-      // Si hay una imagen seleccionada, subirla
-      if (_selectedImage != null) {
-        final imageResult = await _profileService.updateProfilePicture(
-          widget.profile.id,
-          _selectedImage!,
-        );
-
-        if (!imageResult['success']) {
-          throw Exception(imageResult['error']);
-        }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -246,7 +238,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           },
         ),
         const SizedBox(height: 20),
-        _buildUserTypeInfo(),
+        _buildUserTypeDropdown(),
       ],
     );
   }
@@ -289,24 +281,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildUserTypeInfo() {
-    String userTypeDisplay;
-    switch (widget.profile.userType) {
-      case 'inquilino':
-        userTypeDisplay = 'Inquilino';
-        break;
-      case 'propietario':
-        userTypeDisplay = 'Propietario';
-        break;
-      case 'agente':
-        userTypeDisplay = 'Agente';
-        break;
-      default:
-        userTypeDisplay = 'Usuario';
-    }
-
+  Widget _buildUserTypeDropdown() {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(15),
@@ -318,30 +294,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.badge, color: AppTheme.primaryColor),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Tipo de usuario',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-              Text(
-                userTypeDisplay,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+      child: DropdownButtonFormField<String>(
+        value: _userTypeController.text,
+        decoration: InputDecoration(
+          labelText: 'Tipo de usuario',
+          prefixIcon: const Icon(Icons.badge, color: AppTheme.primaryColor),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
           ),
+          filled: true,
+          fillColor: Colors.transparent,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        ),
+        items: const [
+          DropdownMenuItem(value: 'inquilino', child: Text('Inquilino')),
+          DropdownMenuItem(value: 'propietario', child: Text('Propietario')),
+          DropdownMenuItem(value: 'agente', child: Text('Agente')),
         ],
+        onChanged: (value) {
+          if (value != null) {
+            _userTypeController.text = value;
+          }
+        },
       ),
     );
   }

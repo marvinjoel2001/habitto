@@ -34,7 +34,7 @@ class Profile extends BaseModel {
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       favorites: List<int>.from(json['favorites'] ?? []),
-      profileImage: json['profile_image'],
+      profileImage: json['profile_picture'],
     );
   }
 
@@ -49,7 +49,7 @@ class Profile extends BaseModel {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'favorites': favorites,
-      'profile_image': profileImage,
+      'profile_picture': profileImage,
     };
   }
 

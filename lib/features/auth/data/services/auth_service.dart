@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../../../../core/services/api_service.dart';
 import '../../../../config/app_config.dart';
 import '../../../../core/services/token_storage.dart';
@@ -66,9 +68,9 @@ class AuthService {
 
   /// Registrar nuevo usuario con perfil
   /// Ruta: POST /api/users/
-  /// Datos de negocio: User entity + Profile data + password
+  /// Datos de negocio: User entity + Profile data + password + opcional profile image
   /// Retorna: Usuario creado (el perfil se crea automáticamente)
-  Future<Map<String, dynamic>> register(User user, Profile profile, String password) async {
+  Future<Map<String, dynamic>> register(User user, Profile profile, String password, {File? profileImage}) async {
     try {
       // Preparar datos de negocio para la API
       final userData = user.toCreateJson();
@@ -81,6 +83,28 @@ class AuthService {
       if (response['success'] && response['data'] != null) {
         // Convertir respuesta JSON a entidad de dominio
         final createdUser = User.fromJson(response['data']);
+
+        // Si se proporcionó una imagen de perfil, subirla después del registro
+        if (profileImage != null) {
+          // Obtener el perfil creado para obtener su ID
+          final profileResponse = await _apiService.get(AppConfig.currentProfileEndpoint);
+          if (profileResponse['success'] && profileResponse['data'] != null) {
+            final createdProfile = Profile.fromJson(profileResponse['data']);
+
+            // Subir la imagen de perfil
+            final imageResponse = await _apiService.uploadFile(
+              '${AppConfig.profilesEndpoint}${createdProfile.id}/',
+              'profile_picture',
+              profileImage,
+              method: 'PATCH',
+            );
+
+            if (!imageResponse['success']) {
+              // Si falla la subida de imagen, aún consideramos el registro exitoso
+              print('Advertencia: No se pudo subir la imagen de perfil: ${imageResponse['error']}');
+            }
+          }
+        }
 
         return {
           'success': true,

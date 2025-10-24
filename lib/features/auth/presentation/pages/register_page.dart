@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:habitto/shared/theme/app_theme.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../data/services/auth_service.dart';
 import '../../domain/entities/user.dart';
 import '../../../profile/domain/entities/profile.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
+
 import 'dart:ui' as ui;
 
 class RegisterPage extends StatefulWidget {
@@ -24,8 +28,31 @@ class _RegisterPageState extends State<RegisterPage> {
   final _phoneController = TextEditingController();
 
   final AuthService _authService = AuthService();
+  final ImagePicker _imagePicker = ImagePicker();
   bool _isLoading = false;
   String _selectedUserType = 'inquilino';
+  File? _selectedImage;
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al seleccionar imagen: $e')),
+      );
+    }
+  }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
@@ -62,7 +89,7 @@ class _RegisterPageState extends State<RegisterPage> {
         favorites: [],
       );
 
-      final response = await _authService.register(user, profile, _passwordController.text);
+      final response = await _authService.register(user, profile, _passwordController.text, profileImage: _selectedImage);
 
       if (response['success']) {
         // Después del registro exitoso, hacer login automático
@@ -174,6 +201,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ],
                                 ),
                               ),
+                              const SizedBox(height: 24),
+
+                              // Foto de perfil
+                              _buildProfileImageSection(),
                               const SizedBox(height: 24),
 
                               // Nombre de usuario
@@ -374,6 +405,51 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProfileImageSection() {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppTheme.primaryColor, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: _selectedImage != null
+                  ? Image.file(
+                      _selectedImage!,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.asset(
+                      'assets/images/userempty.png',
+                      fit: BoxFit.cover,
+                    ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: _pickImage,
+          icon: const Icon(Icons.camera_alt, color: AppTheme.primaryColor, size: 18),
+          label: const Text(
+            'Agregar foto',
+            style: TextStyle(color: AppTheme.primaryColor, fontSize: 14),
+          ),
+        ),
+      ],
     );
   }
 

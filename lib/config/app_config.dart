@@ -11,6 +11,8 @@ class AppConfig {
   static const String currentUserEndpoint = '/api/users/me/';
   static const String profilesEndpoint = '/api/profiles/';
   static const String currentProfileEndpoint = '/api/profiles/me/';
+  static const String updateProfileEndpoint = '/api/profiles/update_me/';
+  static const String uploadProfilePictureEndpoint = '/api/profiles/upload_profile_picture/';
   static const String propertiesEndpoint = '/api/properties/';
   static const String amenitiesEndpoint = '/api/amenities/';
   static const String photosEndpoint = '/api/photos/';
