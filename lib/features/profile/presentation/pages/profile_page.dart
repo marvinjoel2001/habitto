@@ -16,9 +16,9 @@ class ProfilePage extends StatefulWidget {
   final Function(UserMode)? onModeChanged;
 
   const ProfilePage({
-    Key? key,
+    super.key,
     this.onModeChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();

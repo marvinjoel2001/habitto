@@ -154,13 +154,13 @@ class _SearchPageState extends State<SearchPage> {
 
     // Fondo transparente
     final bgPaint = Paint()..color = const Color(0x00000000);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size, size), bgPaint);
+    canvas.drawRect(const Rect.fromLTWH(0, 0, size, size), bgPaint);
 
     // Círculo principal del marcador (amarillo como el tema)
     final circlePaint = Paint()
       ..color = AppTheme.primaryColor.withOpacity(0.95)
       ..style = PaintingStyle.fill;
-    final center = Offset(size / 2, size / 2);
+    const center = Offset(size / 2, size / 2);
     canvas.drawCircle(center, size * 0.36, circlePaint);
 
     // Borde sutil
@@ -186,9 +186,9 @@ class _SearchPageState extends State<SearchPage> {
 
     // Fondo transparente
     final bgPaint = Paint()..color = const Color(0x00000000);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size, size), bgPaint);
+    canvas.drawRect(const Rect.fromLTWH(0, 0, size, size), bgPaint);
 
-    final center = Offset(size / 2, size / 2);
+    const center = Offset(size / 2, size / 2);
 
     // Círculo exterior (azul)
     final outerCirclePaint = Paint()
@@ -509,7 +509,7 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildMapActions() {
     final cs = Theme.of(context).colorScheme;
 
-    Widget _glassIcon(IconData icon, VoidCallback onTap) {
+    Widget glassIcon(IconData icon, VoidCallback onTap) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: ClipRRect(
@@ -543,7 +543,7 @@ class _SearchPageState extends State<SearchPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Zoom in con animación 3D - ZOOM MÁS GRADUAL
-        _glassIcon(Icons.add, () async {
+        glassIcon(Icons.add, () async {
           if (_mapboxMap != null) {
             // Obtener el zoom actual
             final currentCamera = await _mapboxMap!.getCameraState();
@@ -560,7 +560,7 @@ class _SearchPageState extends State<SearchPage> {
           }
         }),
         // Zoom out - ZOOM MÁS GRADUAL
-        _glassIcon(Icons.remove, () async {
+        glassIcon(Icons.remove, () async {
           if (_mapboxMap != null) {
             // Obtener el zoom actual
             final currentCamera = await _mapboxMap!.getCameraState();
@@ -577,7 +577,7 @@ class _SearchPageState extends State<SearchPage> {
           }
         }),
         // Vista 3D/2D toggle
-        _glassIcon(Icons.threed_rotation, () {
+        glassIcon(Icons.threed_rotation, () {
           if (_mapboxMap != null) {
             _mapboxMap!.flyTo(
               CameraOptions(
@@ -589,7 +589,7 @@ class _SearchPageState extends State<SearchPage> {
           }
         }),
         // Centrar en ubicación actual
-        _glassIcon(Icons.my_location, () {
+        glassIcon(Icons.my_location, () {
           if (_currentPosition != null && _mapboxMap != null) {
             _mapboxMap!.flyTo(
               CameraOptions(
@@ -699,7 +699,7 @@ class _SearchPageState extends State<SearchPage> {
                         width: double.infinity,
                         height: 120,
                         color: AppTheme.grayColor.withValues(alpha: 0.3),
-                        child: Icon(Icons.home, size: 40, color: AppTheme.grayColor),
+                        child: const Icon(Icons.home, size: 40, color: AppTheme.grayColor),
                       ),
                 ),
               ),

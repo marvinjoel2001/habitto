@@ -35,7 +35,7 @@ void main() async {
 }
 
 class HabittoApp extends StatelessWidget {
-  const HabittoApp({Key? key}) : super(key: key);
+  const HabittoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +58,7 @@ class HabittoApp extends StatelessWidget {
 }
 
 class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+  const AuthWrapper({super.key});
 
   @override
   State<AuthWrapper> createState() => _AuthWrapperState();

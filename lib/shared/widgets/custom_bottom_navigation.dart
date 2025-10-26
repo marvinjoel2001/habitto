@@ -8,11 +8,11 @@ class CustomBottomNavigation extends StatelessWidget {
   final bool showAddButton;
 
   const CustomBottomNavigation({
-    Key? key,
+    super.key,
     required this.currentIndex,
     required this.onTap,
     this.showAddButton = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

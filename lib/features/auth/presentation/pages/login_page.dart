@@ -6,7 +6,7 @@ import '../../../../shared/widgets/social_login_button.dart';
 import 'dart:ui' as ui;
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();

@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import '../../data/services/message_service.dart';
+import '../../data/models/message_model.dart';
 
 class ConversationPage extends StatefulWidget {
   final String title;
+  final int? otherUserId; // ID del otro usuario en la conversación
 
-  const ConversationPage({Key? key, required this.title}) : super(key: key);
+  const ConversationPage({
+    super.key, 
+    required this.title,
+    this.otherUserId,
+  });
 
   @override
   State<ConversationPage> createState() => _ConversationPageState();
@@ -12,16 +19,105 @@ class ConversationPage extends StatefulWidget {
 
 class _ConversationPageState extends State<ConversationPage> {
   final TextEditingController _controller = TextEditingController();
+  final MessageService _messageService = MessageService();
+  List<ConvMessage> _messages = [];
+  bool _isLoading = true;
+  String _error = '';
 
-  // Mensajes hardcodeados de ejemplo
-  final List<ConvMessage> _messages = [
-    ConvMessage(text: 'Hola, ¿sigues disponible?', fromMe: false, time: '10:40'),
-    ConvMessage(text: 'Sí, claro. ¿Qué te interesa saber?', fromMe: true, time: '10:41'),
-    ConvMessage(text: '¿Incluye garaje y está cerca del centro?', fromMe: false, time: '10:42'),
-    ConvMessage(text: 'Incluye garaje y está a 10 min del centro.', fromMe: true, time: '10:43'),
-    ConvMessage(text: 'Perfecto, ¿podemos agendar una visita?', fromMe: false, time: '10:44'),
-    ConvMessage(text: 'Mañana a las 15:00 te sirve.', fromMe: true, time: '10:45'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadConversation();
+  }
+
+  Future<void> _loadConversation() async {
+    if (widget.otherUserId == null) {
+      // Si no hay otherUserId, usar datos hardcodeados
+      setState(() {
+        _messages = _getHardcodedMessages();
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = '';
+      });
+
+      final messages = await _messageService.getConversation(1, widget.otherUserId!); // TODO: Obtener ID del usuario actual
+      
+      setState(() {
+        _messages = messages.map((m) => m.toConvMessage(currentUserId: 1)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Error al cargar conversación: $e';
+        _isLoading = false;
+        // Usar datos hardcodeados como fallback
+        _messages = _getHardcodedMessages();
+      });
+    }
+  }
+
+  List<ConvMessage> _getHardcodedMessages() {
+    return [
+      ConvMessage(text: 'Hola, ¿sigues disponible?', fromMe: false, time: '10:40'),
+      ConvMessage(text: 'Sí, claro. ¿Qué te interesa saber?', fromMe: true, time: '10:41'),
+      ConvMessage(text: '¿Incluye garaje y está cerca del centro?', fromMe: false, time: '10:42'),
+      ConvMessage(text: 'Incluye garaje y está a 10 min del centro.', fromMe: true, time: '10:43'),
+      ConvMessage(text: 'Perfecto, ¿podemos agendar una visita?', fromMe: false, time: '10:44'),
+      ConvMessage(text: 'Mañana a las 15:00 te sirve.', fromMe: true, time: '10:45'),
+    ];
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    if (widget.otherUserId == null) {
+      // Modo offline - solo agregar localmente
+      setState(() {
+        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Ahora'));
+        _controller.clear();
+      });
+      return;
+    }
+
+    try {
+      // Agregar mensaje localmente primero para UX inmediata
+      setState(() {
+        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Enviando...'));
+        _controller.clear();
+      });
+
+      // Enviar mensaje a la API
+      await _messageService.sendMessage(
+        senderId: 1, // TODO: Obtener ID del usuario actual
+        receiverId: widget.otherUserId!,
+        content: text,
+      );
+
+      // Actualizar el tiempo del último mensaje
+      setState(() {
+        _messages.last = ConvMessage(text: text, fromMe: true, time: 'Ahora');
+      });
+    } catch (e) {
+      // Si falla, mostrar error pero mantener el mensaje localmente
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al enviar mensaje: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      
+      setState(() {
+        _messages.last = ConvMessage(text: text, fromMe: true, time: 'Error');
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,23 +234,42 @@ class _ConversationPageState extends State<ConversationPage> {
                 children: [
                   Expanded(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(25),
                       child: BackdropFilter(
-                        filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           decoration: BoxDecoration(
-                            color: cs.surface.withOpacity(0.18),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: cs.primary.withOpacity(0.30)),
+                            color: Colors.black.withValues(alpha: 0.25),
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                spreadRadius: 1,
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: TextField(
                             controller: _controller,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'Escribe un mensaje...',
                               border: InputBorder.none,
-                              icon: Icon(Icons.message, color: Colors.black54),
+                              focusedBorder: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              fillColor: Colors.transparent,
+                              filled: true,
+                              icon: Icon(Icons.message, color: Colors.white.withValues(alpha: 0.7)),
+                              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                             ),
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                       ),
@@ -173,14 +288,63 @@ class _ConversationPageState extends State<ConversationPage> {
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.send, color: Colors.black),
-                          onPressed: () {
-                            // Por ahora solo agregamos localmente el texto
+                          onPressed: () async {
                             final text = _controller.text.trim();
                             if (text.isEmpty) return;
+                            
+                            // Limpiar el campo inmediatamente para mejor UX
+                            _controller.clear();
+                            
+                            // Agregar mensaje localmente primero
+                            final tempMessage = ConvMessage(text: text, fromMe: true, time: 'Enviando...');
                             setState(() {
-                              _messages.add(ConvMessage(text: text, fromMe: true, time: 'Ahora'));
-                              _controller.clear();
+                              _messages.add(tempMessage);
                             });
+                            
+                            try {
+                              // Enviar mensaje a través del API
+                              if (widget.otherUserId != null) {
+                                await _messageService.sendMessage(
+                                  senderId: 1, // TODO: Obtener ID del usuario actual
+                                  receiverId: widget.otherUserId!,
+                                  content: text,
+                                );
+                                
+                                // Actualizar el mensaje local con tiempo real
+                                setState(() {
+                                  final index = _messages.indexOf(tempMessage);
+                                  if (index != -1) {
+                                    _messages[index] = ConvMessage(
+                                      text: text, 
+                                      fromMe: true, 
+                                      time: _formatTime(DateTime.now())
+                                    );
+                                  }
+                                });
+                              }
+                            } catch (e) {
+                              // En caso de error, mostrar mensaje de error y mantener el mensaje local
+                              setState(() {
+                                final index = _messages.indexOf(tempMessage);
+                                if (index != -1) {
+                                  _messages[index] = ConvMessage(
+                                    text: text, 
+                                    fromMe: true, 
+                                    time: 'Error al enviar'
+                                  );
+                                }
+                              });
+                              
+                              // Mostrar snackbar de error
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error al enviar mensaje: ${e.toString()}'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
                           },
                         ),
                       ),
@@ -200,12 +364,19 @@ class _ConversationPageState extends State<ConversationPage> {
     _controller.dispose();
     super.dispose();
   }
-}
 
-class ConvMessage {
-  final String text;
-  final bool fromMe;
-  final String time;
-
-  ConvMessage({required this.text, required this.fromMe, required this.time});
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inMinutes < 1) {
+      return 'Ahora';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m';
+    } else if (difference.inDays < 1) {
+      return '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } else {
+      return '${dateTime.day}/${dateTime.month}';
+    }
+  }
 }

@@ -11,10 +11,10 @@ class EditProfilePage extends StatefulWidget {
   final User user;
 
   const EditProfilePage({
-    Key? key,
+    super.key,
     required this.profile,
     required this.user,
-  }) : super(key: key);
+  });
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
@@ -295,7 +295,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ],
       ),
       child: DropdownButtonFormField<String>(
-        value: _userTypeController.text,
+        initialValue: _userTypeController.text,
         decoration: InputDecoration(
           labelText: 'Tipo de usuario',
           prefixIcon: const Icon(Icons.badge, color: AppTheme.primaryColor),

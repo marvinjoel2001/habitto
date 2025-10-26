@@ -11,7 +11,7 @@ class CustomButton extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   
   const CustomButton({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.backgroundColor,
@@ -20,7 +20,7 @@ class CustomButton extends StatelessWidget {
     this.height,
     this.isLoading = false,
     this.padding,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

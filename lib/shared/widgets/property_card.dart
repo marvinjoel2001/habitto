@@ -15,7 +15,7 @@ class PropertyCard extends StatelessWidget {
   final bool showActions;
 
   const PropertyCard({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.title,
     this.subtitle,
@@ -25,7 +25,7 @@ class PropertyCard extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.showActions = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -169,12 +169,12 @@ class _ActionButton extends StatelessWidget {
   final Color color;
 
   const _ActionButton({
-    Key? key,
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,
     required this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

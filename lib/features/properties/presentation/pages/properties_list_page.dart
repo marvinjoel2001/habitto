@@ -5,7 +5,7 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/theme/app_theme.dart';
 
 class PropertiesListPage extends StatefulWidget {
-  const PropertiesListPage({Key? key}) : super(key: key);
+  const PropertiesListPage({super.key});
 
   @override
   State<PropertiesListPage> createState() => _PropertiesListPageState();
@@ -196,7 +196,7 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
                   ),
                   child: Text(
                     property.type.toUpperCase(),
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.primaryColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

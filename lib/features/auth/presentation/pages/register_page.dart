@@ -11,7 +11,7 @@ import '../../../../shared/widgets/custom_text_field.dart';
 import 'dart:ui' as ui;
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();

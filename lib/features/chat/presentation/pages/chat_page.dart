@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:habitto/features/chat/presentation/pages/conversation_page.dart';
+import '../../data/services/message_service.dart';
+import '../../data/models/message_model.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({Key? key}) : super(key: key);
+  const ChatPage({super.key});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -11,46 +13,97 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
+  final MessageService _messageService = MessageService();
+  List<ChatMessage> _messages = [];
+  bool _isLoading = true;
+  String _error = '';
 
-  // Datos hardcodeados para los mensajes
-  final List<ChatMessage> _messages = [
-    ChatMessage(
-      id: '1',
-      senderName: 'Agente Inmobiliario',
-      message: '¡Claro! Te envío los detalles ahora mismo.',
-      time: '10:42 AM',
-      isFromCurrentUser: false,
-      avatarUrl: 'assets/images/agent_avatar.png',
-      isOnline: true,
-    ),
-    ChatMessage(
-      id: '2',
-      senderName: 'Carlos Ruiz',
-      message: 'Hola, ¿sigues disponible?',
-      time: 'Ayer',
-      isFromCurrentUser: false,
-      avatarUrl: 'assets/images/carlos_avatar.png',
-      isOnline: false,
-    ),
-    ChatMessage(
-      id: '3',
-      senderName: 'Ana Gomez',
-      message: 'Perfecto, gracias por la información.',
-      time: '2d',
-      isFromCurrentUser: false,
-      avatarUrl: 'assets/images/ana_avatar.png',
-      isOnline: false,
-    ),
-    ChatMessage(
-      id: '4',
-      senderName: 'Soporte Habitto',
-      message: 'Bienvenido a Habitto. ¿Cómo podemos ayudarte?',
-      time: '4d',
-      isFromCurrentUser: false,
-      avatarUrl: 'assets/images/support_avatar.png',
-      isOnline: false,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages();
+  }
+
+  Future<void> _loadMessages() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = '';
+      });
+
+      final messages = await _messageService.getAllMessages();
+      
+      // Convertir MessageModel a ChatMessage y agrupar por conversación
+      final Map<int, ChatMessage> conversationMap = {};
+      
+      for (final message in messages) {
+        final otherUserId = message.sender == 1 ? message.receiver : message.sender; // Asumiendo usuario actual ID = 1
+        final chatMessage = message.toChatMessage(
+          currentUserId: 1, // TODO: Obtener ID del usuario actual desde auth
+          senderName: 'Usuario $otherUserId',
+        );
+        
+        // Solo mantener el mensaje más reciente por conversación
+        if (!conversationMap.containsKey(otherUserId) || 
+            message.createdAt.isAfter(DateTime.parse('2025-01-01'))) { // Comparación simplificada
+          conversationMap[otherUserId] = chatMessage;
+        }
+      }
+
+      setState(() {
+        _messages = conversationMap.values.toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Error al cargar mensajes: $e';
+        _isLoading = false;
+        // Usar datos hardcodeados como fallback
+        _messages = _getHardcodedMessages();
+      });
+    }
+  }
+
+  List<ChatMessage> _getHardcodedMessages() {
+    return [
+      ChatMessage(
+        id: '1',
+        senderName: 'María González',
+        message: '¡Claro! Te envío los detalles ahora mismo.',
+        time: '10:30',
+        isFromCurrentUser: false,
+        avatarUrl: 'assets/images/maria_avatar.png',
+        isOnline: true,
+      ),
+      ChatMessage(
+        id: '2',
+        senderName: 'Carlos Mendoza',
+        message: 'Hola, ¿sigues disponible?',
+        time: '09:45',
+        isFromCurrentUser: false,
+        avatarUrl: 'assets/images/carlos_avatar.png',
+        isOnline: false,
+      ),
+      ChatMessage(
+        id: '3',
+        senderName: 'Ana Rodríguez',
+        message: 'Perfecto, gracias por la información.',
+        time: '08:20',
+        isFromCurrentUser: false,
+        avatarUrl: 'assets/images/ana_avatar.png',
+        isOnline: true,
+      ),
+      ChatMessage(
+        id: '4',
+        senderName: 'Soporte Habitto',
+        message: 'Bienvenido a Habitto. ¿Cómo podemos ayudarte?',
+        time: 'Ayer',
+        isFromCurrentUser: false,
+        avatarUrl: 'assets/images/support_avatar.png',
+        isOnline: false,
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,53 +135,122 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Column(
         children: [
-          // Barra de búsqueda estilo glass
+          // Barra de búsqueda con glassmorphism similar al home
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(25),
               child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.black.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(25),
                     border: Border.all(
-                      color:
-                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.30),
+                      color: Colors.white.withValues(alpha: 0.25),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 8,
+                        color: Colors.black.withValues(alpha: 0.25),
+                        spreadRadius: 1,
+                        blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: const TextField(
+                  child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Buscar conversaciones...',
                       border: InputBorder.none,
-                      icon: Icon(Icons.search, color: Colors.black54),
-                      hintStyle: TextStyle(color: Colors.black87),
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      fillColor: Colors.transparent,
+                      filled: true,
+                      icon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
+                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                     ),
-                    style: TextStyle(color: Colors.black),
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
               ),
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _buildMessageTile(message);
-              },
-            ),
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : _error.isNotEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _error,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadMessages,
+                              child: const Text('Reintentar'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _messages.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No tienes conversaciones aún',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Inicia una conversación con otros usuarios',
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadMessages,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: _messages.length,
+                              itemBuilder: (context, index) {
+                                final message = _messages[index];
+                                return _buildMessageTile(message);
+                              },
+                            ),
+                          ),
           ),
         ],
       ),
@@ -296,25 +418,4 @@ class _ChatPageState extends State<ChatPage> {
     _messageController.dispose();
     super.dispose();
   }
-}
-
-// Modelo para los mensajes
-class ChatMessage {
-  final String id;
-  final String senderName;
-  final String message;
-  final String time;
-  final bool isFromCurrentUser;
-  final String avatarUrl;
-  final bool isOnline;
-
-  ChatMessage({
-    required this.id,
-    required this.senderName,
-    required this.message,
-    required this.time,
-    required this.isFromCurrentUser,
-    required this.avatarUrl,
-    required this.isOnline,
-  });
 }

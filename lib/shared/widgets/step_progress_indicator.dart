@@ -7,11 +7,11 @@ class StepProgressIndicator extends StatelessWidget {
   final List<String> stepTitles;
 
   const StepProgressIndicator({
-    Key? key,
+    super.key,
     required this.currentStep,
     required this.totalSteps,
     required this.stepTitles,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -151,7 +151,7 @@ class HomeContent extends StatelessWidget {
                         icon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
                         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                       ),
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
                 ),

@@ -13,7 +13,7 @@ class CustomTextField extends StatefulWidget {
   final VoidCallback? onTap;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.controller,
     required this.hintText,
     this.isPassword = false,
@@ -23,7 +23,7 @@ class CustomTextField extends StatefulWidget {
     this.suffixIcon,
     this.maxLines = 1,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomTextField> createState() => _CustomTextFieldState();

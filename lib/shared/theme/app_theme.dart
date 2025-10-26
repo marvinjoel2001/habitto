@@ -86,10 +86,10 @@ class AppTheme {
     brightness:
         Brightness.dark, // Para que el texto de la barra de estado sea blanco
     scaffoldBackgroundColor: darkGrayBase, // Fondo base gris oscuro
-    colorScheme: ColorScheme(
+    colorScheme: const ColorScheme(
       brightness: Brightness.dark,
       primary: primaryColor,
-      onPrimary: const Color(0xFF003D2B), // Texto oscuro sobre el menta
+      onPrimary: Color(0xFF003D2B), // Texto oscuro sobre el menta
       secondary: accentMint,
       onSecondary: blackColor,
       tertiary: paleMint1,
