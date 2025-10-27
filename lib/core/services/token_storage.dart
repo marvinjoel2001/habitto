@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class TokenStorage {
   static const String _accessTokenKey = 'access_token';
@@ -46,5 +47,49 @@ class TokenStorage {
     // Aquí podrías agregar lógica adicional para verificar la expiración del token
     // Por ahora, simplemente verificamos que el token exista
     return true;
+  }
+
+  /// Obtiene el ID del usuario actual desde el token JWT
+  Future<String?> getCurrentUserId() async {
+    try {
+      final accessToken = await getAccessToken();
+      if (accessToken == null || accessToken.isEmpty) {
+        return null;
+      }
+
+      // Decodificar el JWT (solo el payload, sin verificar la firma)
+      final parts = accessToken.split('.');
+      if (parts.length != 3) {
+        return null;
+      }
+
+      // Decodificar el payload (segunda parte del JWT)
+      final payload = parts[1];
+      
+      // Agregar padding si es necesario para base64
+      String normalizedPayload = payload;
+      switch (payload.length % 4) {
+        case 1:
+          normalizedPayload += '===';
+          break;
+        case 2:
+          normalizedPayload += '==';
+          break;
+        case 3:
+          normalizedPayload += '=';
+          break;
+      }
+
+      final decodedBytes = base64Url.decode(normalizedPayload);
+      final decodedString = utf8.decode(decodedBytes);
+      final Map<String, dynamic> payloadMap = json.decode(decodedString);
+
+      // Obtener el user_id del payload
+      final userId = payloadMap['user_id'];
+      return userId?.toString();
+    } catch (e) {
+      print('Error decodificando token: $e');
+      return null;
+    }
   }
 }

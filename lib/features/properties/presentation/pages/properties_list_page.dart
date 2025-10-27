@@ -34,7 +34,7 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
       
       if (response['success']) {
         setState(() {
-          _properties = response['properties'];
+          _properties = response['data']['properties'];
         });
       } else {
         setState(() {

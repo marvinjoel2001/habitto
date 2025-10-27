@@ -8,6 +8,12 @@ import '../../data/services/profile_service.dart';
 import '../../domain/entities/profile.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../auth/data/services/auth_service.dart';
+import '../../../properties/data/services/property_service.dart';
+import '../../../properties/data/services/photo_service.dart';
+import '../../../properties/domain/entities/property.dart';
+import '../../../properties/domain/entities/photo.dart';
+import '../../../properties/presentation/pages/property_photos_page.dart';
+import '../../../../core/services/api_service.dart';
 import 'edit_profile_page.dart';
 
 enum UserMode { inquilino, propietario, agente }
@@ -31,9 +37,14 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   final ProfileService _profileService = ProfileService();
   final AuthService _authService = AuthService();
+  final PropertyService _propertyService = PropertyService();
+  final PhotoService _photoService = PhotoService(ApiService());
   Profile? _currentProfile;
   User? _currentUser;
+  List<Property> _userProperties = [];
+  Map<int, List<Photo>> _propertyPhotos = {};
   bool _isLoading = true;
+  bool _isLoadingProperties = true;
 
   @override
   void initState() {
@@ -46,9 +57,48 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _loadCurrentProfile();
+    _loadUserProperties();
   }
 
-  Future<void> _loadCurrentProfile() async {
+  Future<void> _loadUserProperties() async {
+    setState(() {
+      _isLoadingProperties = true;
+    });
+
+    final result = await _propertyService.getMyProperties();
+    
+    if (result['success']) {
+      final properties = result['data']['properties'] as List<Property>;
+      setState(() {
+        _userProperties = properties;
+        _isLoadingProperties = false;
+      });
+
+      // Cargar fotos para cada propiedad
+      for (final property in properties) {
+        if (property.id != null) {
+          _loadPropertyPhotos(property.id!);
+        }
+      }
+    } else {
+      setState(() {
+        _isLoadingProperties = false;
+      });
+    }
+  }
+
+  Future<void> _loadPropertyPhotos(int propertyId) async {
+    final result = await _photoService.getPropertyPhotos(propertyId);
+    
+    if (result['success']) {
+      final photos = result['data']['photos'] as List<Photo>;
+      setState(() {
+        _propertyPhotos[propertyId] = photos;
+      });
+    }
+   }
+
+   Future<void> _loadCurrentProfile() async {
     try {
       setState(() {
         _isLoading = true;
@@ -58,15 +108,25 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
       if (response['success'] == true) {
         // Extract both profile and user data from the response
-        _currentProfile = response['profile'];
-        _currentUser = response['user'];
+        _currentProfile = response['data']['profile'];
+        _currentUser = response['data']['user'];
 
         // Establecer el modo actual basado en el tipo de usuario
         if (_currentProfile != null) {
           _setModeFromUserType(_currentProfile!.userType);
+          
+          // Notificar el modo inicial al padre después de cargar el perfil
+          if (widget.onModeChanged != null) {
+            widget.onModeChanged!(_currentMode);
+          }
         } else {
           // If no profile, default to inquilino
           _currentMode = UserMode.inquilino;
+          
+          // Notificar el modo por defecto al padre
+          if (widget.onModeChanged != null) {
+            widget.onModeChanged!(_currentMode);
+          }
         }
       } else {
         print('Error cargando perfil: ${response['error']}');
@@ -258,13 +318,63 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               size: 24,
             ),
           ),
-          IconButton(
-            onPressed: () {},
+          PopupMenuButton<String>(
+            onSelected: (String value) {
+              switch (value) {
+                case 'payment_methods':
+                  Navigator.pushNamed(context, '/payment-methods');
+                  break;
+                case 'create_property':
+                  Navigator.pushNamed(context, '/add-property');
+                  break;
+                case 'edit_profile':
+                  _editProfile();
+                  break;
+                case 'logout':
+                  _handleLogout();
+                  break;
+              }
+            },
             icon: const Icon(
               Icons.more_vert,
               color: Colors.black,
               size: 24,
             ),
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'payment_methods',
+                child: ListTile(
+                  leading: Icon(Icons.payment, color: AppTheme.primaryColor),
+                  title: Text('Métodos de Pago'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'create_property',
+                child: ListTile(
+                  leading: Icon(Icons.add_home, color: AppTheme.primaryColor),
+                  title: Text('Crear Propiedad'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'edit_profile',
+                child: ListTile(
+                  leading: Icon(Icons.edit, color: Colors.grey),
+                  title: Text('Editar Perfil'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: ListTile(
+                  leading: Icon(Icons.logout, color: Colors.red),
+                  title: Text('Cerrar Sesión'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -594,21 +704,44 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   }
 
   List<Widget> _buildPropietarioItems() {
-    final propiedades = [
-      {
-        'nombre': 'Apartamento en Equipetrol',
-        'estado': 'Ocupada',
-        'imagen': 'assets/images/casa1.jpg',
-      },
-      {
-        'nombre': 'Casa en zona norte',
-        'estado': 'Disponible',
-        'imagen': 'assets/images/casa2.jpg',
-      },
-    ];
+    if (_isLoadingProperties) {
+      return [
+        const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+          ),
+        ),
+      ];
+    }
 
-    return propiedades.map((propiedad) {
-      final isOcupada = propiedad['estado'] == 'Ocupada';
+    if (_userProperties.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              Icon(
+                Icons.home_outlined,
+                size: 64,
+                color: Colors.white.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No tienes propiedades registradas',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withOpacity(0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ];
+    }
+
+    return _userProperties.map((property) {
+      final isActive = property.isActive;
 
       return Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -630,23 +763,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      propiedad['imagen']!,
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.home, color: Colors.grey),
-                        );
-                      },
-                    ),
+                    child: _buildPropertyImage(property),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -654,7 +771,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          propiedad['nombre']!,
+                          property.address ?? 'Propiedad sin dirección',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -665,14 +782,14 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
-                            color: isOcupada ? Colors.red : AppTheme.primaryColor,
+                            color: isActive ? AppTheme.primaryColor : Colors.red,
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: Text(
-                            propiedad['estado']!,
+                            isActive ? 'Disponible' : 'No disponible',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isOcupada ? Colors.white : Colors.black,
+                              color: isActive ? Colors.black : Colors.white,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -680,18 +797,21 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Gestionar',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    onTap: () => _navigateToPropertyPhotos(property),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Gestionar',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -1349,5 +1469,59 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         ],
       ),
     );
+  }
+
+  Widget _buildPropertyImage(Property property) {
+    final photos = _propertyPhotos[property.id];
+    
+    if (photos != null && photos.isNotEmpty) {
+      // Mostrar la primera foto de la propiedad
+      return Image.network(
+        photos.first.image,
+        width: 70,
+        height: 70,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildDefaultPropertyImage();
+        },
+      );
+    } else {
+      // Mostrar imagen por defecto
+      return _buildDefaultPropertyImage();
+    }
+  }
+
+  Widget _buildDefaultPropertyImage() {
+    return Image.asset(
+      'assets/images/empty.jpg',
+      width: 70,
+      height: 70,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.home, color: Colors.grey),
+        );
+      },
+    );
+  }
+
+  void _navigateToPropertyPhotos(Property property) {
+    if (property.id != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PropertyPhotosPage(property: property),
+        ),
+      ).then((_) {
+        // Recargar fotos después de regresar de la página de gestión
+        _loadPropertyPhotos(property.id!);
+      });
+    }
   }
 }

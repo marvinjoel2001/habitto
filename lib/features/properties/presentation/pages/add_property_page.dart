@@ -15,6 +15,7 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/step_progress_indicator.dart';
 import '../../../../shared/theme/app_theme.dart';
+import 'property_photos_page.dart';
 
 class AddPropertyPage extends StatefulWidget {
   const AddPropertyPage({super.key});
@@ -121,8 +122,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         // Actualizar los controladores con la ubicación actual
         if (_currentPosition != null) {
           setState(() {
-            _latitudeController.text = _currentPosition!.latitude.toString();
-            _longitudeController.text = _currentPosition!.longitude.toString();
+            _latitudeController.text = _currentPosition!.latitude.toStringAsFixed(6);
+            _longitudeController.text = _currentPosition!.longitude.toStringAsFixed(6);
           });
         }
       }
@@ -183,25 +184,36 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     });
 
     try {
+      print('AddPropertyPage: Iniciando carga de datos iniciales');
+      
       // Load amenities, payment methods, and current user profile
       final amenitiesResponse = await _propertyService.getAmenities();
       final paymentMethodsResponse = await _propertyService.getPaymentMethods();
       final profileResponse = await _profileService.getCurrentProfile();
 
+      print('AddPropertyPage: Respuesta de amenities: ${amenitiesResponse['success']}');
+      print('AddPropertyPage: Respuesta de payment methods: ${paymentMethodsResponse['success']}');
+      print('AddPropertyPage: Respuesta de profile: ${profileResponse['success']}');
+
       if (amenitiesResponse['success']) {
-        _availableAmenities = amenitiesResponse['amenities'];
+        _availableAmenities = amenitiesResponse['data'];
+        print('AddPropertyPage: ${_availableAmenities.length} amenities cargadas');
       }
 
       if (paymentMethodsResponse['success']) {
-        _availablePaymentMethods = paymentMethodsResponse['payment_methods']
+        print('AddPropertyPage: Datos de payment methods: ${paymentMethodsResponse['payment_methods']}');
+        _availablePaymentMethods = (paymentMethodsResponse['payment_methods'] as List)
             .map<PaymentMethod>((pm) => PaymentMethod.fromJson(pm))
             .toList();
+        print('AddPropertyPage: ${_availablePaymentMethods.length} payment methods cargados');
       }
 
       if (profileResponse['success'] && profileResponse['user'] != null) {
         _currentUserId = profileResponse['user'].id;
+        print('AddPropertyPage: Usuario actual ID: $_currentUserId');
       }
     } catch (e) {
+      print('AddPropertyPage: Error cargando datos: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error cargando datos: ${e.toString()}')),
       );
@@ -260,10 +272,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         'type': _selectedPropertyType, // Already in API format (casa, departamento, etc.)
         'address': _addressController.text.trim(),
         'latitude': _latitudeController.text.isNotEmpty
-            ? _latitudeController.text
+            ? double.parse(_latitudeController.text).toStringAsFixed(6)
             : "-16.500000",
         'longitude': _longitudeController.text.isNotEmpty
-            ? _longitudeController.text
+            ? double.parse(_longitudeController.text).toStringAsFixed(6)
             : "-68.150000",
         'price': _priceController.text,
         'guarantee': _guaranteeController.text,
@@ -283,16 +295,32 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       if (response['success']) {
         showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('¡Éxito!'),
-            content: const Text('Propiedad registrada correctamente'),
+            title: const Text('¡Propiedad creada!'),
+            content: const Text('Tu propiedad ha sido creada exitosamente. ¿Quieres agregar fotos ahora?'),
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // Cerrar diálogo
+                  Navigator.of(context).pop(); // Volver a la página anterior
                 },
-                child: const Text('OK'),
+                child: const Text('Más tarde'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Cerrar diálogo
+                  // Navegar a la página de fotos
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                       builder: (context) => PropertyPhotosPage(
+                         property: response['data'],
+                       ),
+                     ),
+                  );
+                },
+                child: const Text('Agregar fotos'),
               ),
             ],
           ),
@@ -869,8 +897,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         lng = _currentPosition!.longitude;
         
         // Actualizar los campos del formulario
-        _latitudeController.text = lat.toString();
-        _longitudeController.text = lng.toString();
+        _latitudeController.text = lat.toStringAsFixed(6);
+        _longitudeController.text = lng.toStringAsFixed(6);
       } else {
         // Ubicación por defecto (La Paz, Bolivia)
         lat = -16.5000;
@@ -963,8 +991,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       setState(() {
                         // Acceder a las coordenadas correctamente desde Position
                         // coordinates.latitude es la latitud, coordinates.longitude es la longitud
-                         _longitudeController.text = coordinates.lng.toString();
-                        _latitudeController.text = coordinates.lat.toString();
+                         _longitudeController.text = coordinates.lng.toStringAsFixed(6);
+                        _latitudeController.text = coordinates.lat.toStringAsFixed(6);
                       });
                       _updatePropertyMarker();
                     },
@@ -999,8 +1027,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                             
                             // Actualizar los campos del formulario
                             setState(() {
-                              _latitudeController.text = _currentPosition!.latitude.toString();
-                              _longitudeController.text = _currentPosition!.longitude.toString();
+                              _latitudeController.text = _currentPosition!.latitude.toStringAsFixed(6);
+                              _longitudeController.text = _currentPosition!.longitude.toStringAsFixed(6);
                             });
                             
                             // Actualizar el marcador

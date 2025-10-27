@@ -25,30 +25,61 @@ class ProfileService {
   /// Retorna: Profile entity y User entity del usuario actual
   Future<Map<String, dynamic>> getCurrentProfile() async {
     try {
+      print('ProfileService: Iniciando getCurrentProfile()');
       final response = await _apiService.get(AppConfig.currentProfileEndpoint);
+      
+      print('ProfileService: Respuesta recibida: $response');
 
       if (response['success'] && response['data'] != null) {
-        final userProfile = response['data'];
+        // La respuesta tiene una estructura anidada: response['data']['data']
+        final responseData = response['data'];
+        print('ProfileService: ResponseData: $responseData');
+        
+        // Extraer los datos reales del perfil
+        final userProfile = responseData['data'];
+        print('ProfileService: Datos del perfil extraídos: $userProfile');
 
-        // Convertir respuestas JSON a entidades de dominio
-        final profile = Profile.fromJson(userProfile);
-        final user = User.fromJson(userProfile['user']);
+        if (userProfile != null) {
+          // Convertir respuestas JSON a entidades de dominio
+          print('ProfileService: Creando Profile.fromJson...');
+          final profile = Profile.fromJson(userProfile);
+          print('ProfileService: Profile creado exitosamente: ${profile.toString()}');
+          
+          // El usuario ya está incluido en el perfil, no necesitamos extraerlo por separado
+          final user = profile.user;
+          print('ProfileService: Usuario extraído del perfil: ${user.toString()}');
 
-        return {
-          'success': true,
-          'profile': profile,
-          'user': user,
-        };
+          return {
+            'success': true,
+            'data': {
+              'profile': profile,
+              'user': user,
+            },
+            'message': responseData['message'] ?? 'Perfil obtenido exitosamente',
+          };
+        } else {
+          print('ProfileService: Error - userProfile es null');
+          return {
+            'success': false,
+            'error': 'Datos del perfil no encontrados en la respuesta',
+            'data': null,
+          };
+        }
       } else {
+        print('ProfileService: Error en respuesta - success: ${response['success']}, data: ${response['data']}');
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al obtener el perfil',
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener perfil',
+          'data': null,
         };
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('ProfileService: Error capturado: $e');
+      print('ProfileService: Stack trace: $stackTrace');
       return {
         'success': false,
         'error': 'Error obteniendo perfil: $e',
+        'data': null,
       };
     }
   }
@@ -67,18 +98,21 @@ class ProfileService {
 
         return {
           'success': true,
-          'profile': profile,
+          'data': profile,
+          'message': response['message'] ?? 'Perfil obtenido exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al obtener perfil',
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener perfil',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error obteniendo perfil: $e',
+        'data': null,
       };
     }
   }
@@ -119,20 +153,21 @@ class ProfileService {
 
         return {
           'success': true,
-          'profile': updatedProfile,
-          'message': 'Perfil actualizado exitosamente',
+          'data': updatedProfile,
+          'message': response['message'] ?? 'Perfil actualizado exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al actualizar perfil',
-          'errors': response['errors'] ?? {},
+          'error': response['error'] ?? response['message'] ?? 'Error al actualizar perfil',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error actualizando perfil: $e',
+        'data': null,
       };
     }
   }
@@ -156,19 +191,21 @@ class ProfileService {
 
         return {
           'success': true,
-          'profile': updatedProfile,
-          'message': 'Imagen de perfil actualizada exitosamente',
+          'data': updatedProfile,
+          'message': response['message'] ?? 'Imagen de perfil actualizada exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al actualizar imagen de perfil',
+          'error': response['error'] ?? response['message'] ?? 'Error al actualizar imagen de perfil',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error actualizando imagen: $e',
+        'data': null,
       };
     }
   }
@@ -209,20 +246,21 @@ class ProfileService {
 
         return {
           'success': true,
-          'profile': updatedProfile,
-          'message': 'Perfil actualizado exitosamente',
+          'data': updatedProfile,
+          'message': response['message'] ?? 'Perfil actualizado exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al actualizar perfil',
-          'errors': response['errors'] ?? {},
+          'error': response['error'] ?? response['message'] ?? 'Error al actualizar perfil',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error actualizando perfil: $e',
+        'data': null,
       };
     }
   }
@@ -238,18 +276,21 @@ class ProfileService {
       if (response['success']) {
         return {
           'success': true,
-          'message': 'Perfil verificado exitosamente',
+          'data': null,
+          'message': response['message'] ?? 'Perfil verificado exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al verificar perfil',
+          'error': response['error'] ?? response['message'] ?? 'Error al verificar perfil',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error verificando perfil: $e',
+        'data': null,
       };
     }
   }
@@ -265,7 +306,7 @@ class ProfileService {
         return currentProfileResult;
       }
 
-      final Profile currentProfile = currentProfileResult['profile'];
+      final Profile currentProfile = currentProfileResult['data'];
       final List<int> favorites = List<int>.from(currentProfile.favorites ?? []);
 
       // Lógica de negocio: No agregar duplicados
@@ -279,6 +320,7 @@ class ProfileService {
       return {
         'success': false,
         'error': 'Error agregando a favoritos: $e',
+        'data': null,
       };
     }
   }
@@ -294,7 +336,7 @@ class ProfileService {
         return currentProfileResult;
       }
 
-      final Profile currentProfile = currentProfileResult['profile'];
+      final Profile currentProfile = currentProfileResult['data'];
       final List<int> favorites = List<int>.from(currentProfile.favorites ?? []);
 
       // Lógica de negocio: Remover de favoritos
@@ -306,6 +348,7 @@ class ProfileService {
       return {
         'success': false,
         'error': 'Error removiendo de favoritos: $e',
+        'data': null,
       };
     }
   }
@@ -329,19 +372,21 @@ class ProfileService {
 
         return {
           'success': true,
-          'profile': updatedProfile,
-          'message': 'Imagen de perfil actualizada exitosamente',
+          'data': updatedProfile,
+          'message': response['message'] ?? 'Imagen de perfil actualizada exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al actualizar imagen de perfil',
+          'error': response['error'] ?? response['message'] ?? 'Error al actualizar imagen de perfil',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error actualizando imagen: $e',
+        'data': null,
       };
     }
   }

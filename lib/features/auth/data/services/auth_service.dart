@@ -27,41 +27,72 @@ class AuthService {
   /// Retorna: tokens de acceso y refresh
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
+      print('AuthService: Iniciando login para usuario: $username');
       final response = await _apiService.post(AppConfig.loginEndpoint, {
         'username': username,
         'password': password,
       });
 
+      print('AuthService: Respuesta completa del login: $response');
+
       if (response['success'] && response['data'] != null) {
         final data = response['data'];
+        print('AuthService: Datos extraídos: $data');
 
         // Validar formato de respuesta
         if (data['access'] != null && data['refresh'] != null) {
+          print('AuthService: Tokens encontrados en data - access: ${data['access']?.substring(0, 20)}..., refresh: ${data['refresh']?.substring(0, 20)}...');
           // Guardar tokens usando TokenStorage
           await _tokenStorage.saveTokens(data['access'], data['refresh']);
+          print('AuthService: Tokens guardados exitosamente');
 
           return {
             'success': true,
-            'access_token': data['access'],
-            'refresh_token': data['refresh'],
-            'message': 'Inicio de sesión exitoso',
+            'data': {
+              'access_token': data['access'],
+              'refresh_token': data['refresh'],
+            },
+            'message': response['message'] ?? 'Inicio de sesión exitoso',
           };
         } else {
-          return {
-            'success': false,
-            'error': 'Formato de respuesta de tokens inválido',
-          };
+          print('AuthService: Tokens no encontrados en data. Verificando respuesta directa...');
+          // Verificar si los tokens están directamente en response['data']
+          if (response['data']['refresh'] != null && response['data']['access'] != null) {
+            print('AuthService: Tokens encontrados directamente en response[data]');
+            await _tokenStorage.saveTokens(response['data']['access'], response['data']['refresh']);
+            print('AuthService: Tokens guardados exitosamente (formato directo)');
+            
+            return {
+              'success': true,
+              'data': {
+                'access_token': response['data']['access'],
+                'refresh_token': response['data']['refresh'],
+              },
+              'message': response['message'] ?? 'Inicio de sesión exitoso',
+            };
+          } else {
+            print('AuthService: Formato de respuesta de tokens inválido - data: $data');
+            return {
+              'success': false,
+              'error': 'Formato de respuesta de tokens inválido',
+              'data': null,
+            };
+          }
         }
       } else {
+        print('AuthService: Login falló - success: ${response['success']}, data: ${response['data']}');
         return {
           'success': false,
-          'error': response['error'] ?? 'Credenciales inválidas',
+          'error': response['error'] ?? response['message'] ?? 'Credenciales inválidas',
+          'data': null,
         };
       }
     } catch (e) {
+      print('AuthService: Excepción durante login: $e');
       return {
         'success': false,
         'error': 'Error de autenticación: $e',
+        'data': null,
       };
     }
   }
@@ -108,20 +139,21 @@ class AuthService {
 
         return {
           'success': true,
-          'user': createdUser,
-          'message': 'Usuario registrado exitosamente',
+          'data': createdUser,
+          'message': response['message'] ?? 'Usuario registrado exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al crear usuario',
-          'errors': response['errors'] ?? {},
+          'error': response['error'] ?? response['message'] ?? 'Error al crear usuario',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error de registro: $e',
+        'data': null,
       };
     }
   }
@@ -139,18 +171,21 @@ class AuthService {
 
         return {
           'success': true,
-          'user': currentUser,
+          'data': currentUser,
+          'message': response['message'] ?? 'Usuario obtenido exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al obtener usuario actual',
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener usuario actual',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error obteniendo usuario: $e',
+        'data': null,
       };
     }
   }
@@ -172,6 +207,7 @@ class AuthService {
 
     return {
       'success': true,
+      'data': null,
       'message': 'Sesión cerrada exitosamente',
     };
   }

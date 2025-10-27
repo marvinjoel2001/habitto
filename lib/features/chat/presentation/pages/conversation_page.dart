@@ -46,18 +46,27 @@ class _ConversationPageState extends State<ConversationPage> {
         _error = '';
       });
 
-      final messages = await _messageService.getConversation(1, widget.otherUserId!); // TODO: Obtener ID del usuario actual
+      final result = await _messageService.getConversation(1, widget.otherUserId!); // TODO: Obtener ID del usuario actual
       
-      setState(() {
-        _messages = messages.map((m) => m.toConvMessage(currentUserId: 1)).toList();
-        _isLoading = false;
-      });
+      if (result['success']) {
+        final messages = result['data'] as List<MessageModel>;
+        
+        setState(() {
+          _messages = messages.map((message) => message.toConvMessage(
+            currentUserId: 1, // TODO: Obtener ID del usuario actual desde auth
+          )).toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = 'Error: ${result['error']}';
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() {
-        _error = 'Error al cargar conversación: $e';
+        _error = 'Error cargando conversación: $e';
         _isLoading = false;
-        // Usar datos hardcodeados como fallback
-        _messages = _getHardcodedMessages();
       });
     }
   }
@@ -94,16 +103,30 @@ class _ConversationPageState extends State<ConversationPage> {
       });
 
       // Enviar mensaje a la API
-      await _messageService.sendMessage(
+      final result = await _messageService.sendMessage(
         senderId: 1, // TODO: Obtener ID del usuario actual
         receiverId: widget.otherUserId!,
         content: text,
       );
 
-      // Actualizar el tiempo del último mensaje
-      setState(() {
-        _messages.last = ConvMessage(text: text, fromMe: true, time: 'Ahora');
-      });
+      if (result['success']) {
+        // Actualizar el tiempo del último mensaje
+        setState(() {
+          _messages.last = ConvMessage(text: text, fromMe: true, time: 'Ahora');
+        });
+      } else {
+        // Si falla, mostrar error pero mantener el mensaje localmente
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${result['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        
+        setState(() {
+          _messages.last = ConvMessage(text: text, fromMe: true, time: 'Error');
+        });
+      }
     } catch (e) {
       // Si falla, mostrar error pero mantener el mensaje localmente
       ScaffoldMessenger.of(context).showSnackBar(
@@ -301,15 +324,15 @@ class _ConversationPageState extends State<ConversationPage> {
                               _messages.add(tempMessage);
                             });
                             
-                            try {
-                              // Enviar mensaje a través del API
-                              if (widget.otherUserId != null) {
-                                await _messageService.sendMessage(
-                                  senderId: 1, // TODO: Obtener ID del usuario actual
-                                  receiverId: widget.otherUserId!,
-                                  content: text,
-                                );
-                                
+                            // Enviar mensaje a través del API
+                            if (widget.otherUserId != null) {
+                              final result = await _messageService.sendMessage(
+                                senderId: 1, // TODO: Obtener ID del usuario actual
+                                receiverId: widget.otherUserId!,
+                                content: text,
+                              );
+                              
+                              if (result['success']) {
                                 // Actualizar el mensaje local con tiempo real
                                 setState(() {
                                   final index = _messages.indexOf(tempMessage);
@@ -321,28 +344,28 @@ class _ConversationPageState extends State<ConversationPage> {
                                     );
                                   }
                                 });
-                              }
-                            } catch (e) {
-                              // En caso de error, mostrar mensaje de error y mantener el mensaje local
-                              setState(() {
-                                final index = _messages.indexOf(tempMessage);
-                                if (index != -1) {
-                                  _messages[index] = ConvMessage(
-                                    text: text, 
-                                    fromMe: true, 
-                                    time: 'Error al enviar'
+                              } else {
+                                // En caso de error, mostrar mensaje de error y mantener el mensaje local
+                                setState(() {
+                                  final index = _messages.indexOf(tempMessage);
+                                  if (index != -1) {
+                                    _messages[index] = ConvMessage(
+                                      text: text, 
+                                      fromMe: true, 
+                                      time: 'Error al enviar'
+                                    );
+                                  }
+                                });
+                                
+                                // Mostrar snackbar de error
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error al enviar mensaje: ${result['error'] ?? 'Error desconocido'}'),
+                                      backgroundColor: Colors.red,
+                                    ),
                                   );
                                 }
-                              });
-                              
-                              // Mostrar snackbar de error
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error al enviar mensaje: ${e.toString()}'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
                               }
                             }
                           },

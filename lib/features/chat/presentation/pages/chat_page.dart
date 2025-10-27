@@ -31,29 +31,41 @@ class _ChatPageState extends State<ChatPage> {
         _error = '';
       });
 
-      final messages = await _messageService.getAllMessages();
+      final result = await _messageService.getAllMessages();
       
-      // Convertir MessageModel a ChatMessage y agrupar por conversación
-      final Map<int, ChatMessage> conversationMap = {};
-      
-      for (final message in messages) {
-        final otherUserId = message.sender == 1 ? message.receiver : message.sender; // Asumiendo usuario actual ID = 1
-        final chatMessage = message.toChatMessage(
-          currentUserId: 1, // TODO: Obtener ID del usuario actual desde auth
-          senderName: 'Usuario $otherUserId',
-        );
+      if (result['success']) {
+        final messages = result['data'] as List<MessageModel>;
         
-        // Solo mantener el mensaje más reciente por conversación
-        if (!conversationMap.containsKey(otherUserId) || 
-            message.createdAt.isAfter(DateTime.parse('2025-01-01'))) { // Comparación simplificada
-          conversationMap[otherUserId] = chatMessage;
+        // Convertir MessageModel a ChatMessage y agrupar por conversación
+        final Map<int, ChatMessage> conversationMap = {};
+        
+        for (final message in messages) {
+          final otherUserId = message.sender == 1 ? message.receiver : message.sender; // Asumiendo usuario actual ID = 1
+          final chatMessage = message.toChatMessage(
+            currentUserId: 1, // TODO: Obtener ID del usuario actual desde auth
+            senderName: 'Usuario $otherUserId',
+          );
+          
+          // Solo mantener el mensaje más reciente por conversación
+          if (!conversationMap.containsKey(otherUserId) || 
+              message.createdAt.isAfter(DateTime.parse('2025-01-01'))) { // Comparación simplificada
+            conversationMap[otherUserId] = chatMessage;
+          }
         }
-      }
 
-      setState(() {
-        _messages = conversationMap.values.toList();
-        _isLoading = false;
-      });
+        setState(() {
+          _messages = conversationMap.values.toList();
+          _isLoading = false;
+        });
+      } else {
+        // Manejar error
+        setState(() {
+          _error = 'Error: ${result['error']}';
+          _isLoading = false;
+          // Usar datos hardcodeados como fallback
+          _messages = _getHardcodedMessages();
+        });
+      }
     } catch (e) {
       setState(() {
         _error = 'Error al cargar mensajes: $e';

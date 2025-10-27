@@ -33,9 +33,14 @@ class ApiService {
     // Interceptor para añadir token de autenticación
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        print('ApiService: Preparando petición a ${options.path}');
         final token = await _tokenStorage.getAccessToken();
+        print('ApiService: Token obtenido: ${token != null ? "Token presente (${token.substring(0, 20)}...)" : "No hay token"}');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
+          print('ApiService: Header Authorization añadido');
+        } else {
+          print('ApiService: ADVERTENCIA - No se encontró token de acceso');
         }
         handler.next(options);
       },

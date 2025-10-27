@@ -3,6 +3,7 @@ import '../../../../core/services/api_service.dart';
 import '../../../../core/services/token_storage.dart';
 import '../../domain/entities/property.dart';
 import '../../domain/entities/amenity.dart';
+import '../../domain/entities/payment_method.dart';
 
 /// Servicio de propiedades - Capa de negocio
 /// Responsabilidad: Implementar la lógica de negocio para propiedades
@@ -34,46 +35,61 @@ class PropertyService {
 
         return {
           'success': true,
-          'amenities': amenities,
+          'data': amenities,
+          'message': response['message'] ?? 'Amenidades obtenidas exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al obtener amenidades',
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener amenidades',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error obteniendo amenidades: $e',
+        'data': null,
       };
     }
   }
 
-  /// Obtener métodos de pago
+  /// Obtener métodos de pago disponibles
   /// Ruta: GET /api/payment-methods/
-  /// Retorna: Lista de métodos de pago disponibles
+  /// Retorna: Lista de métodos de pago
   Future<Map<String, dynamic>> getPaymentMethods() async {
     try {
+      print('PropertyService: Iniciando getPaymentMethods()');
       final response = await _apiService.get('/api/payment-methods/');
+      
+      print('PropertyService: Respuesta completa de payment-methods: $response');
 
       if (response['success'] && response['data'] != null) {
-        final results = response['data']['results'] as List;
-
+        print('PropertyService: Datos de payment-methods: ${response['data']}');
+        
+        // Verificar si los datos están en 'results' como indica la documentación
+        final paymentMethods = response['data']['results'] ?? response['data'];
+        print('PropertyService: Payment methods extraídos: $paymentMethods');
+        
         return {
           'success': true,
-          'payment_methods': results,
+          'payment_methods': paymentMethods,
+          'message': response['message'] ?? 'Métodos de pago obtenidos exitosamente',
         };
       } else {
+        print('PropertyService: Error en respuesta: ${response['error'] ?? response['message']}');
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al obtener métodos de pago',
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener métodos de pago',
+          'data': null,
         };
       }
     } catch (e) {
+      print('PropertyService: Excepción en getPaymentMethods: $e');
       return {
         'success': false,
         'error': 'Error obteniendo métodos de pago: $e',
+        'data': null,
       };
     }
   }
@@ -86,19 +102,20 @@ class PropertyService {
     try {
       final response = await _apiService.post(AppConfig.propertiesEndpoint, propertyData);
 
-      if (response['success'] && response['data'] != null) {
+      if (response['success'] == true && response['data'] != null) {
         // Convertir respuesta JSON a entidad de dominio
         final property = Property.fromJson(response['data']);
 
         return {
           'success': true,
-          'property': property,
+          'data': property,
           'message': 'Propiedad creada exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al crear propiedad',
+          'error': response['error'] ?? response['message'] ?? 'Error al crear propiedad',
+          'data': null,
           'errors': response['errors'] ?? {},
         };
       }
@@ -106,6 +123,7 @@ class PropertyService {
       return {
         'success': false,
         'error': 'Error creando propiedad: $e',
+        'data': null,
       };
     }
   }
@@ -149,21 +167,26 @@ class PropertyService {
 
         return {
           'success': true,
-          'properties': properties,
-          'count': response['data']['count'],
-          'next': response['data']['next'],
-          'previous': response['data']['previous'],
+          'data': {
+            'properties': properties,
+            'count': response['data']['count'],
+            'next': response['data']['next'],
+            'previous': response['data']['previous'],
+          },
+          'message': response['message'] ?? 'Propiedades obtenidas exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al obtener propiedades',
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener propiedades',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error obteniendo propiedades: $e',
+        'data': null,
       };
     }
   }
@@ -182,18 +205,21 @@ class PropertyService {
 
         return {
           'success': true,
-          'property': property,
+          'data': property,
+          'message': response['message'] ?? 'Propiedad obtenida exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al obtener propiedad',
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener propiedad',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error obteniendo propiedad: $e',
+        'data': null,
       };
     }
   }
@@ -212,20 +238,21 @@ class PropertyService {
 
         return {
           'success': true,
-          'property': property,
-          'message': 'Propiedad actualizada exitosamente',
+          'data': property,
+          'message': response['message'] ?? 'Propiedad actualizada exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al actualizar propiedad',
-          'errors': response['errors'] ?? {},
+          'error': response['error'] ?? response['message'] ?? 'Error al actualizar propiedad',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error actualizando propiedad: $e',
+        'data': null,
       };
     }
   }
@@ -241,18 +268,21 @@ class PropertyService {
       if (response['success']) {
         return {
           'success': true,
-          'message': 'Propiedad eliminada exitosamente',
+          'data': null,
+          'message': response['message'] ?? 'Propiedad eliminada exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al eliminar propiedad',
+          'error': response['error'] ?? response['message'] ?? 'Error al eliminar propiedad',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error eliminando propiedad: $e',
+        'data': null,
       };
     }
   }
@@ -275,12 +305,24 @@ class PropertyService {
         return {
           'success': false,
           'error': 'Usuario no autenticado',
+          'data': null,
+        };
+      }
+
+      // Obtener el ID del usuario actual
+      final currentUserId = await _tokenStorage.getCurrentUserId();
+      if (currentUserId == null) {
+        return {
+          'success': false,
+          'error': 'No se pudo obtener el ID del usuario',
+          'data': null,
         };
       }
 
       // Usar el método getProperties con filtro de propietario
       return await getProperties(
         type: type,
+        owner: int.tryParse(currentUserId),
         isActive: isActive,
         search: search,
         ordering: ordering,
@@ -291,6 +333,7 @@ class PropertyService {
       return {
         'success': false,
         'error': 'Error obteniendo mis propiedades: $e',
+        'data': null,
       };
     }
   }
@@ -312,19 +355,59 @@ class PropertyService {
 
         return {
           'success': true,
-          'property': property,
-          'message': isActive ? 'Propiedad activada' : 'Propiedad desactivada',
+          'data': property,
+          'message': response['message'] ?? (isActive ? 'Propiedad activada' : 'Propiedad desactivada'),
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? 'Error al cambiar estado de propiedad',
+          'error': response['error'] ?? response['message'] ?? 'Error al cambiar estado de propiedad',
+          'data': null,
         };
       }
     } catch (e) {
       return {
         'success': false,
         'error': 'Error cambiando estado: $e',
+        'data': null,
+      };
+    }
+  }
+
+  /// Crear nuevo método de pago
+  /// Ruta: POST /api/payment-methods/
+  /// Datos de negocio: Información del método de pago
+  /// Retorna: PaymentMethod entity creado
+  Future<Map<String, dynamic>> createPaymentMethod(Map<String, dynamic> paymentMethodData) async {
+    try {
+      print('PropertyService: Iniciando createPaymentMethod()');
+      final response = await _apiService.post('/api/payment-methods/', paymentMethodData);
+      
+      print('PropertyService: Respuesta completa de crear payment-method: $response');
+
+      if (response['success'] == true && response['data'] != null) {
+        // Convertir respuesta JSON a entidad de dominio
+        final paymentMethod = PaymentMethod.fromJson(response['data']);
+
+        return {
+          'success': true,
+          'data': paymentMethod,
+          'message': response['message'] ?? 'Método de pago creado exitosamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ?? response['message'] ?? 'Error al crear método de pago',
+          'data': null,
+          'errors': response['errors'] ?? {},
+        };
+      }
+    } catch (e) {
+      print('PropertyService: Excepción en createPaymentMethod: $e');
+      return {
+        'success': false,
+        'error': 'Error creando método de pago: $e',
+        'data': null,
       };
     }
   }

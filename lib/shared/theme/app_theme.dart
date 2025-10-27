@@ -28,6 +28,20 @@ class AppTheme {
   static const Color grayColor = Color(
       0xFFF0F5F2); // Para inputs en light theme (si se usara un light mode real)
   static const Color errorColor = Color(0xFFCF6679);
+  static const Color backgroundColor = darkGrayBase; // Color de fondo principal
+
+  // 📝 Estilos de texto
+  static const TextStyle headlineSmall = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+    color: whiteColor,
+  );
+
+  static const TextStyle bodyMedium = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: whiteColor,
+  );
 
   // 🌟 Gradiente PRINCIPAL - (Blanco/Menta a Gris Oscuro - Más luminoso arriba, sutil abajo)
   static const LinearGradient profileGradient = LinearGradient(
