@@ -44,7 +44,7 @@ class CustomBottomNavigation extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildNavItem(context, 0, Icons.home_outlined, Icons.home, 'Home'),
+                _buildNavItem(context, 0, Icons.style_outlined, Icons.style, 'Home'),
                 _buildNavItem(context, 1, Icons.search_outlined, Icons.search, 'Buscar'),
                 if (showAddButton) _buildAddButton(context),
                 _buildNavItem(context, 2, Icons.chat_bubble_outline, Icons.chat_bubble, 'Chat'),

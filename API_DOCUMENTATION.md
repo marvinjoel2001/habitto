@@ -101,6 +101,7 @@ Gestiona las propiedades inmobiliarias del sistema.
   - `ordering`: Ordena por `price` o `created_at` (prefija con `-` para orden descendente)
   - `page`: Número de página
   - `page_size`: Elementos por página
+  - `match_score`: Umbral de score de matching (0–100). Si el usuario autenticado tiene `SearchProfile`, se devuelven solo propiedades con score >= `match_score` respecto a su perfil.
 - **Response (200 OK)**:
   ```json
   {
@@ -130,7 +131,14 @@ Gestiona las propiedades inmobiliarias del sistema.
           "is_active": true,
           "created_at": "2025-10-22T10:00:00Z",
           "updated_at": "2025-10-22T10:00:00Z",
-          "accepted_payment_methods": [1, 2]
+          "accepted_payment_methods": [1, 2],
+          "allows_roommates": false,
+          "max_occupancy": 3,
+          "min_price_per_person": "500.00",
+          "is_furnished": false,
+          "tenant_requirements": {"no_smoking": true},
+          "tags": ["céntrico", "luminoso"],
+          "semantic_embedding": null
         }
       ]
     }
@@ -190,7 +198,14 @@ Gestiona las propiedades inmobiliarias del sistema.
     "amenities": [1, 2, 3],
     "availability_date": "2025-11-01",
     "accepted_payment_methods": [1, 2],
-    "zone_id": 1
+    "zone_id": 1,
+    "allows_roommates": false,
+    "max_occupancy": 3,
+    "min_price_per_person": "500.00",
+    "is_furnished": false,
+    "tenant_requirements": {"no_smoking": true},
+    "tags": ["céntrico", "luminoso"],
+    "semantic_embedding": null
   }
   ```
 - **Campos obligatorios**:
@@ -211,6 +226,13 @@ Gestiona las propiedades inmobiliarias del sistema.
   - `availability_date`: Fecha de disponibilidad
   - `accepted_payment_methods`: Array de IDs de métodos de pago aceptados
   - `zone_id`: ID de la zona (se asigna automáticamente si no se especifica)
+  - `allows_roommates`: Si la propiedad permite roomies
+  - `max_occupancy`: Ocupantes máximos recomendados
+  - `min_price_per_person`: Precio mínimo por persona si hay roomies
+  - `is_furnished`: Si está amueblada
+  - `tenant_requirements`: Requisitos del inquilino (JSON)
+  - `tags`: Etiquetas libres (JSON array)
+  - `semantic_embedding`: Embedding semántico (opcional para IA)
 - **Formato de coordenadas**:
   - **Latitud**: Debe estar entre -90 y 90 grados
   - **Longitud**: Debe estar entre -180 y 180 grados
@@ -240,7 +262,14 @@ Gestiona las propiedades inmobiliarias del sistema.
       "updated_at": "2025-10-22T10:00:00Z",
       "accepted_payment_methods": [1, 2],
       "zone_id": 1,
-      "zone_name": "Zona Sur"
+      "zone_name": "Zona Sur",
+      "allows_roommates": false,
+      "max_occupancy": 3,
+      "min_price_per_person": "500.00",
+      "is_furnished": false,
+      "tenant_requirements": {"no_smoking": true},
+      "tags": ["céntrico", "luminoso"],
+      "semantic_embedding": null
     }
   }
   ```
@@ -2619,3 +2648,155 @@ Gestiona los mensajes entre usuarios del sistema.
 **Consejos para obtener conversaciones:**
 - Para obtener mensajes entre dos usuarios específicos, usa: `/api/messages/?sender=1&receiver=2` y `/api/messages/?sender=2&receiver=1`
 - Ordena por `created_at` para mostrar cronológicamente
+
+## 7. Endpoints de Matching (`/api/search_profiles/`, `/api/roommate_requests/`, `/api/matches/`, `/api/match_feedback/`, `/api/recommendations/`)
+
+Sistema de matching inteligente para inquilinos, propietarios y agentes.
+
+### `POST /api/search_profiles/`
+- **Descripción**: Crea/actualiza el `SearchProfile` del usuario autenticado con preferencias de búsqueda.
+- **Autenticación**: Requerida.
+- **Request Body (JSON)**:
+  - `latitude`/`longitude` (opcional): Coordenadas base del perfil, se convierten a `Point`
+  - `budget_min`, `budget_max` (opcional): Presupuesto
+  - `desired_types` (opcional): Array de tipos deseados
+  - `bedrooms_min`, `bedrooms_max` (opcional)
+  - `amenities` (opcional): IDs de amenidades
+  - `roommate_preference` (opcional): `no` | `looking` | `open`
+  - `roommate_preferences`, `vibes` (opcional): JSON/array libre
+  - `preferred_zones` (opcional): Array de IDs de zonas preferidas
+  - Campos adicionales para mejorar el matching:
+    - `age` (opcional): Edad
+    - `children_count` (opcional): Número de hijos
+    - `family_size` (opcional): Tamaño del grupo familiar
+    - `smoker` (opcional): Si fuma
+    - `gender` (opcional): `male` | `female` | `other`
+    - `occupation` (opcional): Ocupación (texto)
+    - `has_vehicle` (opcional): Si tiene vehículo
+    - `commute_distance_km` (opcional): Distancia de traslado preferida
+    - `education_level` (opcional): Nivel educativo (texto)
+    - `pets_count` (opcional): Número de mascotas
+    - `languages` (opcional): Array de idiomas
+    - `lifestyle` (opcional): JSON libre con estilo de vida
+    - `schedule` (opcional): JSON libre con horarios
+- **Response (200/201)**: Perfil creado/actualizado.
+
+### `GET /api/search_profiles/my/`
+- **Descripción**: Obtiene el `SearchProfile` del usuario autenticado.
+- **Autenticación**: Requerida.
+
+### `POST /api/roommate_requests/`
+- **Descripción**: Crea una solicitud de roommate asociada al `SearchProfile`.
+- **Autenticación**: Requerida.
+- **Request Body**: `desired_move_in_date`, `max_roommates`, `gender_preference`, `smoker_ok`, `budget_per_person`.
+
+### `GET /api/roommate_requests/my/`
+- **Descripción**: Lista las solicitudes de roommate creadas por el usuario autenticado.
+- **Autenticación**: Requerida.
+
+### `GET /api/search_profiles/{id}/matches/?type=property|roommate|agent`
+- **Descripción**: Lista matches paginados asociados al perfil de búsqueda indicado, ordenados por score.
+- **Autenticación**: Requerida.
+- **Query params**:
+  - `type`: `property` (por defecto) | `roommate` | `agent`
+  - `status` (opcional): `pending` | `accepted` | `rejected` para filtrar por estado
+- **Response (200 OK)**: Respuesta paginada estándar de DRF (`count`, `next`, `previous`, `results`).
+- **Acciones relacionadas**:
+  - `POST /api/matches/{id}/accept/`: Acepta un match y crea notificación/mensaje.
+  - `POST /api/matches/{id}/reject/`: Rechaza un match y almacena feedback opcional.
+
+### `POST /api/match_feedback/`
+- **Descripción**: Envía feedback sobre un match (`like`, `dislike`, `neutral`) con razón opcional.
+- **Autenticación**: Requerida.
+ - **Request Body (JSON)**:
+   - `match`: ID del match
+   - `user`: ID del usuario (se valida que sea el autenticado)
+   - `feedback_type`: `like` | `dislike` | `neutral`
+   - `reason` (opcional): Texto con la razón del feedback
+
+### `GET /api/recommendations/?type=mixed|property|roommate|agent`
+- **Descripción**: Obtiene recomendaciones híbridas para el `SearchProfile` del usuario. Genera matches on-demand antes de listar.
+- **Autenticación**: Requerida.
+- **Notas**: `type=mixed` incluye resultados de propiedades, roomies y agentes; se devuelve un arreglo con elementos `{type, match}`.
+
+- **Ejemplo (type=property)**
+  ```http
+  GET /api/recommendations/?type=property
+  Authorization: Bearer <token>
+  ```
+  ```json
+  {
+    "results": [
+      {
+        "type": "property",
+        "match": {
+          "id": 123,
+          "match_type": "property",
+          "subject_id": 45,          // ID de la Property
+          "target_user": 7,          // ID del usuario actual
+          "score": 85.2,
+          "status": "pending",
+          "metadata": { "details": { /* explicación del score */ } },
+          "created_at": "2025-11-05T12:00:00Z",
+          "updated_at": "2025-11-05T12:00:00Z"
+        }
+      }
+    ]
+  }
+  ```
+
+- **Ejemplo (type=roommate)**
+  ```http
+  GET /api/recommendations/?type=roommate
+  Authorization: Bearer <token>
+  ```
+  ```json
+  {
+    "results": [
+      {
+        "type": "roommate",
+        "match": {
+          "id": 456,
+          "match_type": "roommate",
+          "subject_id": 12,          // ID del SearchProfile del otro usuario
+          "target_user": 7,
+          "score": 80.0,
+          "status": "pending",
+          "metadata": { "details": { /* explicación del score */ } },
+          "created_at": "2025-11-05T12:00:00Z",
+          "updated_at": "2025-11-05T12:00:00Z"
+        }
+      }
+    ]
+  }
+  ```
+
+### Flujo de "Like" y almacenamiento
+- Al listar matches, el usuario puede enviar un "like" a través de `POST /api/matches/{id}/accept/`.
+- Al aceptar:
+  - Se actualiza el `status` del `Match` a `accepted`.
+  - Se envía una `Notification` al usuario confirmando el like.
+  - Si el match es de tipo `property`, se crea un `Message` automático al propietario: "Hola, me interesa tu propiedad (match X%)".
+  - Además, se envía una `Notification` al propietario indicando: "<usuario> está interesado en tu propiedad (match X%)".
+- El historial de likes puede consultarse listando `GET /api/search_profiles/{id}/matches/?status=accepted`.
+
+### Cómo se eligen las propiedades mostradas
+- El sistema genera matches con `score` calculado por reglas: ubicación, precio vs presupuesto, amenities, preferencias de roomie, reputación y frescura, y un factor familiar (p.ej., hijos vs dormitorios).
+- Solo se almacenan matches con `score >= 70`.
+- Para listar propiedades directamente: `GET /api/properties/?match_score=70` filtra según el `SearchProfile` del usuario autenticado.
+- Para una experiencia tipo swipe y priorizar probabilidades altas, usa `GET /api/search_profiles/{id}/matches/?type=property`.
+ - El matching para roomies considera el solapamiento de `preferred_zones` entre perfiles.
+
+### Notas de Matching
+- Al crear una `Property`, el sistema genera matches automáticos con perfiles existentes si el score >= 70.
+- El listado de propiedades soporta `match_score` para filtrar en base al perfil del usuario.
+- `Zone` expone métricas nuevas en `zone_stats`: `match_ratio` y `roomie_demand`.
+
+## 8. Endpoints de Zonas (`/api/zones/`) – Métricas de Matching
+
+### `GET /api/zones/{id}/stats/`
+- **Descripción**: Incluye métricas adicionales:
+  - `match_ratio`: proporción de matches aceptados / matches totales para propiedades de la zona.
+  - `roomie_demand`: cantidad de solicitudes de roommate activas con preferencia por la zona.
+
+

@@ -201,73 +201,9 @@ class HomeContent extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
-              // Lista de propiedades
+              // Tarjetero tipo Tinder con carrusel de fotos dentro de cada tarjeta
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(
-                      bottom: 120), // Añadir padding inferior aquí
-                  itemCount: 3,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                        image: DecorationImage(
-                          image:
-                              AssetImage('assets/images/casa${index + 1}.jpg'),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Align(
-                          alignment: Alignment.bottomLeft,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: BackdropFilter(
-                              filter:
-                                  ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.25),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.25),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Casa en Equipetrol ${index + 1}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      '\$${(800 + index * 200)}/mes',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                child: PropertySwipeDeck(properties: _mockProperties),
               ),
             ],
           ),
@@ -280,6 +216,349 @@ class HomeContent extends StatelessWidget {
     return _FloatingCategoryItem(
       imagePath: imagePath,
       label: label,
+    );
+  }
+}
+
+// ---- Modelo y datos mockeados ----
+class Property {
+  final String title;
+  final String priceLabel;
+  final List<String> images; // rutas locales por ahora
+  final double distanceKm;
+
+  Property({
+    required this.title,
+    required this.priceLabel,
+    required this.images,
+    required this.distanceKm,
+  });
+}
+
+final List<Property> _mockProperties = [
+  Property(
+    title: 'Casa en Equipetrol',
+    priceLabel: ' 2.200/mes',
+    images: [
+      'assets/images/casa1.jpg',
+      'assets/images/casa2.jpg',
+      'assets/images/casa3.jpg',
+    ],
+    distanceKm: 1.2,
+  ),
+  Property(
+    title: 'Departamento céntrico',
+    priceLabel: ' 1.500/mes',
+    images: [
+      'assets/images/casa2.jpg',
+      'assets/images/casa3.jpg',
+      'assets/images/casa1.jpg',
+    ],
+    distanceKm: 0.8,
+  ),
+  Property(
+    title: 'Loft minimalista',
+    priceLabel: ' 1.800/mes',
+    images: [
+      'assets/images/casa3.jpg',
+      'assets/images/casa1.jpg',
+      'assets/images/casa2.jpg',
+    ],
+    distanceKm: 2.5,
+  ),
+];
+
+// ---- Deck con swipe ----
+class PropertySwipeDeck extends StatefulWidget {
+  final List<Property> properties;
+  const PropertySwipeDeck({super.key, required this.properties});
+
+  @override
+  State<PropertySwipeDeck> createState() => _PropertySwipeDeckState();
+}
+
+class _PropertySwipeDeckState extends State<PropertySwipeDeck>
+    with SingleTickerProviderStateMixin {
+  int topIndex = 0;
+  double dragDx = 0.0; // para overlay del corazón
+
+  void _handleDragEnd(DraggableDetails details) {
+    final dx = details.offset.dx;
+    const threshold = 120; // px
+
+    bool liked = dx > threshold;
+    bool dismissed = dx.abs() > threshold;
+
+    setState(() {
+      dragDx = 0.0;
+      if (dismissed) {
+        topIndex = (topIndex + 1).clamp(0, widget.properties.length);
+      }
+      // Aquí podríamos persistir el like si liked == true
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (topIndex >= widget.properties.length) {
+      return Center(
+        child: Text(
+          'No hay más propiedades',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+        ),
+      );
+    }
+
+    final cards = <Widget>[];
+    for (int i = widget.properties.length - 1; i >= topIndex; i--) {
+      final order = i - topIndex;
+      final scale = 1.0 - (order * 0.04);
+      final translateY = order * 14.0;
+      final property = widget.properties[i];
+
+      final card = Transform.translate(
+        offset: Offset(0, translateY),
+        child: Transform.scale(
+          scale: scale,
+          alignment: Alignment.topCenter,
+          child: i == topIndex
+              ? Draggable<int>(
+                  data: i,
+                  onDragUpdate: (d) {
+                    setState(() => dragDx = d.delta.dx + dragDx);
+                  },
+                  onDragEnd: _handleDragEnd,
+                  feedback: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    child: PropertyCard(
+                      property: property,
+                      likeProgress: _likeProgressFromDx(dragDx),
+                    ),
+                  ),
+                  childWhenDragging: const SizedBox.shrink(),
+                  child: PropertyCard(
+                    property: property,
+                    likeProgress: _likeProgressFromDx(dragDx),
+                  ),
+                )
+              : PropertyCard(
+                  property: property,
+                  likeProgress: 0.0,
+                ),
+        ),
+      );
+      cards.add(card);
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      children: cards,
+    );
+  }
+
+  double _likeProgressFromDx(double dx) {
+    // Solo derecha
+    final p = (dx / 160).clamp(0.0, 1.0);
+    return p;
+  }
+}
+
+// ---- Tarjeta con carrusel ----
+class PropertyCard extends StatefulWidget {
+  final Property property;
+  final double likeProgress; // 0..1 para overlay corazón
+
+  const PropertyCard({
+    super.key,
+    required this.property,
+    required this.likeProgress,
+  });
+
+  @override
+  State<PropertyCard> createState() => _PropertyCardState();
+}
+
+class _PropertyCardState extends State<PropertyCard> {
+  late final PageController _pageController;
+  int _page = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 3 / 4,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.25),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Carrusel
+              PageView.builder(
+                controller: _pageController,
+                itemCount: widget.property.images.length,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemBuilder: (_, i) {
+                  final path = widget.property.images[i];
+                  return Image.asset(
+                    path,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => Container(
+                      color: Colors.grey[300],
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.image_not_supported, size: 48),
+                    ),
+                  );
+                },
+              ),
+
+              // Indicadores
+              Positioned(
+                bottom: 16,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(widget.property.images.length, (i) {
+                    final active = i == _page;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: active ? 18 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: active
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+
+              // Distancia chip
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.place_outlined,
+                          color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${widget.property.distanceKm.toStringAsFixed(1)} km',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Gradiente inferior con info
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.45),
+                        Colors.black.withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.property.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.property.priceLabel,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Overlay corazón cuando se arrastra a la derecha
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: Opacity(
+                  opacity: widget.likeProgress,
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withOpacity(0.6),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.favorite, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
