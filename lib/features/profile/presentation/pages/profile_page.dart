@@ -395,7 +395,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
           final isActive = _currentMode == mode;
           return Expanded(
             child: GestureDetector(
-              onTap: () => _changeMode(mode),
+              onTap: () => _onSelectMode(mode),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
@@ -440,7 +440,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
           decoration: BoxDecoration(
 
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.20), width: 1),
+            border: Border.all(color: Colors.white.withOpacity(0.20), width: 1),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,6 +559,128 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         ),
       ),
     );
+  }
+
+  // --- Cambio de modo con confirmación y creación de perfil ---
+  Future<void> _onSelectMode(UserMode mode) async {
+    final targetType = _modeToUserType(mode);
+    final currentType = _currentProfile?.userType.toLowerCase();
+
+    // Si ya tiene el perfil, solo cambia de pestaña sin modal
+    if (currentType == targetType) {
+      _changeMode(mode);
+      return;
+    }
+
+    // Mostrar modal de confirmación para crear/cambiar el perfil
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.black.withOpacity(0.85),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(
+                mode == UserMode.propietario
+                    ? Icons.home_work_outlined
+                    : mode == UserMode.agente
+                        ? Icons.verified_user_outlined
+                        : Icons.meeting_room_outlined,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Confirmar cambio a ${_getModeDisplayName(mode)}',
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Text(
+              _getModeConfirmationText(mode),
+              style: TextStyle(color: Colors.white.withOpacity(0.85)),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    // Ejecutar cambio en backend: PATCH /api/profiles/update_me/ { user_type }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Actualizando perfil...')),
+    );
+
+    final result = await _profileService.updateCurrentProfile({
+      'user_type': targetType,
+    });
+
+    if (result['success'] == true) {
+      final updatedProfile = result['data'] as Profile;
+      setState(() {
+        _currentProfile = updatedProfile;
+      });
+
+      // Cambiar pestaña y notificar
+      _changeMode(mode);
+
+      // Si es propietario/agente, refrescar sus propiedades visibles
+      if (mode == UserMode.propietario || mode == UserMode.agente) {
+        _loadUserProperties();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Perfil actualizado a ${_getModeDisplayName(mode)}')),
+      );
+    } else {
+      final errorMsg = result['error']?.toString() ?? 'Error al actualizar el perfil';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg)),
+      );
+    }
+  }
+
+  String _modeToUserType(UserMode mode) {
+    switch (mode) {
+      case UserMode.inquilino:
+        return 'inquilino';
+      case UserMode.propietario:
+        return 'propietario';
+      case UserMode.agente:
+        return 'agente';
+    }
+  }
+
+  String _getModeConfirmationText(UserMode mode) {
+    switch (mode) {
+      case UserMode.inquilino:
+        return 'Como Inquilino podrás gestionar pagos, contratos y reportes de tus alquileres.';
+      case UserMode.propietario:
+        return 'Como Propietario ahora podrás crear y administrar propiedades, ver ingresos y gestionar inquilinos.';
+      case UserMode.agente:
+        return 'Como Agente podrás subir propiedades, recibir pagos y gestionar clientes y comisiones.';
+    }
   }
 
   Widget _buildModeContent() {

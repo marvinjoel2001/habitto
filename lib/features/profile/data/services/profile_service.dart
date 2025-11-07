@@ -148,8 +148,24 @@ class ProfileService {
       }
 
       if (response['success'] && response['data'] != null) {
+        // La API envuelve la respuesta: { success, message, data: { ...perfil } }
+        final envelope = response['data'];
+        final profileJson = envelope is Map && envelope['data'] is Map
+            ? Map<String, dynamic>.from(envelope['data'] as Map)
+            : envelope is Map
+                ? Map<String, dynamic>.from(envelope as Map)
+                : <String, dynamic>{};
+
+        if (profileJson.isEmpty) {
+          return {
+            'success': false,
+            'error': 'Respuesta del servidor inválida al actualizar el perfil',
+            'data': null,
+          };
+        }
+
         // Convertir respuesta JSON a entidad de dominio
-        final updatedProfile = Profile.fromJson(response['data']);
+        final updatedProfile = Profile.fromJson(profileJson);
 
         return {
           'success': true,
