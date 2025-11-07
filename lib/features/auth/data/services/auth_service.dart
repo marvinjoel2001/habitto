@@ -28,16 +28,31 @@ class AuthService {
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
       print('AuthService: Iniciando login para usuario: $username');
-      final response = await _apiService.post(AppConfig.loginEndpoint, {
+      // Payload de login según documentación: username + password
+      final payload = {
         'username': username,
         'password': password,
-      });
+      };
+
+      // Único endpoint soportado: /api/login/
+      final response = await _apiService.post(AppConfig.loginEndpoint, payload);
 
       print('AuthService: Respuesta completa del login: $response');
 
       if (response['success'] && response['data'] != null) {
-        final data = response['data'];
-        print('AuthService: Datos extraídos: $data');
+        final envelope = response['data'];
+        print('AuthService: Respuesta del backend (envelope): $envelope');
+
+        // La API devuelve { success, message, data: { access, refresh } }
+        // Evitamos el uso de generics en 'is' para compatibilidad del analizador.
+        Map<String, dynamic> data;
+        if (envelope is Map && envelope['data'] is Map) {
+          data = Map<String, dynamic>.from(envelope['data'] as Map);
+        } else if (envelope is Map) {
+          data = Map<String, dynamic>.from(envelope as Map);
+        } else {
+          data = {};
+        }
 
         // Validar formato de respuesta
         if (data['access'] != null && data['refresh'] != null) {
@@ -55,29 +70,12 @@ class AuthService {
             'message': response['message'] ?? 'Inicio de sesión exitoso',
           };
         } else {
-          print('AuthService: Tokens no encontrados en data. Verificando respuesta directa...');
-          // Verificar si los tokens están directamente en response['data']
-          if (response['data']['refresh'] != null && response['data']['access'] != null) {
-            print('AuthService: Tokens encontrados directamente en response[data]');
-            await _tokenStorage.saveTokens(response['data']['access'], response['data']['refresh']);
-            print('AuthService: Tokens guardados exitosamente (formato directo)');
-            
-            return {
-              'success': true,
-              'data': {
-                'access_token': response['data']['access'],
-                'refresh_token': response['data']['refresh'],
-              },
-              'message': response['message'] ?? 'Inicio de sesión exitoso',
-            };
-          } else {
-            print('AuthService: Formato de respuesta de tokens inválido - data: $data');
-            return {
-              'success': false,
-              'error': 'Formato de respuesta de tokens inválido',
-              'data': null,
-            };
-          }
+          print('AuthService: Formato de respuesta de tokens inválido - data: $data');
+          return {
+            'success': false,
+            'error': 'Formato de respuesta de tokens inválido',
+            'data': null,
+          };
         }
       } else {
         print('AuthService: Login falló - success: ${response['success']}, data: ${response['data']}');

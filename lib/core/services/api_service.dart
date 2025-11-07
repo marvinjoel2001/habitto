@@ -198,15 +198,37 @@ class ApiService {
         };
       }
 
+      // Preparar payload compatible
+      final payload = {
+        'refresh': refreshToken,
+        'refresh_token': refreshToken,
+      };
+
       final response = await _dio.post(
         AppConfig.refreshTokenEndpoint,
-        data: {'refresh': refreshToken},
-        options: Options(
-          headers: {'Authorization': null}, // No usar token para refresh
-        ),
+        data: payload,
+        options: Options(headers: {'Authorization': null}),
       );
 
-      final newAccessToken = response.data['access'];
+      // La API puede envolver la respuesta: { success, message, data: { access } }
+      final envelope = response.data;
+      Map<String, dynamic> data;
+      if (envelope is Map && envelope['data'] is Map) {
+        data = Map<String, dynamic>.from(envelope['data'] as Map);
+      } else if (envelope is Map) {
+        data = Map<String, dynamic>.from(envelope as Map);
+      } else {
+        data = {};
+      }
+      final newAccessToken = data['access'];
+
+      if (newAccessToken == null || (newAccessToken is String && newAccessToken.isEmpty)) {
+        return {
+          'success': false,
+          'error': 'No access token received during refresh',
+        };
+      }
+
       await _tokenStorage.saveAccessToken(newAccessToken);
 
       return {

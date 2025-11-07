@@ -75,7 +75,11 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
     });
 
     try {
-      final result = await _propertyService.createPaymentMethod(_nameController.text.trim());
+      // La API espera un Map<String, dynamic> con los datos del método de pago
+      final payload = {
+        'name': _nameController.text.trim(),
+      };
+      final result = await _propertyService.createPaymentMethod(payload);
       
       if (result['success']) {
         _nameController.clear();

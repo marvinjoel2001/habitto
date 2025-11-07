@@ -20,6 +20,14 @@ class AppConfig {
   static const String logoutEndpoint = '/api/logout/';
   static const String refreshTokenEndpoint = '/api/refresh/';
 
+  // Endpoints alternativos (compatibilidad con documentación nueva)
+  // Algunos despliegues usan SimpleJWT por defecto:
+  //  - Obtener tokens: POST /api/token/
+  //  - Refrescar token: POST /api/token/refresh/
+  static const String tokenObtainEndpoint = '/api/token/';
+  static const String tokenRefreshEndpoint = '/api/token/refresh/';
+  static const String authLoginEndpoint = '/api/auth/login/';
+
   // Database Configuration
   static const String databaseName = 'habitto.db';
   static const int databaseVersion = 1;
