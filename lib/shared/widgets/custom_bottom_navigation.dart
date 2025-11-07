@@ -93,7 +93,7 @@ class CustomBottomNavigation extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.40),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.50),
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
               color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
@@ -108,7 +108,7 @@ class CustomBottomNavigation extends StatelessWidget {
               Text(
                 label,
                 style: const TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),
