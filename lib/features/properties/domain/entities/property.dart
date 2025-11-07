@@ -44,27 +44,59 @@ class Property extends BaseModel {
   });
 
   factory Property.fromJson(Map<String, dynamic> json) {
+    // Parse robusto para tipos que pueden venir como string en la API
+    int _parseInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v;
+      return int.tryParse(v.toString()) ?? 0;
+    }
+
+    double _parseDouble(dynamic v) {
+      if (v == null) return 0.0;
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      return double.tryParse(v.toString()) ?? 0.0;
+    }
+
+    bool _parseBool(dynamic v, {bool defaultValue = true}) {
+      if (v == null) return defaultValue;
+      if (v is bool) return v;
+      final s = v.toString().toLowerCase();
+      if (s == 'true' || s == '1') return true;
+      if (s == 'false' || s == '0') return false;
+      return defaultValue;
+    }
+
+    DateTime _parseDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      try {
+        return DateTime.parse(v.toString());
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
     return Property(
-      id: json['id'],
-      type: json['type'],
-      address: json['address'],
-      latitude: json['latitude']?.toDouble(),
-      longitude: json['longitude']?.toDouble(),
-      price: double.tryParse(json['price'].toString()) ?? 0.0,
-      guarantee: double.tryParse(json['guarantee'].toString()) ?? 0.0,
-      description: json['description'],
-      size: json['size']?.toDouble() ?? 0.0,
-      bedrooms: json['bedrooms'],
-      bathrooms: json['bathrooms'],
-      isActive: json['is_active'] ?? true,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
-      owner: json['owner'],
-      agent: json['agent'],
-      amenities: List<int>.from(json['amenities'] ?? []),
-      acceptedPaymentMethods: List<int>.from(json['accepted_payment_methods'] ?? []),
+      id: _parseInt(json['id']),
+      type: json['type']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      latitude: json['latitude'] != null ? _parseDouble(json['latitude']) : null,
+      longitude: json['longitude'] != null ? _parseDouble(json['longitude']) : null,
+      price: _parseDouble(json['price']),
+      guarantee: _parseDouble(json['guarantee']),
+      description: json['description']?.toString() ?? '',
+      size: _parseDouble(json['size']),
+      bedrooms: _parseInt(json['bedrooms']),
+      bathrooms: _parseInt(json['bathrooms']),
+      isActive: _parseBool(json['is_active'], defaultValue: true),
+      createdAt: json['created_at'] != null ? _parseDate(json['created_at']) : DateTime.now(),
+      updatedAt: json['updated_at'] != null ? _parseDate(json['updated_at']) : DateTime.now(),
+      owner: _parseInt(json['owner']),
+      agent: json['agent'] != null ? _parseInt(json['agent']) : null,
+      amenities: List<int>.from((json['amenities'] ?? []).map((e) => _parseInt(e))),
+      acceptedPaymentMethods: List<int>.from((json['accepted_payment_methods'] ?? []).map((e) => _parseInt(e))),
       availabilityDate: json['availability_date'] != null
-          ? DateTime.parse(json['availability_date'])
+          ? _parseDate(json['availability_date'])
           : null,
     );
   }

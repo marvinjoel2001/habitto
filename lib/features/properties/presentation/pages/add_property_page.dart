@@ -266,10 +266,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
     try {
       // Prepare property data according to API documentation
-      final propertyData = {
-        'owner': _currentUserId!,
-        'agent': null, // Can be set if there's an agent
-        'type': _selectedPropertyType, // Already in API format (casa, departamento, etc.)
+      final propertyData = <String, dynamic>{
+        'type': _selectedPropertyType,
         'address': _addressController.text.trim(),
         'latitude': _latitudeController.text.isNotEmpty
             ? double.parse(_latitudeController.text).toStringAsFixed(6)
@@ -407,7 +405,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: AppTheme.getProfileBackground(),
+        color: Colors.white,
         child: _isLoadingData
             ? const Center(
                 child: CircularProgressIndicator(
@@ -439,30 +437,21 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   Widget _buildHeader() {
     return Container(
       height: 80 + MediaQuery.of(context).padding.top,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryColor.withOpacity(0.9),
-            AppTheme.secondaryColor.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+      decoration: const BoxDecoration(color: Colors.white),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppTheme.darkGrayBase),
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () => Navigator.pop(context),
               ),
               const Expanded(
                 child: Text(
                   'Detalles de la Propiedad',
                   style: TextStyle(
-                    color: AppTheme.darkGrayBase,
+                    color: Colors.black,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -476,7 +465,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 child: const Text(
                   'Guardar y salir',
                   style: TextStyle(
-                    color: AppTheme.darkGrayBase,
+                    color: Colors.black,
                     fontSize: 14,
                   ),
                 ),
@@ -509,7 +498,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             'Comencemos con lo básico. Proporcione los detalles esenciales de su propiedad.',
             style: TextStyle(
               fontSize: 16,
-              color: AppTheme.whiteColor.withOpacity(0.8),
+              color: Colors.black87,
               height: 1.5
             ),
           ),
@@ -519,7 +508,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -536,14 +525,14 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                     child: DropdownButton<String>(
                       value: _selectedPropertyType,
                       isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.whiteColor),
-                      dropdownColor: AppTheme.mediumGray,
+                      icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
+                      dropdownColor: Colors.white,
                       items: _propertyTypeMapping.entries.map((entry) {
                         return DropdownMenuItem<String>(
                           value: entry.value, // API value (casa, departamento, etc.)
                           child: Text(
                             entry.key, // Display value (Casa, Departamento, etc.)
-                            style: const TextStyle(color: AppTheme.whiteColor),
+                            style: const TextStyle(color: Colors.black),
                           ),
                         );
                       }).toList(),
@@ -564,7 +553,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -581,7 +570,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       });
                     }
                   },
-                  icon: Icon(Icons.remove_circle_outline, color: AppTheme.whiteColor.withOpacity(0.7)),
+                  icon: Icon(Icons.remove_circle_outline, color: Colors.black54),
                 ),
               ),
               Expanded(
@@ -600,7 +589,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.whiteColor,
+                            color: Colors.black,
                           ),
                         ),
                       ),
@@ -628,7 +617,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -645,7 +634,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       });
                     }
                   },
-                  icon: Icon(Icons.remove_circle_outline, color: AppTheme.whiteColor.withOpacity(0.7)),
+                  icon: Icon(Icons.remove_circle_outline, color: Colors.black54),
                 ),
               ),
               Expanded(
@@ -664,7 +653,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.whiteColor,
+                            color: Colors.black,
                           ),
                         ),
                       ),
@@ -692,7 +681,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor,
+              color: Colors.black,
             ),
           ),
           const SizedBox(height: 12),
@@ -716,7 +705,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             'Ahora agreguemos los detalles financieros y características especiales.',
             style: TextStyle(
               fontSize: 16,
-              color: AppTheme.whiteColor.withOpacity(0.8),
+              color: Colors.black87,
               height: 1.5
             ),
           ),
@@ -726,7 +715,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -741,7 +730,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -756,7 +745,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -771,7 +760,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -788,7 +777,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   label: Text(
                     amenity.name,
                     style: TextStyle(
-                      color: isSelected ? AppTheme.darkGrayBase : AppTheme.whiteColor,
+                      color: isSelected ? AppTheme.darkGrayBase : Colors.black,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
@@ -815,7 +804,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -832,7 +821,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   label: Text(
                     method.name,
                     style: TextStyle(
-                      color: isSelected ? AppTheme.darkGrayBase : AppTheme.whiteColor,
+                      color: isSelected ? AppTheme.darkGrayBase : Colors.black,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
@@ -929,7 +918,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             'Ubicación y disponibilidad de la propiedad',
             style: TextStyle(
               fontSize: 16,
-              color: AppTheme.whiteColor.withOpacity(0.8),
+              color: Colors.black87,
               height: 1.5
             ),
           ),
@@ -939,7 +928,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -955,7 +944,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),
@@ -963,7 +952,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             height: 300,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.whiteColor.withOpacity(0.2)),
+              border: Border.all(color: Colors.black12),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -1004,11 +993,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                     bottom: 10,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppTheme.darkGrayBase.withOpacity(0.7),
+                        color: Colors.black.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.my_location, color: AppTheme.whiteColor),
+                        icon: const Icon(Icons.my_location, color: Colors.white),
                         onPressed: () {
                           if (_currentPosition != null && _mapboxMap != null) {
                             // Centrar el mapa en la ubicación actual
