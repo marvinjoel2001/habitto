@@ -133,21 +133,30 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: lightGrayishDark, // Un gris oscuro claro para los inputs
-      hintStyle: TextStyle(color: Colors.grey[400]),
+      fillColor: const Color.fromARGB(255, 254, 254, 255), // Un gris oscuro claro para los inputs
+      hintStyle: TextStyle(color: const Color.fromARGB(255, 220, 220, 220)),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: primaryColor, width: 2.5),
+        // Borde plomito delgado también al enfocar
+        borderSide: BorderSide(color: darkGrayBase.withOpacity(0.4), width: 1.0),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
+        // Borde plomito súper delgado en estado normal
         borderSide: BorderSide(
-          color: whiteColor.withOpacity(0.1),
-          width: 1,
+          color: darkGrayBase.withOpacity(0.3),
+          width: 0.8,
+        ),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: darkGrayBase.withOpacity(0.2),
+          width: 0.8,
         ),
       ),
     ),

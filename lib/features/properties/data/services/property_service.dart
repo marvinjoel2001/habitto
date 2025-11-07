@@ -28,7 +28,18 @@ class PropertyService {
       final response = await _apiService.get(AppConfig.amenitiesEndpoint);
 
       if (response['success'] && response['data'] != null) {
-        final results = response['data']['results'] as List;
+        // Desenvolver posibles envolturas de 'data'
+        final envelope = response['data'];
+        final inner = (envelope is Map && envelope['data'] != null)
+            ? envelope['data']
+            : envelope;
+
+        // Extraer lista de resultados
+        final results = (inner is Map && inner['results'] is List)
+            ? inner['results'] as List
+            : (inner is List)
+                ? inner
+                : <dynamic>[];
 
         // Convertir respuesta JSON a entidades de dominio
         final amenities = results.map((amenity) => Amenity.fromJson(amenity)).toList();
@@ -66,14 +77,25 @@ class PropertyService {
 
       if (response['success'] && response['data'] != null) {
         print('PropertyService: Datos de payment-methods: ${response['data']}');
-        
-        // Verificar si los datos están en 'results' como indica la documentación
-        final paymentMethods = response['data']['results'] ?? response['data'];
-        print('PropertyService: Payment methods extraídos: $paymentMethods');
-        
+
+        // Desenvolver posibles envolturas de 'data'
+        final envelope = response['data'];
+        final inner = (envelope is Map && envelope['data'] != null)
+            ? envelope['data']
+            : envelope;
+
+        // Extraer lista de resultados
+        final results = (inner is Map && inner['results'] is List)
+            ? inner['results'] as List
+            : (inner is List)
+                ? inner
+                : <dynamic>[];
+
+        print('PropertyService: Payment methods extraídos (lista): $results');
+
         return {
           'success': true,
-          'payment_methods': paymentMethods,
+          'payment_methods': results,
           'message': response['message'] ?? 'Métodos de pago obtenidos exitosamente',
         };
       } else {

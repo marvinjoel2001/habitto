@@ -208,9 +208,12 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         print('AddPropertyPage: ${_availablePaymentMethods.length} payment methods cargados');
       }
 
-      if (profileResponse['success'] && profileResponse['user'] != null) {
-        _currentUserId = profileResponse['user'].id;
-        print('AddPropertyPage: Usuario actual ID: $_currentUserId');
+      if (profileResponse['success'] == true && profileResponse['data'] != null) {
+        final user = profileResponse['data']['user'];
+        if (user != null) {
+          _currentUserId = user.id;
+          print('AddPropertyPage: Usuario actual ID: $_currentUserId');
+        }
       }
     } catch (e) {
       print('AddPropertyPage: Error cargando datos: $e');
@@ -285,8 +288,12 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         'availability_date': _availabilityDateController.text.isNotEmpty
             ? _availabilityDateController.text
             : DateTime.now().add(const Duration(days: 1)).toIso8601String().split('T')[0],
-        'accepted_payment_methods': _selectedPaymentMethodIds,
       };
+
+      // Métodos de pago son opcionales: si no hay selección, no enviar la llave
+      if (_selectedPaymentMethodIds.isNotEmpty) {
+        propertyData['accepted_payment_methods'] = _selectedPaymentMethodIds;
+      }
 
       final response = await _propertyService.createProperty(propertyData);
 
@@ -513,11 +520,16 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           ),
           const SizedBox(height: 12),
           Container(
-            decoration: AppTheme.getGlassCard(),
+            // Borde plomito delgado y menos blur para el select
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppTheme.darkGrayBase.withOpacity(0.3), width: 1),
+              gradient: AppTheme.getCardGradient(),
+            ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
               child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                filter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -576,11 +588,15 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: AppTheme.getGlassCard(),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppTheme.darkGrayBase.withOpacity(0.3), width: 1),
+                    gradient: AppTheme.getCardGradient(),
+                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      filter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Text(
@@ -640,11 +656,15 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: AppTheme.getGlassCard(),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppTheme.darkGrayBase.withOpacity(0.3), width: 1),
+                    gradient: AppTheme.getCardGradient(),
+                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      filter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Text(
@@ -1045,7 +1065,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.whiteColor
+                        color: Colors.black
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1067,7 +1087,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.whiteColor
+                        color: Colors.black
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1088,7 +1108,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.whiteColor
+              color: Colors.black
             ),
           ),
           const SizedBox(height: 12),

@@ -34,6 +34,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final inputTheme = Theme.of(context).inputDecorationTheme;
     return TextFormField(
       controller: widget.controller,
       obscureText: widget.isPassword ? _obscureText : false,
@@ -41,14 +43,15 @@ class _CustomTextFieldState extends State<CustomTextField> {
       validator: widget.validator,
       maxLines: widget.isPassword ? 1 : widget.maxLines,
       onTap: widget.onTap,
+      cursorColor: AppTheme.blackColor,
       style: const TextStyle(
         fontSize: 16,
-        color: AppTheme.whiteColor,
+        color: AppTheme.blackColor,
       ),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: TextStyle(
-          color: AppTheme.whiteColor.withOpacity(0.5),
+        hintStyle: const TextStyle(
+          color: AppTheme.blackColor,
           fontSize: 16,
         ),
         prefixIcon: widget.prefixIcon,
@@ -56,7 +59,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             ? IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: AppTheme.whiteColor.withOpacity(0.5),
+                  color: AppTheme.blackColor.withOpacity(0.6),
                 ),
                 onPressed: () {
                   setState(() {
@@ -65,8 +68,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 },
               )
             : widget.suffixIcon,
-        filled: true,
-        fillColor: AppTheme.whiteColor.withOpacity(0.15),
+            filled: true,
+            // Mantener el relleno del Theme (no negro). Si no existe, usar el color de diseño.
+            fillColor: inputTheme.fillColor ?? AppTheme.lightGrayishDark,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -78,7 +82,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
+            color: cs.primary.withOpacity(0.6),
             width: 1.5,
           ),
         ),

@@ -31,12 +31,14 @@ class ProfileService {
       print('ProfileService: Respuesta recibida: $response');
 
       if (response['success'] && response['data'] != null) {
-        // La respuesta tiene una estructura anidada: response['data']['data']
-        final responseData = response['data'];
-        print('ProfileService: ResponseData: $responseData');
-        
-        // Extraer los datos reales del perfil
-        final userProfile = responseData['data'];
+        // La API puede envolver los datos como { success, message, data: { ...perfil } }
+        final envelope = response['data'];
+        // Si existe envelope['data'], úsalo; de lo contrario, el envelope ya es el perfil
+        final userProfile = envelope is Map && envelope['data'] is Map
+            ? Map<String, dynamic>.from(envelope['data'] as Map)
+            : envelope is Map
+                ? Map<String, dynamic>.from(envelope as Map)
+                : null;
         print('ProfileService: Datos del perfil extraídos: $userProfile');
 
         if (userProfile != null) {
@@ -55,7 +57,7 @@ class ProfileService {
               'profile': profile,
               'user': user,
             },
-            'message': responseData['message'] ?? 'Perfil obtenido exitosamente',
+            'message': response['message'] ?? 'Perfil obtenido exitosamente',
           };
         } else {
           print('ProfileService: Error - userProfile es null');
