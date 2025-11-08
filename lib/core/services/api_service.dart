@@ -34,19 +34,29 @@ class ApiService {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         print('ApiService: Preparando petición a ${options.path}');
-        final token = await _tokenStorage.getAccessToken();
-        print('ApiService: Token obtenido: ${token != null ? "Token presente (${token.substring(0, 20)}...)" : "No hay token"}');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-          print('ApiService: Header Authorization añadido');
+        // Evitar añadir Authorization en las rutas de refresh para prevenir 401 y bucles
+        final isRefreshPath = options.path == AppConfig.refreshTokenEndpoint ||
+            options.path == AppConfig.tokenRefreshEndpoint;
+        if (!isRefreshPath) {
+          final token = await _tokenStorage.getAccessToken();
+          print('ApiService: Token obtenido: ${token != null ? "Token presente (${token.substring(0, 20)}...)" : "No hay token"}');
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+            print('ApiService: Header Authorization añadido');
+          } else {
+            print('ApiService: ADVERTENCIA - No se encontró token de acceso');
+          }
         } else {
-          print('ApiService: ADVERTENCIA - No se encontró token de acceso');
+          print('ApiService: Petición de refresh detectada, omitiendo Authorization');
         }
         handler.next(options);
       },
       onError: (error, handler) async {
         // Manejar error 401 (Unauthorized) con refresh automático
-        if (error.response?.statusCode == 401) {
+        // Evitar bucle: si la petición que falló ES el refresh, no intentar refrescar de nuevo
+        final isRefreshPath = error.requestOptions.path == AppConfig.refreshTokenEndpoint ||
+            error.requestOptions.path == AppConfig.tokenRefreshEndpoint;
+        if (error.response?.statusCode == 401 && !isRefreshPath) {
           final refreshResult = await _refreshToken();
 
           if (refreshResult['success']) {
@@ -204,9 +214,11 @@ class ApiService {
         'refresh_token': refreshToken,
       };
 
+      // Usar la ruta estándar de SimpleJWT: /api/token/refresh/
       final response = await _dio.post(
-        AppConfig.refreshTokenEndpoint,
+        AppConfig.tokenRefreshEndpoint,
         data: payload,
+        // Asegurar que no se envíe Authorization y evitar que el interceptor lo reañada
         options: Options(headers: {'Authorization': null}),
       );
 

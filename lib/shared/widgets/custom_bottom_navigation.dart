@@ -1,6 +1,7 @@
 // Top-level (imports)
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import '../theme/app_theme.dart';
 
 class CustomBottomNavigation extends StatelessWidget {
   final int currentIndex;
@@ -21,23 +22,23 @@ class CustomBottomNavigation extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(40),
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
           child: Container(
             height: 84,
             margin: const EdgeInsets.only(left: 16, right: 16, bottom: 0),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.55),
+              gradient: AppTheme.getCardGradient(opacity: 0.28),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.25),
+                color: AppTheme.darkGrayBase.withValues(alpha: 0.30),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  spreadRadius: 1,
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: 0.12),
+                  spreadRadius: 0,
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
