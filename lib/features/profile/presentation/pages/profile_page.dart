@@ -71,7 +71,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     } else {
       result = await _propertyService.getMyProperties();
     }
-    
+
     if (result['success']) {
       final properties = result['data']['properties'] as List<Property>;
       setState(() {
@@ -94,7 +94,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   Future<void> _loadPropertyPhotos(int propertyId) async {
     final result = await _photoService.getPropertyPhotos(propertyId);
-    
+
     if (result['success']) {
       final photos = result['data']['photos'] as List<Photo>;
       setState(() {
@@ -119,7 +119,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         // Establecer el modo actual basado en el tipo de usuario
         if (_currentProfile != null) {
           _setModeFromUserType(_currentProfile!.userType);
-          
+
           // Notificar el modo inicial al padre después de cargar el perfil
           if (widget.onModeChanged != null) {
             widget.onModeChanged!(_currentMode);
@@ -127,7 +127,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         } else {
           // If no profile, default to inquilino
           _currentMode = UserMode.inquilino;
-          
+
           // Notificar el modo por defecto al padre
           if (widget.onModeChanged != null) {
             widget.onModeChanged!(_currentMode);
@@ -518,15 +518,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                     ),
                     const SizedBox(height: 12),
 
-                    // Información de contacto
-                    Text(
-                      _getUserId(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
+
                     Text(
                       _getUserEmail(),
                       style: TextStyle(
@@ -1184,12 +1176,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     return 'Usuario';
   }
 
-  String _getUserId() {
-    if (_currentUser != null) {
-      return 'ID: ${_currentUser!.id}';
-    }
-    return 'ID: ---';
-  }
+
 
   String _getUserEmail() {
     if (_currentUser != null && _currentUser!.email.isNotEmpty) {
@@ -1388,14 +1375,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                _getUserId(),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
+
               const SizedBox(height: 4),
               Text(
                 _getUserEmail(),
@@ -1610,7 +1590,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   Widget _buildPropertyImage(Property property) {
     final photos = _propertyPhotos[property.id];
-    
+
     if (photos != null && photos.isNotEmpty) {
       // Mostrar la primera foto de la propiedad
       return Image.network(
