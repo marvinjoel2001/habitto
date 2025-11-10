@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import '../../../../shared/widgets/custom_bottom_navigation.dart';
+import '../../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
 import '../../../search/presentation/pages/search_page.dart' as search;
@@ -635,18 +636,22 @@ class _PropertyCardState extends State<PropertyCard> {
                     return _noImagePlaceholder();
                   }
                   final url = widget.property.images[i];
-                  return Image.network(
-                    url,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        color: Colors.black12,
-                        alignment: Alignment.center,
-                        child: const CircularProgressIndicator(),
-                      );
-                    },
-                    errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _openFullScreen(i),
+                    child: Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
+                          color: Colors.black12,
+                          alignment: Alignment.center,
+                          child: const CircularProgressIndicator(),
+                        );
+                      },
+                      errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                    ),
                   );
                 },
               ),
@@ -818,6 +823,28 @@ class _PropertyCardState extends State<PropertyCard> {
         ),
       ),
       )
+    );
+  }
+
+  void _openFullScreen(int initialIndex) {
+    if (widget.property.images.isEmpty) return;
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Cerrar',
+      barrierColor: Colors.black.withOpacity(0.98),
+      pageBuilder: (context, anim1, anim2) {
+        return FullScreenImageViewer(
+          images: widget.property.images,
+          initialIndex: initialIndex,
+          onClose: () {},
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 160),
+      transitionBuilder: (context, anim, secondary, child) {
+        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOut);
+        return FadeTransition(opacity: curved, child: child);
+      },
     );
   }
 }
