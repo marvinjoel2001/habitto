@@ -20,6 +20,8 @@ class Property extends BaseModel {
   final List<int> amenities;
   final List<int> acceptedPaymentMethods;
   final DateTime? availabilityDate;
+  // URL de la primera foto asociada, provista por el backend en listados
+  final String? mainPhoto;
 
   Property({
     required this.id,
@@ -41,6 +43,7 @@ class Property extends BaseModel {
     required this.amenities,
     required this.acceptedPaymentMethods,
     this.availabilityDate,
+    this.mainPhoto,
   });
 
   factory Property.fromJson(Map<String, dynamic> json) {
@@ -98,6 +101,9 @@ class Property extends BaseModel {
       availabilityDate: json['availability_date'] != null
           ? _parseDate(json['availability_date'])
           : null,
+      mainPhoto: (json['main_photo']?.toString().isNotEmpty ?? false)
+          ? json['main_photo'].toString()
+          : null,
     );
   }
 
@@ -123,6 +129,7 @@ class Property extends BaseModel {
       'amenities': amenities,
       'accepted_payment_methods': acceptedPaymentMethods,
       'availability_date': availabilityDate?.toIso8601String(),
+      'main_photo': mainPhoto,
     };
   }
 

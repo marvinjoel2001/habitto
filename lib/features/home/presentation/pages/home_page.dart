@@ -229,11 +229,16 @@ class _HomeContentState extends State<HomeContent> {
 
       final cards = <HomePropertyCardData>[];
       for (final p in properties) {
+        // Semilla de imágenes: si el backend incluye main_photo, úsalo para evitar repetición y N+1
+        final initialImages = <String>[];
+        if (p.mainPhoto != null && p.mainPhoto!.isNotEmpty) {
+          initialImages.add(p.mainPhoto!);
+        }
         cards.add(HomePropertyCardData(
           id: p.id,
           title: p.address.isNotEmpty ? p.address : 'Propiedad',
           priceLabel: p.price > 0 ? 'Bs. ${p.price.toStringAsFixed(0)}/mes' : '—',
-          images: const [],
+          images: initialImages,
           distanceKm: 0.0,
           tags: [p.type.isNotEmpty ? _capitalize(p.type) : ''],
         ));
@@ -260,7 +265,8 @@ class _HomeContentState extends State<HomeContent> {
     final res = await _photoService.getPropertyPhotos(propertyId);
     if (res['success'] == true && res['data'] != null) {
       final photos = (res['data']['photos'] as List<domain_photo.Photo>?);
-      final urls = (photos ?? []).map((ph) => ph.image).toList();
+      // Unificar y evitar duplicados; mantener main_photo si existe
+      final urls = (photos ?? []).map((ph) => ph.image).where((u) => u.isNotEmpty).toSet().toList();
       setState(() {
         _photoUrlsByProperty[propertyId] = urls;
         _cards = _cards.map((c) => c.id == propertyId ? c.copyWith(images: urls) : c).toList();
