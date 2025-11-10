@@ -219,25 +219,33 @@ class ApiService {
         'refresh_token': refreshToken,
       };
 
-      // Usar la ruta estándar de SimpleJWT: /api/token/refresh/
+      // Usar el endpoint configurado por el backend
+      // Preferimos AppConfig.refreshTokenEndpoint; si el backend usa SimpleJWT,
+      // AppConfig.tokenRefreshEndpoint puede apuntar al mismo valor.
       final response = await _dio.post(
-        AppConfig.tokenRefreshEndpoint,
+        AppConfig.refreshTokenEndpoint,
         data: payload,
         // Asegurar que no se envíe Authorization y evitar que el interceptor lo reañada
         options: Options(headers: {'Authorization': null}),
       );
 
-      // La API puede envolver la respuesta: { success, message, data: { access } }
+      // La API puede responder de varias formas:
+      // - { success, message, data: { access } }
+      // - { access: "..." }
+      // - { access_token: "..." }
       final envelope = response.data;
-      Map<String, dynamic> data;
-      if (envelope is Map && envelope['data'] is Map) {
-        data = Map<String, dynamic>.from(envelope['data'] as Map);
-      } else if (envelope is Map) {
-        data = Map<String, dynamic>.from(envelope as Map);
-      } else {
-        data = {};
+      String? newAccessToken;
+      if (envelope is Map<String, dynamic>) {
+        if (envelope['access'] is String) {
+          newAccessToken = envelope['access'] as String;
+        } else if (envelope['access_token'] is String) {
+          newAccessToken = envelope['access_token'] as String;
+        } else if (envelope['data'] is Map) {
+          final data = Map<String, dynamic>.from(envelope['data'] as Map);
+          final acc = data['access'] ?? data['access_token'];
+          if (acc is String) newAccessToken = acc;
+        }
       }
-      final newAccessToken = data['access'];
 
       if (newAccessToken == null || (newAccessToken is String && newAccessToken.isEmpty)) {
         return {

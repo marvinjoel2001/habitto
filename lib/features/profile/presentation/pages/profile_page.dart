@@ -1228,7 +1228,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     }
 
     // Si no tiene foto de perfil, mostrar la imagen por defecto
-    return const AssetImage('assets/images/userempty.png');
+    // Cambiado a un asset existente para evitar errores de carga
+    return const AssetImage('assets/images/unnamed.png');
   }
 
   String _getModeTitle() {

@@ -4,6 +4,8 @@ import '../../../../core/services/token_storage.dart';
 import '../../domain/entities/property.dart';
 import '../../domain/entities/amenity.dart';
 import '../../domain/entities/payment_method.dart';
+import '../../../profile/data/services/profile_service.dart';
+import '../../../auth/domain/entities/user.dart';
 
 /// Servicio de propiedades - Capa de negocio
 /// Responsabilidad: Implementar la lógica de negocio para propiedades
@@ -194,8 +196,12 @@ class PropertyService {
 
       final response = await _apiService.get(uri.toString().replaceFirst(AppConfig.baseUrl, ''));
 
+      // IMPORTANTE: El ApiService ya devuelve la estructura del backend
+      // response['data'] contiene: {success, message, data: {count, results}}
       if (response['success'] && response['data'] != null) {
-        final results = response['data']['results'] as List;
+        // Acceder al objeto data interno del backend
+        final backendData = response['data']['data'];
+        final results = backendData['results'] as List;
 
         // Convertir respuestas JSON a entidades de dominio
         final properties = results.map((property) => Property.fromJson(property)).toList();
@@ -204,16 +210,20 @@ class PropertyService {
           'success': true,
           'data': {
             'properties': properties,
-            'count': response['data']['count'],
-            'next': response['data']['next'],
-            'previous': response['data']['previous'],
+            'count': backendData['count'],
+            'next': backendData['next'],
+            'previous': backendData['previous'],
           },
-          'message': response['message'] ?? 'Propiedades obtenidas exitosamente',
+          'message': response['data']['message'] ?? 'Propiedades obtenidas exitosamente',
         };
       } else {
+        final dynamic respData = response['data'];
+        final String errorMsg = response['error'] ??
+            (respData is Map ? (respData['message'] ?? respData['error']) : null) ??
+            'Error al obtener propiedades';
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al obtener propiedades',
+          'error': errorMsg,
           'data': null,
         };
       }
@@ -336,20 +346,28 @@ class PropertyService {
     try {
       // Lógica de negocio: Obtener ID del usuario actual desde el token
       final token = await _tokenStorage.getAccessToken();
-      if (token == null) {
-        return {
-          'success': false,
-          'error': 'Usuario no autenticado',
-          'data': null,
-        };
-      }
 
       // Obtener el ID del usuario actual
-      final currentUserId = await _tokenStorage.getCurrentUserId();
+      String? currentUserId = await _tokenStorage.getCurrentUserId();
+
+      // Fallback: si no hay token o no se pudo decodificar el user_id, intentar obtenerlo desde el perfil actual
+      if (token == null || currentUserId == null) {
+        try {
+          final profileService = ProfileService(apiService: _apiService, tokenStorage: _tokenStorage);
+          final profileRes = await profileService.getCurrentProfile();
+          if (profileRes['success'] == true && profileRes['data'] != null && profileRes['data']['user'] != null) {
+            final user = profileRes['data']['user'] as User;
+            currentUserId = user.id?.toString();
+          }
+        } catch (e) {
+          // Ignorar y devolver error más abajo si sigue faltando el ID
+        }
+      }
+
       if (currentUserId == null) {
         return {
           'success': false,
-          'error': 'No se pudo obtener el ID del usuario',
+          'error': 'No se pudo determinar el usuario actual',
           'data': null,
         };
       }
