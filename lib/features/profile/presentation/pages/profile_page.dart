@@ -64,8 +64,13 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     setState(() {
       _isLoadingProperties = true;
     });
-
-    final result = await _propertyService.getMyProperties();
+    Map<String, dynamic> result;
+    // Cargar según el modo actual: propietario o agente
+    if (_currentMode == UserMode.agente) {
+      result = await _propertyService.getAgentProperties();
+    } else {
+      result = await _propertyService.getMyProperties();
+    }
     
     if (result['success']) {
       final properties = result['data']['properties'] as List<Property>;
@@ -947,22 +952,45 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   }
 
   List<Widget> _buildAgenteItems() {
-    final propiedadesAsignadas = [
-      {
-        'nombre': 'Casa en Equipetrol',
-        'cliente': 'Cliente: Sofía Ramírez',
-        'comision': 'Comisión: 5%',
-        'imagen': 'assets/images/casa3.jpg',
-      },
-      {
-        'nombre': 'Departamento en el centro',
-        'cliente': 'Cliente: Carlos Mendoza',
-        'comision': 'Comisión: 4%',
-        'imagen': 'assets/images/casa4.jpg',
-      },
-    ];
+    if (_isLoadingProperties) {
+      return [
+        const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+          ),
+        ),
+      ];
+    }
 
-    return propiedadesAsignadas.map((propiedad) {
+    if (_userProperties.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              Icon(
+                Icons.business_outlined,
+                size: 64,
+                color: Colors.white.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No tienes propiedades asignadas',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withOpacity(0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ];
+    }
+
+    return _userProperties.map((property) {
+      final isActive = property.isActive;
+
       return Container(
         margin: const EdgeInsets.only(bottom: 16),
         child: ClipRRect(
@@ -983,23 +1011,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      propiedad['imagen']!,
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.home, color: Colors.grey),
-                        );
-                      },
-                    ),
+                    child: _buildPropertyImage(property),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -1007,45 +1019,47 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          propiedad['nombre']!,
+                          property.address ?? 'Propiedad sin dirección',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          propiedad['cliente']!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.7),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isActive ? AppTheme.primaryColor : Colors.red,
+                            borderRadius: BorderRadius.circular(15),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          propiedad['comision']!,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF7FFFD4),
+                          child: Text(
+                            isActive ? 'Disponible' : 'No disponible',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isActive ? Colors.black : Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF7FFFD4),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Contactar',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    onTap: () => _navigateToPropertyPhotos(property),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Gestionar',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),

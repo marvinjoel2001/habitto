@@ -19,16 +19,22 @@ class PhotoService {
       final response = await _apiService.get('${AppConfig.photosEndpoint}?property=$propertyId');
 
       if (response['success'] == true && response['data'] != null) {
-        final List<dynamic> photosJson = response['data']['results'] ?? [];
+        // La API devuelve un envelope { success, message, data: {count, results, ...} }
+        final envelope = response['data'];
+        final inner = (envelope is Map && envelope['data'] is Map)
+            ? Map<String, dynamic>.from(envelope['data'] as Map)
+            : (envelope is Map ? Map<String, dynamic>.from(envelope as Map) : <String, dynamic>{});
+
+        final List<dynamic> photosJson = inner['results'] ?? [];
         final List<Photo> photos = photosJson.map((json) => Photo.fromJson(json)).toList();
 
         return {
           'success': true,
           'data': {
             'photos': photos,
-            'count': response['data']['count'] ?? 0,
+            'count': inner['count'] ?? 0,
           },
-          'message': response['message'] ?? 'Fotos obtenidas exitosamente',
+          'message': (envelope is Map ? envelope['message'] : null) ?? response['message'] ?? 'Fotos obtenidas exitosamente',
         };
       } else {
         return {
@@ -56,6 +62,14 @@ class PhotoService {
     String? caption,
   }) async {
     try {
+      // Validación temprana para alinear con la documentación del backend
+      if (propertyId <= 0) {
+        return {
+          'success': false,
+          'error': 'ID de propiedad inválido (pk=0). Crea la propiedad y usa su ID real.',
+          'data': null,
+        };
+      }
       // Preparar campos adicionales para el formulario
       final Map<String, String> formData = {
         'property': propertyId.toString(),
@@ -73,12 +87,17 @@ class PhotoService {
       );
 
       if (response['success'] == true && response['data'] != null) {
-        final photo = Photo.fromJson(response['data']);
+        // Envelope { success, message, data: { ... photo ... } }
+        final envelope = response['data'];
+        final inner = (envelope is Map && envelope['data'] is Map)
+            ? Map<String, dynamic>.from(envelope['data'] as Map)
+            : (envelope is Map ? Map<String, dynamic>.from(envelope as Map) : <String, dynamic>{});
+        final photo = Photo.fromJson(inner);
 
         return {
           'success': true,
           'data': photo,
-          'message': response['message'] ?? 'Foto subida exitosamente',
+          'message': (envelope is Map ? envelope['message'] : null) ?? response['message'] ?? 'Foto subida exitosamente',
         };
       } else {
         return {
@@ -107,12 +126,16 @@ class PhotoService {
       });
 
       if (response['success'] == true && response['data'] != null) {
-        final photo = Photo.fromJson(response['data']);
+        final envelope = response['data'];
+        final inner = (envelope is Map && envelope['data'] is Map)
+            ? Map<String, dynamic>.from(envelope['data'] as Map)
+            : (envelope is Map ? Map<String, dynamic>.from(envelope as Map) : <String, dynamic>{});
+        final photo = Photo.fromJson(inner);
 
         return {
           'success': true,
           'data': photo,
-          'message': response['message'] ?? 'Caption actualizado exitosamente',
+          'message': (envelope is Map ? envelope['message'] : null) ?? response['message'] ?? 'Caption actualizado exitosamente',
         };
       } else {
         return {

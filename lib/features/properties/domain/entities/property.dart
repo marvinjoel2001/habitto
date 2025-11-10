@@ -77,7 +77,7 @@ class Property extends BaseModel {
     }
 
     return Property(
-      id: _parseInt(json['id']),
+      id: _parseInt(json['id'] ?? json['pk']),
       type: json['type']?.toString() ?? '',
       address: json['address']?.toString() ?? '',
       latitude: json['latitude'] != null ? _parseDouble(json['latitude']) : null,

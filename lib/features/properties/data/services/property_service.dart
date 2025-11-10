@@ -125,13 +125,24 @@ class PropertyService {
       final response = await _apiService.post(AppConfig.propertiesEndpoint, propertyData);
 
       if (response['success'] == true && response['data'] != null) {
+        // La API devuelve un envelope { success, message, data: {...} }
+        final envelope = response['data'];
+        Map<String, dynamic> data;
+        if (envelope is Map && envelope['data'] is Map) {
+          data = Map<String, dynamic>.from(envelope['data'] as Map);
+        } else if (envelope is Map) {
+          data = Map<String, dynamic>.from(envelope as Map);
+        } else {
+          data = {};
+        }
+
         // Convertir respuesta JSON a entidad de dominio
-        final property = Property.fromJson(response['data']);
+        final property = Property.fromJson(data);
 
         return {
           'success': true,
           'data': property,
-          'message': 'Propiedad creada exitosamente',
+          'message': (envelope is Map ? envelope['message'] : null) ?? 'Propiedad creada exitosamente',
         };
       } else {
         return {
@@ -158,6 +169,7 @@ class PropertyService {
     String? type,
     bool? isActive,
     int? owner,
+    int? agent,
     String? search,
     String? ordering,
     int page = 1,
@@ -170,6 +182,7 @@ class PropertyService {
       if (type != null) queryParams['type'] = type;
       if (isActive != null) queryParams['is_active'] = isActive.toString();
       if (owner != null) queryParams['owner'] = owner.toString();
+      if (agent != null) queryParams['agent'] = agent.toString();
       if (search != null) queryParams['search'] = search;
       if (ordering != null) queryParams['ordering'] = ordering;
       queryParams['page'] = page.toString();
@@ -355,6 +368,54 @@ class PropertyService {
       return {
         'success': false,
         'error': 'Error obteniendo mis propiedades: $e',
+        'data': null,
+      };
+    }
+  }
+
+  /// Obtener propiedades asignadas al agente actual
+  /// Lógica de negocio: Filtrar propiedades por agente actual
+  /// Retorna: Lista de Property entities del agente
+  Future<Map<String, dynamic>> getAgentProperties({
+    String? type,
+    bool? isActive,
+    String? search,
+    String? ordering,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final token = await _tokenStorage.getAccessToken();
+      if (token == null) {
+        return {
+          'success': false,
+          'error': 'Usuario no autenticado',
+          'data': null,
+        };
+      }
+
+      final currentUserId = await _tokenStorage.getCurrentUserId();
+      if (currentUserId == null) {
+        return {
+          'success': false,
+          'error': 'No se pudo obtener el ID del usuario',
+          'data': null,
+        };
+      }
+
+      return await getProperties(
+        type: type,
+        agent: int.tryParse(currentUserId),
+        isActive: isActive,
+        search: search,
+        ordering: ordering,
+        page: page,
+        pageSize: pageSize,
+      );
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error obteniendo propiedades como agente: $e',
         'data': null,
       };
     }

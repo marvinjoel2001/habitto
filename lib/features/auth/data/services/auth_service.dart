@@ -110,8 +110,19 @@ class AuthService {
       final response = await _apiService.post(AppConfig.usersEndpoint, userData);
 
       if (response['success'] && response['data'] != null) {
-        // Convertir respuesta JSON a entidad de dominio
-        final createdUser = User.fromJson(response['data']);
+        // La API devuelve un envelope { success, message, data: {...} }
+        final envelope = response['data'];
+        Map<String, dynamic> data;
+        if (envelope is Map && envelope['data'] is Map) {
+          data = Map<String, dynamic>.from(envelope['data'] as Map);
+        } else if (envelope is Map) {
+          data = Map<String, dynamic>.from(envelope as Map);
+        } else {
+          data = {};
+        }
+
+        // Convertir respuesta JSON a entidad de dominio usando el contenido de data
+        final createdUser = User.fromJson(data);
 
         // Si se proporcionó una imagen de perfil, subirla después del registro
         if (profileImage != null) {
@@ -138,7 +149,7 @@ class AuthService {
         return {
           'success': true,
           'data': createdUser,
-          'message': response['message'] ?? 'Usuario registrado exitosamente',
+          'message': (envelope is Map ? envelope['message'] : null) ?? response['message'] ?? 'Usuario registrado exitosamente',
         };
       } else {
         return {
@@ -162,15 +173,26 @@ class AuthService {
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
       final response = await _apiService.get(AppConfig.currentUserEndpoint);
-
+      
       if (response['success'] && response['data'] != null) {
+        // Manejar envelope { success, message, data }
+        final envelope = response['data'];
+        Map<String, dynamic> data;
+        if (envelope is Map && envelope['data'] is Map) {
+          data = Map<String, dynamic>.from(envelope['data'] as Map);
+        } else if (envelope is Map) {
+          data = Map<String, dynamic>.from(envelope as Map);
+        } else {
+          data = {};
+        }
+
         // Convertir respuesta JSON a entidad de dominio
-        final currentUser = User.fromJson(response['data']);
+        final currentUser = User.fromJson(data);
 
         return {
           'success': true,
           'data': currentUser,
-          'message': response['message'] ?? 'Usuario obtenido exitosamente',
+          'message': (envelope is Map ? envelope['message'] : null) ?? response['message'] ?? 'Usuario obtenido exitosamente',
         };
       } else {
         return {

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:habitto/config/app_config.dart';
 import 'package:habitto/core/services/token_storage.dart';
 
@@ -19,8 +20,12 @@ class ApiService {
   final TokenStorage _tokenStorage = TokenStorage();
 
   void _initializeDio() {
+    // Ajustar baseUrl según plataforma para coincidir con entorno del backend
+    // - Web: backend en localhost
+    // - Emulador Android: 10.0.2.2
+    final resolvedBaseUrl = kIsWeb ? 'http://localhost:8000' : AppConfig.baseUrl;
     _dio = Dio(BaseOptions(
-      baseUrl: AppConfig.baseUrl,
+      baseUrl: resolvedBaseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       sendTimeout: const Duration(seconds: 30),

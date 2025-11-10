@@ -26,6 +26,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
   List<Photo> _photos = [];
   bool _isLoading = true;
   bool _isUploading = false;
+  int _uploadedCount = 0;
 
   @override
   void initState() {
@@ -39,7 +40,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
       _isLoading = true;
     });
 
-    final result = await _photoService.getPropertyPhotos(widget.property.id!);
+    final result = await _photoService.getPropertyPhotos(widget.property.id);
     
     if (result['success']) {
       setState(() {
@@ -86,13 +87,126 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
     }
   }
 
+  Future<void> _pickFromCamera() async {
+    try {
+      if (widget.property.id <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ID de propiedad inválido. Crea la propiedad antes de subir fotos.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        await _uploadImage(File(image.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al tomar foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickMultipleAndUpload() async {
+    try {
+      if (widget.property.id <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ID de propiedad inválido. Crea la propiedad antes de subir fotos.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      final List<XFile> images = await _imagePicker.pickMultiImage(
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      ) ?? [];
+
+      if (images.isNotEmpty) {
+        setState(() {
+          _isUploading = true;
+          _uploadedCount = 0;
+        });
+
+        for (final img in images) {
+          final result = await _photoService.uploadPropertyPhoto(
+            propertyId: widget.property.id,
+            imageFile: File(img.path),
+            caption: 'Foto de ${widget.property.address}',
+          );
+
+          if (result['success']) {
+            _uploadedCount++;
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result['error'] ?? 'Error al subir una foto'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+
+        setState(() {
+          _isUploading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Se subieron $_uploadedCount fotos'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        await _loadPhotos();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al seleccionar imágenes: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _uploadImage(File imageFile) async {
     setState(() {
       _isUploading = true;
     });
 
+    if (widget.property.id <= 0) {
+      setState(() { _isUploading = false; });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ID de propiedad inválido (pk=0). Crea la propiedad y usa su ID real.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
     final result = await _photoService.uploadPropertyPhoto(
-      propertyId: widget.property.id!,
+      propertyId: widget.property.id,
       imageFile: imageFile,
       caption: 'Foto de ${widget.property.address}',
     );
@@ -194,28 +308,91 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                // Encabezado informativo
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.home_outlined, color: AppTheme.primaryColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(widget.property.type, style: AppTheme.headlineSmall),
+                            Text('ID: ${widget.property.id} · ${widget.property.address}', style: AppTheme.bodyMedium),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 // Botón para agregar fotos
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.all(16),
-                  child: ElevatedButton.icon(
-                    onPressed: _isUploading ? null : _pickAndUploadImage,
-                    icon: _isUploading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.add_a_photo),
-                    label: Text(_isUploading ? 'Subiendo...' : 'Agregar Foto'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: (_isUploading || widget.property.id <= 0) ? null : _pickAndUploadImage,
+                              icon: _isUploading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.photo_library_outlined),
+                              label: Text(_isUploading ? 'Subiendo...' : 'Galería'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: (_isUploading || widget.property.id <= 0) ? null : _pickFromCamera,
+                              icon: const Icon(Icons.photo_camera_outlined),
+                              label: const Text('Cámara'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black87,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: (_isUploading || widget.property.id <= 0) ? null : _pickMultipleAndUpload,
+                          icon: const Icon(Icons.collections_outlined),
+                          label: const Text('Seleccionar múltiples fotos'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(color: AppTheme.primaryColor),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Puedes subir varias imágenes. Recomendado 1920x1080, JPG/PNG.',
+                          style: AppTheme.bodyMedium.copyWith(color: Colors.grey[700]),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 
