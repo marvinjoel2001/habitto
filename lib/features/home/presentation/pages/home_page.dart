@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../../../shared/widgets/match_modal.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import '../../../../shared/widgets/custom_bottom_navigation.dart';
 import '../../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/swipe_property_card.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
 import '../../../search/presentation/pages/search_page.dart' as search;
 import '../../../chat/presentation/pages/chat_page.dart';
@@ -84,18 +87,21 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBody: false,
-      body: _pages[_currentIndex],
-      bottomNavigationBar: CustomBottomNavigation(
-        currentIndex: _currentIndex,
-        showAddButton: _showAddButton,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+    return Container(
+      decoration: AppTheme.getProfileBackground(),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: false,
+        body: _pages[_currentIndex],
+        bottomNavigationBar: CustomBottomNavigation(
+          currentIndex: _currentIndex,
+          showAddButton: _showAddButton,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+        ),
       ),
     );
   }
@@ -195,12 +201,15 @@ class _HomeContentState extends State<HomeContent> {
   late final ApiService _apiService;
   late final PropertyService _propertyService;
   late final PhotoService _photoService;
+  late final ProfileService _profileService;
 
   bool _isLoading = true;
   String? _error;
 
   List<HomePropertyCardData> _cards = [];
   final Map<int, List<String>> _photoUrlsByProperty = {};
+  HomePropertyCardData? _currentTopProperty;
+  String _currentUserImageUrl = 'assets/images/userempty.png';
 
   @override
   void initState() {
@@ -208,7 +217,24 @@ class _HomeContentState extends State<HomeContent> {
     _apiService = ApiService();
     _propertyService = PropertyService(apiService: _apiService);
     _photoService = PhotoService(_apiService);
+    _profileService = ProfileService(apiService: _apiService);
     _loadAllProperties();
+    _loadCurrentUserImage();
+  }
+
+  Future<void> _loadCurrentUserImage() async {
+    try {
+      final res = await _profileService.getCurrentProfile();
+      if (res['success'] == true && res['data'] != null) {
+        final profile = res['data']['profile'];
+        final url = (profile?.profileImage ?? '') as String;
+        if (url.isNotEmpty && mounted) {
+          setState(() => _currentUserImageUrl = url);
+        }
+      }
+    } catch (_) {
+      // Mantener imagen por defecto
+    }
   }
 
   Future<void> _loadAllProperties() async {
@@ -294,9 +320,56 @@ class _HomeContentState extends State<HomeContent> {
                     ? Center(
                         child: Text(_error!, style: const TextStyle(color: Colors.white)),
                       )
-                    : PropertySwipeDeck(properties: _cards),
+                    : PropertySwipeDeck(
+                        properties: _cards,
+                        onTopChange: (p) => setState(() => _currentTopProperty = p),
+                      ),
           ),
-          Container(height: 22, color: AppTheme.blackColor),
+          Container(
+            color: Colors.transparent,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _CircleActionButton(
+                  icon: Icons.rotate_left,
+                  bgColor: Colors.white,
+                  iconColor: Colors.amber,
+                ),
+                const SizedBox(width: 18),
+                _CircleActionButton(
+                  icon: Icons.close,
+                  bgColor: Colors.white,
+                  iconColor: Colors.redAccent,
+                ),
+                const SizedBox(width: 18),
+                _CircleActionButton(
+                  icon: Icons.favorite,
+                  bgColor: Colors.white,
+                  iconColor: const Color.fromARGB(255, 247, 22, 1),
+                  onTap: () {
+                    final userImage = _currentUserImageUrl;
+                    final propertyImage = (_currentTopProperty?.images.isNotEmpty ?? false)
+                        ? _currentTopProperty!.images[0]
+                        : 'assets/images/empty.jpg';
+                    MatchModal.show(
+                      context,
+                      userImageUrl: userImage,
+                      propertyImageUrl: propertyImage,
+                      propertyTitle: _currentTopProperty?.title,
+                    );
+                  },
+                ),
+                const SizedBox(width: 18),
+                _CircleActionButton(
+                  icon: Icons.star,
+                  bgColor: Colors.white,
+                  iconColor: Colors.blueAccent,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
         ],
       ),
     );
@@ -381,7 +454,12 @@ class HomePropertyCardData {
 // ---- Deck con swipe ----
 class PropertySwipeDeck extends StatefulWidget {
   final List<HomePropertyCardData> properties;
-  const PropertySwipeDeck({super.key, required this.properties});
+  final ValueChanged<HomePropertyCardData>? onTopChange;
+  const PropertySwipeDeck({
+    super.key,
+    required this.properties,
+    this.onTopChange,
+  });
 
   @override
   State<PropertySwipeDeck> createState() => _PropertySwipeDeckState();
@@ -394,6 +472,7 @@ class _PropertySwipeDeckState extends State<PropertySwipeDeck>
   bool _isDragging = false; // visual para card durante arrastre
   late AnimationController _animController;
   Animation<double>? _animDx;
+  bool _pendingDismiss = false; // evita duplicar avance por listeners múltiples
 
   @override
   void initState() {
@@ -402,6 +481,32 @@ class _PropertySwipeDeckState extends State<PropertySwipeDeck>
       vsync: this,
       duration: const Duration(milliseconds: 220),
     );
+
+    // Reportar la tarjeta inicial al padre
+    if (widget.properties.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final current = widget.properties[topIndex];
+        widget.onTopChange?.call(current);
+      });
+    }
+
+    // Listener único para completar animación y avanzar índice si corresponde
+    _animController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          dragDx = 0.0;
+          _isDragging = false;
+          if (_pendingDismiss) {
+            topIndex = (topIndex + 1).clamp(0, widget.properties.length);
+          }
+        });
+        if (_pendingDismiss && topIndex < widget.properties.length) {
+          final current = widget.properties[topIndex];
+          widget.onTopChange?.call(current);
+        }
+        _pendingDismiss = false;
+      }
+    });
   }
 
   @override
@@ -438,23 +543,8 @@ class _PropertySwipeDeckState extends State<PropertySwipeDeck>
         setState(() {
           dragDx = _animDx!.value;
         });
-      })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          if (dismiss) {
-            setState(() {
-              dragDx = 0.0;
-              _isDragging = false;
-              topIndex = (topIndex + 1).clamp(0, widget.properties.length);
-            });
-          } else {
-            setState(() {
-              dragDx = 0.0;
-              _isDragging = false;
-            });
-          }
-        }
       });
+    _pendingDismiss = dismiss;
     _animController.forward(from: 0.0);
   }
 
@@ -496,8 +586,8 @@ class _PropertySwipeDeckState extends State<PropertySwipeDeck>
                         });
                       },
                       onPanEnd: (details) {
-                        const threshold = 120.0;
                         final width = MediaQuery.of(context).size.width;
+                        final threshold = width * 0.55; // requiere arrastre más largo
                         if (dragDx.abs() > threshold) {
                           final target = dragDx > 0 ? width * 1.2 : -width * 1.2;
                           _animateTo(target, dismiss: true);
@@ -505,18 +595,31 @@ class _PropertySwipeDeckState extends State<PropertySwipeDeck>
                           _animateTo(0.0, dismiss: false);
                         }
                       },
-                      child: PropertyCard(
-                        property: property,
-                        likeProgress: _likeProgressFromDx(dragDx),
+                      child: SwipePropertyCard(
+                        images: property.images,
+                        title: property.title,
+                        priceLabel: property.priceLabel,
+                        tags: property.tags,
+                        distanceKm: property.distanceKm,
+                        likeProgress: _likeProgressFromDx(
+                          dragDx,
+                          MediaQuery.of(context).size.width,
+                        ),
                         isDragging: _isDragging,
+                        onOpenImage: (index) => _openFullScreen(property.images, index),
                       ),
                     ),
                   ),
                 )
-              : PropertyCard(
-                  property: property,
+              : SwipePropertyCard(
+                  images: property.images,
+                  title: property.title,
+                  priceLabel: property.priceLabel,
+                  tags: property.tags,
+                  distanceKm: property.distanceKm,
                   likeProgress: 0.0,
                   isDragging: false,
+                  onOpenImage: (index) => _openFullScreen(property.images, index),
                 ),
         ),
       );
@@ -529,10 +632,33 @@ class _PropertySwipeDeckState extends State<PropertySwipeDeck>
     );
   }
 
-  double _likeProgressFromDx(double dx) {
-    // Solo derecha
-    final p = (dx / 160).clamp(0.0, 1.0);
+  double _likeProgressFromDx(double dx, double width) {
+    // Solo derecha; progreso en función del ancho para menor sensibilidad
+    final required = width * 0.55; // coincide con threshold visual
+    final p = (dx / required).clamp(0.0, 1.0);
     return p;
+  }
+
+  void _openFullScreen(List<String> images, int initialIndex) {
+    if (images.isEmpty) return;
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Cerrar',
+      barrierColor: Colors.black.withOpacity(0.98),
+      pageBuilder: (context, anim1, anim2) {
+        return FullScreenImageViewer(
+          images: images,
+          initialIndex: initialIndex,
+          onClose: () {},
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 160),
+      transitionBuilder: (context, anim, secondary, child) {
+        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOut);
+        return FadeTransition(opacity: curved, child: child);
+      },
+    );
   }
 }
 
@@ -600,11 +726,8 @@ class _PropertyCardState extends State<PropertyCard> {
           duration: const Duration(milliseconds: 120),
           decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: widget.isDragging
-                ? Colors.white.withOpacity(0.6)
-                : Colors.transparent,
-            width: widget.isDragging ? 2 : 0,
+          border: const Border.fromBorderSide(
+            BorderSide(color: Colors.white, width: 0.5),
           ),
           boxShadow: [
             BoxShadow(
@@ -636,21 +759,27 @@ class _PropertyCardState extends State<PropertyCard> {
                     return _noImagePlaceholder();
                   }
                   final url = widget.property.images[i];
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _openFullScreen(i),
-                    child: Image.network(
-                      url,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return Container(
-                          color: Colors.black12,
-                          alignment: Alignment.center,
-                          child: const CircularProgressIndicator(),
-                        );
-                      },
-                      errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 24, left: 20, right: 20, bottom: 10),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _openFullScreen(i),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Image.network(
+                          url,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              color: Colors.black12,
+                              alignment: Alignment.center,
+                              child: const CircularProgressIndicator(),
+                            );
+                          },
+                          errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -739,10 +868,12 @@ class _PropertyCardState extends State<PropertyCard> {
                           Row(
                             children: [
                               Expanded(
-                                child: Text(
+                                child: AutoSizeText(
                                   widget.property.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 3,
+                                  minFontSize: 18,
+                                  stepGranularity: 1,
+                                  overflow: TextOverflow.visible,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 32,
@@ -770,22 +901,6 @@ class _PropertyCardState extends State<PropertyCard> {
                                 .toList(),
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              _CircleActionButton(
-                                icon: Icons.favorite,
-                                bgColor: Colors.white,
-                                iconColor: Colors.redAccent,
-                              ),
-                              SizedBox(width: 18),
-                              _CircleActionButton(
-                                icon: Icons.bookmark,
-                                bgColor: Colors.black54,
-                                iconColor: Colors.white,
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),

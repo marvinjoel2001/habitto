@@ -1,0 +1,416 @@
+import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
+import '../theme/app_theme.dart';
+
+class MatchModal {
+  static Future<void> show(
+    BuildContext context, {
+    required String userImageUrl,
+    required String propertyImageUrl,
+    String? propertyTitle,
+  }) async {
+    await showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Cerrar',
+      barrierColor: Colors.black.withOpacity(0.6),
+      transitionDuration: const Duration(milliseconds: 320),
+      pageBuilder: (context, anim1, anim2) {
+        return _FullScreenMatchContent(
+          userImageUrl: userImageUrl,
+          propertyImageUrl: propertyImageUrl,
+          propertyTitle: propertyTitle,
+        );
+      },
+      transitionBuilder: (context, anim, secondary, child) {
+        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+        return FadeTransition(opacity: curved, child: child);
+      },
+    );
+    return;
+  }
+}
+
+class _FullScreenMatchContent extends StatelessWidget {
+  final String userImageUrl;
+  final String propertyImageUrl;
+  final String? propertyTitle;
+
+  const _FullScreenMatchContent({
+    super.key,
+    required this.userImageUrl,
+    required this.propertyImageUrl,
+    this.propertyTitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          // Fondo degradado de tema a pantalla completa
+          Positioned.fill(
+            child: Container(
+              decoration: AppTheme.getProfileBackground(),
+            ),
+          ),
+          // Contenido
+          Positioned.fill(
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
+                  // Header opcional: nombre app o close button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(width: 48),
+                      // Título superior pequeño
+                      Text(
+                        'Match',
+                        style: const TextStyle(
+                          color: AppTheme.whiteColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Zona de tarjetas inclinadas con íconos flotantes
+                  Expanded(
+                    child: Center(
+                      child: SizedBox(
+                        height: 360,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Positioned(
+                              left: 52,
+                              top: 24,
+                              child: Transform.rotate(
+                                angle: -0.12,
+                                child: _RoundedImageCard(
+                                  url: userImageUrl,
+                                  size: const Size(200, 300),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 52,
+                              top: 0,
+                              child: Transform.rotate(
+                                angle: 0.12,
+                                child: _RoundedImageCard(
+                                  url: propertyImageUrl,
+                                  size: const Size(200, 300),
+                                ),
+                              ),
+                            ),
+                            // Íconos flotantes
+                            Positioned(
+                              top: 40,
+                              right: 60,
+                              child: _FloatingIcon(
+                                bg: cs.secondary,
+                                icon: Icons.mail_outline,
+                              ),
+                            ),
+                            Positioned(
+                              top: 120,
+                              left: 40,
+                              child: _FloatingIcon(
+                                bg: cs.primary,
+                                icon: Icons.card_giftcard,
+                              ),
+                            ),
+                            // Corazón central
+                            Positioned(
+                              bottom: 16,
+                              child: Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accentMint,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.accentMint.withOpacity(0.45),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(Icons.favorite, color: Colors.white, size: 30),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Título grande con énfasis (match con propiedad)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        children: [
+                          const TextSpan(
+                            text: '¡Es un ',
+                            style: TextStyle(
+                              color: AppTheme.whiteColor,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'Match',
+                            style: TextStyle(
+                              color: cs.secondary,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const TextSpan(
+                            text: '!\n',
+                            style: TextStyle(
+                              color: AppTheme.whiteColor,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'Con ',
+                            style: const TextStyle(
+                              color: AppTheme.whiteColor,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextSpan(
+                            text: propertyTitle?.isNotEmpty == true
+                                ? propertyTitle!
+                                : 'esta propiedad',
+                            style: TextStyle(
+                              color: cs.secondary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Subtítulo contextual
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      'Comunícate con el propietario y da el siguiente paso. \nEste hogar parece perfecto para ti.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  // CTA deslizable con glassmorphism
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    child: _DraggableCta(
+                      onComplete: () => Navigator.of(context).maybePop(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoundedImageCard extends StatelessWidget {
+  final String url;
+  final Size size;
+
+  const _RoundedImageCard({super.key, required this.url, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size.width,
+      height: size.height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.30),
+            blurRadius: 18,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: _buildImage(url),
+      ),
+    );
+  }
+
+  Widget _buildImage(String url) {
+    if (url.startsWith('http')) {
+      return Image.network(url, fit: BoxFit.cover);
+    }
+    return Image.asset(url, fit: BoxFit.cover);
+  }
+}
+
+class _FloatingIcon extends StatelessWidget {
+  final Color bg;
+  final IconData icon;
+  const _FloatingIcon({super.key, required this.bg, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: bg,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: bg.withOpacity(0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: Colors.white, size: 24),
+    );
+  }
+}
+
+class _DraggableCta extends StatefulWidget {
+  final VoidCallback onComplete;
+  const _DraggableCta({super.key, required this.onComplete});
+
+  @override
+  State<_DraggableCta> createState() => _DraggableCtaState();
+}
+
+class _DraggableCtaState extends State<_DraggableCta> with SingleTickerProviderStateMixin {
+  double _drag = 0.0;
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const double height = 72;
+    const double knobSize = 44;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(36),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          height: height,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(36),
+            border: Border.all(color: Colors.white.withOpacity(0.20)),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double maxDrag = constraints.maxWidth - knobSize - 24; // padding lateral
+              final double progress = (_drag / maxDrag).clamp(0.0, 1.0);
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Texto centrado
+                  const Text(
+                    'Get Started',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  // Flechas a la derecha
+                  const Positioned(
+                    right: 18,
+                    child: Icon(Icons.keyboard_double_arrow_right, color: Colors.white70, size: 28),
+                  ),
+                  // Knob arrastrable
+                  Positioned(
+                    left: 12 + _drag,
+                    child: GestureDetector(
+                      onHorizontalDragUpdate: (details) {
+                        setState(() {
+                          _drag = (_drag + details.delta.dx).clamp(0.0, maxDrag);
+                        });
+                      },
+                      onHorizontalDragEnd: (details) {
+                        // Completa si cruza 65%
+                        if (progress >= 0.65) {
+                          widget.onComplete();
+                        } else {
+                          // Animar de vuelta
+                          final tween = Tween<double>(begin: _drag, end: 0.0).animate(_controller);
+                          _controller
+                            ..reset()
+                            ..addListener(() {
+                              setState(() => _drag = tween.value);
+                            })
+                            ..forward();
+                        }
+                      },
+                      child: Container(
+                        width: knobSize,
+                        height: knobSize,
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.95),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withOpacity(0.45),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                          border: Border.all(color: Colors.white.withOpacity(0.35), width: 1),
+                        ),
+                        child: const Icon(Icons.favorite, color: Colors.white, size: 22),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}

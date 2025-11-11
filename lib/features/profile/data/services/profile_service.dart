@@ -125,32 +125,29 @@ class ProfileService {
   /// Retorna: Profile entity actualizado
   Future<Map<String, dynamic>> updateCurrentProfile(Map<String, dynamic> profileData, {File? profileImage}) async {
     try {
-      Map<String, dynamic> response;
+      Profile? lastProfile;
 
+      // 1) Si hay imagen, usar el endpoint dedicado de subida de foto.
       if (profileImage != null) {
-        // Si hay imagen, usar multipart/form-data
-        final additionalFields = <String, String>{};
-        profileData.forEach((key, value) {
-          additionalFields[key] = value.toString();
-        });
-
-        response = await _apiService.uploadFile(
-          AppConfig.updateProfileEndpoint,
-          'profile_picture',
-          profileImage,
-          method: 'PATCH',
-          additionalFields: additionalFields,
-        );
-      } else {
-        // Si no hay imagen, usar JSON
-        response = await _apiService.patch(
-          AppConfig.updateProfileEndpoint,
-          profileData,
-        );
+        final uploadResult = await uploadCurrentProfilePicture(profileImage);
+        if (!uploadResult['success']) {
+          return {
+            'success': false,
+            'error': uploadResult['error'] ?? 'Error al subir imagen de perfil',
+            'data': null,
+          };
+        }
+        lastProfile = uploadResult['data'] as Profile?;
       }
 
+      // 2) Actualizar el resto de datos usando PATCH JSON al endpoint update_me
+      final response = await _apiService.patch(
+        AppConfig.updateProfileEndpoint,
+        profileData,
+      );
+
       if (response['success'] && response['data'] != null) {
-        // La API envuelve la respuesta: { success, message, data: { ...perfil } }
+        // La API puede responder como { success, message, data: { ...perfil } } o directamente { ...perfil }
         final envelope = response['data'];
         final profileJson = envelope is Map && envelope['data'] is Map
             ? Map<String, dynamic>.from(envelope['data'] as Map)
@@ -158,16 +155,18 @@ class ProfileService {
                 ? Map<String, dynamic>.from(envelope as Map)
                 : <String, dynamic>{};
 
-        if (profileJson.isEmpty) {
+        // Si no vino el perfil en esta respuesta, usar el último perfil de la subida
+        final updatedProfile = profileJson.isNotEmpty
+            ? Profile.fromJson(profileJson)
+            : lastProfile;
+
+        if (updatedProfile == null) {
           return {
             'success': false,
             'error': 'Respuesta del servidor inválida al actualizar el perfil',
             'data': null,
           };
         }
-
-        // Convertir respuesta JSON a entidad de dominio
-        final updatedProfile = Profile.fromJson(profileJson);
 
         return {
           'success': true,
@@ -204,8 +203,23 @@ class ProfileService {
       );
 
       if (response['success'] && response['data'] != null) {
-        // Convertir respuesta JSON a entidad de dominio
-        final updatedProfile = Profile.fromJson(response['data']);
+        // La API puede devolver { success, message, data: { ...perfil } } o el perfil directamente
+        final envelope = response['data'];
+        final profileJson = envelope is Map && envelope['data'] is Map
+            ? Map<String, dynamic>.from(envelope['data'] as Map)
+            : envelope is Map
+                ? Map<String, dynamic>.from(envelope as Map)
+                : <String, dynamic>{};
+
+        if (profileJson.isEmpty) {
+          return {
+            'success': false,
+            'error': 'Respuesta del servidor inválida al subir imagen de perfil',
+            'data': null,
+          };
+        }
+
+        final updatedProfile = Profile.fromJson(profileJson);
 
         return {
           'success': true,

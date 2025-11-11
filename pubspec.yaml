@@ -19,6 +19,7 @@ dependencies:
   mapbox_maps_flutter: ^2.0.0
   shared_preferences: ^2.2.2
   image_picker: ^1.0.4
+  auto_size_text: ^3.0.0
 
 dev_dependencies:
   flutter_test:
