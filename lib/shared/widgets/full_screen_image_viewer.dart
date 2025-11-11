@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart' show Matrix4;
 
 class FullScreenImageViewer extends StatefulWidget {
   final List<String> images;
@@ -23,17 +24,20 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
   late int _index;
   bool _isZoomed = false;
   double _verticalDrag = 0.0;
+  late final TransformationController _transformController;
 
   @override
   void initState() {
     super.initState();
     _index = widget.initialIndex.clamp(0, (widget.images.isNotEmpty ? widget.images.length - 1 : 0));
     _controller = PageController(initialPage: _index);
+    _transformController = TransformationController();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _transformController.dispose();
     super.dispose();
   }
 
@@ -43,22 +47,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: GestureDetector(
-          onVerticalDragUpdate: (details) {
-            if (!widget.enableSwipeDownToClose) return;
-            if (_isZoomed) return;
-            _verticalDrag += details.delta.dy;
-          },
-          onVerticalDragEnd: (details) {
-            if (!widget.enableSwipeDownToClose) return;
-            if (_isZoomed) return;
-            if (_verticalDrag > 100) {
-              widget.onClose?.call();
-              Navigator.of(context).maybePop();
-            }
-            _verticalDrag = 0.0;
-          },
-          child: Stack(
+        child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
               hasImages
@@ -74,42 +63,71 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                         return Container(
                           color: Colors.black,
                           alignment: Alignment.center,
-                          child: InteractiveViewer(
-                            clipBehavior: Clip.none,
-                            panEnabled: true,
-                            minScale: 1.0,
-                            maxScale: 4.0,
-                            onInteractionUpdate: (details) {
-                              final scale = details.scale;
-                              final zooming = scale > 1.02;
-                              if (zooming != _isZoomed) {
-                                setState(() {
-                                  _isZoomed = zooming;
-                                });
+                          child: GestureDetector(
+                            onDoubleTap: () {
+                              final scale = _transformController.value.getMaxScaleOnAxis();
+                              final zooming = scale > 1.01;
+                              if (zooming) {
+                                // Reset a escala 1
+                                _transformController.value = Matrix4.identity();
+                                setState(() => _isZoomed = false);
+                              } else {
+                                // Zoom centrado
+                                _transformController.value = Matrix4.identity()..scale(2.0);
+                                setState(() => _isZoomed = true);
                               }
                             },
-                            onInteractionEnd: (_) {
-                              if (_isZoomed) {
-                                setState(() {
-                                  _isZoomed = false;
-                                });
-                              }
-                            },
-                            child: Image.network(
-                              url,
-                              fit: BoxFit.contain,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return const Center(
-                                    child: CircularProgressIndicator(
-                                        color: Colors.white));
+                            child: InteractiveViewer(
+                              clipBehavior: Clip.hardEdge,
+                              panEnabled: _isZoomed,
+                              scaleEnabled: true,
+                              minScale: 1.0,
+                              maxScale: 4.0,
+                              boundaryMargin: const EdgeInsets.symmetric(vertical: 160.0, horizontal: 0.0),
+                              transformationController: _transformController,
+                              onInteractionUpdate: (_) {
+                                final scale = _transformController.value.getMaxScaleOnAxis();
+                                final zooming = scale > 1.01;
+                                if (zooming != _isZoomed) {
+                                  setState(() {
+                                    _isZoomed = zooming;
+                                  });
+                                }
                               },
-                              errorBuilder: (context, error, stack) {
-                                return const Center(
-                                  child: Icon(Icons.broken_image,
-                                      color: Colors.white70, size: 64),
-                                );
+                              onInteractionEnd: (_) {
+                                final scale = _transformController.value.getMaxScaleOnAxis();
+                                final zooming = scale > 1.01;
+                                if (zooming != _isZoomed) {
+                                  setState(() {
+                                    _isZoomed = zooming;
+                                  });
+                                }
                               },
+                              child: Center(
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final width = constraints.maxWidth;
+                                    return Image.network(
+                                      url,
+                                      width: width,
+                                      fit: BoxFit.fitWidth,
+                                      alignment: Alignment.center,
+                                      loadingBuilder: (context, child, progress) {
+                                        if (progress == null) return child;
+                                        return const Center(
+                                            child: CircularProgressIndicator(
+                                                color: Colors.white));
+                                      },
+                                      errorBuilder: (context, error, stack) {
+                                        return const Center(
+                                          child: Icon(Icons.broken_image,
+                                              color: Colors.white70, size: 64),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
                             ),
                           ),
                         );
@@ -156,7 +174,6 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
             ],
           ),
         ),
-      ),
     );
   }
 }
