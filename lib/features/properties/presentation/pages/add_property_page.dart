@@ -12,7 +12,6 @@ import '../../domain/entities/payment_method.dart';
 import '../../data/services/property_service.dart';
 import '../../../profile/data/services/profile_service.dart';
 import '../../../../shared/widgets/custom_button.dart';
-import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/step_progress_indicator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import 'property_photos_page.dart';
@@ -510,55 +509,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
-            'Tipo de Propiedad',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            // Borde plomito delgado y menos blur para el select
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppTheme.darkGrayBase.withOpacity(0.3), width: 1),
-              gradient: AppTheme.getCardGradient(),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedPropertyType,
-                      isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-                      dropdownColor: Colors.white,
-                      items: _propertyTypeMapping.entries.map((entry) {
-                        return DropdownMenuItem<String>(
-                          value: entry.value, // API value (casa, departamento, etc.)
-                          child: Text(
-                            entry.key, // Display value (Casa, Departamento, etc.)
-                            style: const TextStyle(color: Colors.black),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedPropertyType = newValue!;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildPropertyTypeDropdown(),
           const SizedBox(height: 24),
           const Text(
             'Habitaciones',
@@ -705,9 +656,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ),
           ),
           const SizedBox(height: 12),
-          CustomTextField(
+          _buildProfileStyledField(
             controller: _areaController,
             hintText: 'Ej: 120.5',
+            icon: Icons.square_foot,
             keyboardType: TextInputType.number,
           ),
         ],
@@ -739,9 +691,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ),
           ),
           const SizedBox(height: 12),
-          CustomTextField(
+          _buildProfileStyledField(
             controller: _priceController,
             hintText: 'Ej: 2500000',
+            icon: Icons.attach_money,
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 24),
@@ -754,9 +707,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ),
           ),
           const SizedBox(height: 12),
-          CustomTextField(
+          _buildProfileStyledField(
             controller: _guaranteeController,
             hintText: 'Ej: 3000000',
+            icon: Icons.lock_outline,
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 24),
@@ -769,9 +723,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ),
           ),
           const SizedBox(height: 12),
-          CustomTextField(
+          _buildProfileStyledField(
             controller: _descriptionController,
             hintText: 'Describe tu propiedad...',
+            icon: Icons.description,
             maxLines: 3,
           ),
           const SizedBox(height: 24),
@@ -952,9 +907,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ),
           ),
           const SizedBox(height: 12),
-          CustomTextField(
+          _buildProfileStyledField(
             controller: _addressController,
             hintText: 'Ej: Calle Principal 123, Zona Sur, La Paz',
+            icon: Icons.location_on,
           ),
           const SizedBox(height: 24),
           
@@ -1069,9 +1025,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    CustomTextField(
+                    _buildProfileStyledField(
                       controller: _latitudeController,
                       hintText: 'Ej: -16.5000',
+                      icon: Icons.explore,
                       keyboardType: TextInputType.number,
                     ),
                   ],
@@ -1091,9 +1048,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    CustomTextField(
+                    _buildProfileStyledField(
                       controller: _longitudeController,
                       hintText: 'Ej: -68.1500',
+                      icon: Icons.explore,
                       keyboardType: TextInputType.number,
                     ),
                   ],
@@ -1112,9 +1070,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ),
           ),
           const SizedBox(height: 12),
-          CustomTextField(
+          _buildProfileStyledField(
             controller: _availabilityDateController,
             hintText: 'YYYY-MM-DD (opcional)',
+            icon: Icons.calendar_today,
+            readOnly: true,
             onTap: () async {
               final date = await showDatePicker(
                 context: context,
@@ -1141,6 +1101,105 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  // Campos estilo EditProfile
+  Widget _buildProfileStyledField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    VoidCallback? onTap,
+    bool readOnly = false,
+    bool enabled = true,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        enabled: enabled,
+        readOnly: readOnly,
+        onTap: onTap,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        style: const TextStyle(color: AppTheme.darkGrayBase),
+        decoration: InputDecoration(
+          hintText: hintText,
+          floatingLabelBehavior: FloatingLabelBehavior.never,
+          labelStyle: const TextStyle(color: AppTheme.darkGrayBase),
+          prefixIcon: Icon(icon, color: AppTheme.primaryColor),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          isDense: true,
+          hintStyle: TextStyle(color: Colors.black.withOpacity(0.5)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPropertyTypeDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        initialValue: _selectedPropertyType,
+        decoration: InputDecoration(
+          hintText: 'Tipo de propiedad',
+          floatingLabelBehavior: FloatingLabelBehavior.never,
+          labelStyle: const TextStyle(color: AppTheme.darkGrayBase),
+          prefixIcon: const Icon(Icons.home_work, color: AppTheme.primaryColor),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          isDense: true,
+          hintStyle: TextStyle(color: Colors.black.withOpacity(0.5)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+        dropdownColor: Colors.white,
+        style: const TextStyle(color: AppTheme.darkGrayBase),
+        items: _propertyTypeMapping.entries.map((entry) {
+          return DropdownMenuItem<String>(
+            value: entry.value,
+            child: Text(entry.key, style: const TextStyle(color: AppTheme.darkGrayBase)),
+          );
+        }).toList(),
+        onChanged: (value) {
+          if (value != null) {
+            setState(() {
+              _selectedPropertyType = value;
+            });
+          }
+        },
       ),
     );
   }
