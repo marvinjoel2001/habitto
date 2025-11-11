@@ -3,8 +3,8 @@ class AppConfig {
   static const String version = '1.0.0';
 
   // API Configuration
-  //static const String baseUrl = 'http://192.168.1.73:8000';
-    static const String baseUrl = 'http://10.0.2.2:8000';
+  static const String baseUrl = 'http://192.168.1.128:8000';
+    //static const String baseUrl = 'http://10.0.2.2:8000';
   static const int timeoutDuration = 30000; // milliseconds
 
   // API Endpoints

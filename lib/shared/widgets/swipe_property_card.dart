@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 
 import '../theme/app_theme.dart';
 
@@ -118,6 +119,8 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                 // Carrusel de imágenes
                 PageView.builder(
                   controller: _pageController,
+                  physics: const BouncingScrollPhysics(),
+                  dragStartBehavior: DragStartBehavior.down,
                   itemCount: widget.images.isNotEmpty ? widget.images.length : 1,
                   onPageChanged: (i) => setState(() => _page = i),
                   itemBuilder: (_, i) {

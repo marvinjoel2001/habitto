@@ -684,17 +684,25 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                   child: Transform.rotate(
                     angle: rotation,
                     child: GestureDetector(
-                      onPanStart: (_) => setState(() => _isDragging = true),
-                      onPanUpdate: (details) {
+                      onHorizontalDragStart: (_) => setState(() => _isDragging = true),
+                      onHorizontalDragUpdate: (details) {
                         setState(() {
                           dragDx += details.delta.dx;
                         });
                       },
-                      onPanEnd: (details) {
+                      onHorizontalDragEnd: (details) {
                         final width = MediaQuery.of(context).size.width;
-                        final threshold = width * 0.55; // requiere arrastre más largo
-                        if (dragDx.abs() > threshold) {
-                          final target = dragDx > 0 ? width * 1.2 : -width * 1.2;
+                        // Menor distancia requerida y opción por velocidad para activar swipe
+                        final threshold = width * 0.35; // antes: 0.55
+                        final vx = details.velocity.pixelsPerSecond.dx;
+                        const velocityThreshold = 700; // px/seg
+
+                        final shouldDismiss =
+                            dragDx.abs() > threshold || vx.abs() > velocityThreshold;
+
+                        if (shouldDismiss) {
+                          final directionPositive = (dragDx + vx * 0.001) > 0;
+                          final target = directionPositive ? width * 1.2 : -width * 1.2;
                           _animateTo(target, dismiss: true);
                         } else {
                           _animateTo(0.0, dismiss: false);
@@ -712,6 +720,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                         ),
                         isDragging: _isDragging,
                         onOpenImage: (index) => _openFullScreen(property.images, index),
+                        outerTopPadding: 28.0,
                       ),
                     ),
                   ),
@@ -725,6 +734,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                   likeProgress: 0.0,
                   isDragging: false,
                   onOpenImage: (index) => _openFullScreen(property.images, index),
+                  outerTopPadding: 28.0,
                 ),
         ),
       );
@@ -738,8 +748,8 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
   }
 
   double _likeProgressFromDx(double dx, double width) {
-    // Solo derecha; progreso en función del ancho para menor sensibilidad
-    final required = width * 0.55; // coincide con threshold visual
+    // Solo derecha; progreso en función del ancho con menor distancia requerida
+    final required = width * 0.35; // coincide con nuevo threshold
     final p = (dx / required).clamp(0.0, 1.0);
     return p;
   }
