@@ -153,7 +153,7 @@ class _GlassTag extends StatelessWidget {
   }
 }
 
-class _CircleActionButton extends StatelessWidget {
+class _CircleActionButton extends StatefulWidget {
   final IconData icon;
   final Color bgColor;
   final Color iconColor;
@@ -168,24 +168,61 @@ class _CircleActionButton extends StatelessWidget {
   });
 
   @override
+  State<_CircleActionButton> createState() => _CircleActionButtonState();
+}
+
+class _CircleActionButtonState extends State<_CircleActionButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 160),
+      reverseDuration: const Duration(milliseconds: 140),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleTap() async {
+    await _controller.forward();
+    await _controller.reverse();
+    widget.onTap?.call();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: bgColor,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.25),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
+      onTap: _handleTap,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: widget.bgColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.25),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Icon(widget.icon, color: widget.iconColor, size: 28),
         ),
-        child: Icon(icon, color: iconColor, size: 28),
       ),
     );
   }
@@ -210,6 +247,39 @@ class _HomeContentState extends State<HomeContent> {
   final Map<int, List<String>> _photoUrlsByProperty = {};
   HomePropertyCardData? _currentTopProperty;
   String _currentUserImageUrl = 'assets/images/userempty.png';
+  final GlobalKey<PropertySwipeDeckState> _deckKey = GlobalKey<PropertySwipeDeckState>();
+
+  void _spawnHeartsBurst() {
+    final overlay = Overlay.of(context);
+    if (overlay == null) return;
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (ctx) => const _HeartsBurstOverlay(),
+    );
+    overlay.insert(entry);
+    Future.delayed(const Duration(milliseconds: 1750), () {
+      entry.remove();
+    });
+  }
+
+  void _spawnBigXAndSwipeLeft() {
+    final overlay = Overlay.of(context);
+    if (overlay == null) {
+      _deckKey.currentState?.swipeLeft();
+      return;
+    }
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (ctx) => const _BigXOverlay(),
+    );
+    overlay.insert(entry);
+    Future.delayed(const Duration(milliseconds: 600), () {
+      _deckKey.currentState?.swipeLeft();
+    });
+    Future.delayed(const Duration(milliseconds: 800), () {
+      entry.remove();
+    });
+  }
 
   @override
   void initState() {
@@ -326,12 +396,14 @@ class _HomeContentState extends State<HomeContent> {
                         child: Text(_error!, style: const TextStyle(color: Colors.white)),
                       )
                     : PropertySwipeDeck(
+                        key: _deckKey,
                         properties: _cards,
                         onTopChange: (p) => setState(() => _currentTopProperty = p),
                       ),
           ),
           Container(
             color: Colors.transparent,
+            margin: const EdgeInsets.only(top: 20),
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -340,19 +412,22 @@ class _HomeContentState extends State<HomeContent> {
                   icon: Icons.rotate_left,
                   bgColor: Colors.white,
                   iconColor: Colors.amber,
+                  onTap: () => _deckKey.currentState?.goBack(),
                 ),
                 const SizedBox(width: 18),
                 _CircleActionButton(
                   icon: Icons.close,
                   bgColor: Colors.white,
                   iconColor: Colors.redAccent,
+                  onTap: _spawnBigXAndSwipeLeft,
                 ),
                 const SizedBox(width: 18),
                 _CircleActionButton(
                   icon: Icons.favorite,
-                  bgColor: Colors.white,
-                  iconColor: const Color.fromARGB(255, 247, 22, 1),
+                  bgColor: Colors.orange,
+                  iconColor: Colors.white,
                   onTap: () {
+                    _spawnHeartsBurst();
                     final userImage = _currentUserImageUrl;
                     final propertyImage = (_currentTopProperty?.images.isNotEmpty ?? false)
                         ? _currentTopProperty!.images[0]
@@ -467,10 +542,10 @@ class PropertySwipeDeck extends StatefulWidget {
   });
 
   @override
-  State<PropertySwipeDeck> createState() => _PropertySwipeDeckState();
+  State<PropertySwipeDeck> createState() => PropertySwipeDeckState();
 }
 
-class _PropertySwipeDeckState extends State<PropertySwipeDeck>
+class PropertySwipeDeckState extends State<PropertySwipeDeck>
     with SingleTickerProviderStateMixin {
   int topIndex = 0;
   double dragDx = 0.0; // para overlay del corazón
@@ -551,6 +626,31 @@ class _PropertySwipeDeckState extends State<PropertySwipeDeck>
       });
     _pendingDismiss = dismiss;
     _animController.forward(from: 0.0);
+  }
+
+  // --- Controles programáticos ---
+  void swipeLeft() {
+    final width = MediaQuery.of(context).size.width;
+    _animateTo(-width * 1.2, dismiss: true);
+  }
+
+  void swipeRight() {
+    final width = MediaQuery.of(context).size.width;
+    _animateTo(width * 1.2, dismiss: true);
+  }
+
+  void goBack() {
+    if (topIndex > 0) {
+      setState(() {
+        topIndex = topIndex - 1;
+        dragDx = 0.0;
+        _isDragging = false;
+      });
+      if (topIndex < widget.properties.length) {
+        final current = widget.properties[topIndex];
+        widget.onTopChange?.call(current);
+      }
+    }
   }
 
   @override
@@ -732,7 +832,7 @@ class _PropertyCardState extends State<PropertyCard> {
           decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           border: const Border.fromBorderSide(
-            BorderSide(color: Colors.white, width: 0.5),
+            BorderSide(color: Colors.white, width: 1.6),
           ),
           boxShadow: [
             BoxShadow(
@@ -859,7 +959,7 @@ class _PropertyCardState extends State<PropertyCard> {
                       decoration: BoxDecoration(
                         // Usar el gradiente de cards para que el fondo plomito
                         // coincida con el que se percibe detrás del bottom navigation
-                        gradient: AppTheme.getCardGradient(opacity: 0.28),
+                        gradient: AppTheme.getCardGradient(opacity: 0.62),
                         border: Border(
                           top: BorderSide(
                               color: Colors.white.withOpacity(0.15),
@@ -1088,6 +1188,208 @@ class _FloatingCategoryItemState extends State<_FloatingCategoryItem>
           ),
         ),
       ],
+    );
+  }
+}
+
+// Overlay de burst de corazones al presionar el botón de like
+class _HeartsBurstOverlay extends StatefulWidget {
+  const _HeartsBurstOverlay({super.key});
+
+  @override
+  State<_HeartsBurstOverlay> createState() => _HeartsBurstOverlayState();
+}
+
+class _HeartsBurstOverlayState extends State<_HeartsBurstOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final List<_HeartParticle> _particles;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..forward();
+
+    final rand = math.Random();
+    _particles = List.generate(22, (i) {
+      // Ángulos hacia arriba (de -π a 0), más disperso
+      final angle = -math.pi * rand.nextDouble();
+      final speed = 140 + rand.nextDouble() * 180; // px/s
+      final size = 18 + rand.nextDouble() * 16; // px
+      final drift = (rand.nextDouble() * 160) - 80; // px lateral extra
+      final delay = rand.nextDouble() * 0.25; // pequeño desfase
+      return _HeartParticle(
+        angle: angle,
+        speed: speed,
+        baseSize: size,
+        driftX: drift,
+        startDelay: delay,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final startX = size.width / 2; // alineado al centro, donde están los botones
+    final startY = size.height - 140; // justo encima de la fila de acciones
+
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final tGlobal = _controller.value; // 0..1
+          return Positioned.fill(
+            child: Stack(
+              children: _particles.map((p) {
+                final t = (tGlobal - p.startDelay).clamp(0.0, 1.0);
+                // Movimiento radial con drift lateral
+                final vx = math.cos(p.angle) * p.speed;
+                final vy = math.sin(p.angle) * p.speed + 220; // empuje superior adicional
+                final x = startX + (vx * t) + (p.driftX * t);
+                final y = startY - (vy * t);
+                final opacity = (1.0 - t).clamp(0.0, 1.0);
+                final scale = 1.0 + 0.4 * t;
+
+                return Positioned(
+                  left: x,
+                  top: y,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: p.baseSize,
+                        height: p.baseSize,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.favorite,
+                          color: Colors.orange,
+                          size: p.baseSize,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _HeartParticle {
+  final double angle;
+  final double speed;
+  final double baseSize;
+  final double driftX;
+  final double startDelay;
+
+  _HeartParticle({
+    required this.angle,
+    required this.speed,
+    required this.baseSize,
+    required this.driftX,
+    required this.startDelay,
+  });
+}
+
+// Overlay de X grande antes de avanzar
+class _BigXOverlay extends StatefulWidget {
+  const _BigXOverlay({super.key});
+
+  @override
+  State<_BigXOverlay> createState() => _BigXOverlayState();
+}
+
+class _BigXOverlayState extends State<_BigXOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..forward();
+    _scale = Tween<double>(begin: 0.9, end: 1.15).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return Positioned.fill(
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: size.height * 0.38,
+                  child: Center(
+                    child: Opacity(
+                      opacity: _opacity.value,
+                      child: Transform.scale(
+                        scale: _scale.value,
+                        child: Container(
+                          width: size.width * 0.5,
+                          height: size.width * 0.5,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.85),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.25),
+                                blurRadius: 24,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.redAccent,
+                            size: size.width * 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

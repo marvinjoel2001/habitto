@@ -94,7 +94,7 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             border: const Border.fromBorderSide(
-              BorderSide(color: Colors.white, width: 1.2),
+              BorderSide(color: Colors.white, width: 2),
             ),
             boxShadow: [
               BoxShadow(
@@ -223,7 +223,7 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                       child: Container(
                         padding: EdgeInsets.only(top: 16, bottom: widget.overlayBottomSpace),
                         decoration: BoxDecoration(
-                          gradient: AppTheme.getCardGradient(opacity: 0.40),
+                          gradient: AppTheme.getCardGradient(opacity: 0.10),
                           border: Border(
                             top: BorderSide(
                               color: Colors.white.withOpacity(0.15),

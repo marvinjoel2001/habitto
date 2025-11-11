@@ -86,7 +86,7 @@ class AppTheme {
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        whiteColor
+        const Color.fromARGB(255, 0, 0, 0)
             .withValues(alpha: opacity * 1.5), // Más transparente, pero presente
         primaryColor.withValues(alpha: opacity * 0.5), // Toque de menta muy sutil
       ],
