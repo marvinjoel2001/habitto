@@ -261,9 +261,14 @@ class _HomeContentState extends State<HomeContent> {
         if (p.mainPhoto != null && p.mainPhoto!.isNotEmpty) {
           initialImages.add(p.mainPhoto!);
         }
+        // Formatear: anteponer tipo (capitalizado) y capitalizar primera letra de la dirección/título
+        final typeLabel = p.type.isNotEmpty ? _capitalize(p.type) : 'Propiedad';
+        final addressLabel = p.address.isNotEmpty ? _capitalize(p.address) : 'Propiedad';
+        final formattedTitle = "$typeLabel · $addressLabel";
+
         cards.add(HomePropertyCardData(
           id: p.id,
-          title: p.address.isNotEmpty ? p.address : 'Propiedad',
+          title: formattedTitle,
           priceLabel: p.price > 0 ? 'Bs. ${p.price.toStringAsFixed(0)}/mes' : '—',
           images: initialImages,
           distanceKm: 0.0,
