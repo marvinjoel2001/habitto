@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import '../../data/services/message_service.dart';
 import '../../data/models/message_model.dart';
+import 'package:habitto/core/services/token_storage.dart';
 
 class ConversationPage extends StatefulWidget {
   final String title;
@@ -20,9 +21,11 @@ class ConversationPage extends StatefulWidget {
 class _ConversationPageState extends State<ConversationPage> {
   final TextEditingController _controller = TextEditingController();
   final MessageService _messageService = MessageService();
+  final TokenStorage _tokenStorage = TokenStorage();
   List<ConvMessage> _messages = [];
   bool _isLoading = true;
   String _error = '';
+  int? _currentUserId;
 
   @override
   void initState() {
@@ -46,14 +49,31 @@ class _ConversationPageState extends State<ConversationPage> {
         _error = '';
       });
 
-      final result = await _messageService.getConversation(1, widget.otherUserId!); // TODO: Obtener ID del usuario actual
+      // Obtener el ID del usuario actual
+      final currentUserIdStr = await _tokenStorage.getCurrentUserId();
+      final currentUserId = currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
+      
+      if (currentUserId == null) {
+        setState(() {
+          _error = 'Error: No se pudo obtener el ID del usuario actual';
+          _isLoading = false;
+          _messages = _getHardcodedMessages(); // Fallback
+        });
+        return;
+      }
+
+      setState(() {
+        _currentUserId = currentUserId;
+      });
+
+      final result = await _messageService.getConversation(currentUserId, widget.otherUserId!);
       
       if (result['success']) {
         final messages = result['data'] as List<MessageModel>;
         
         setState(() {
           _messages = messages.map((message) => message.toConvMessage(
-            currentUserId: 1, // TODO: Obtener ID del usuario actual desde auth
+            currentUserId: _currentUserId!,
           )).toList();
           _isLoading = false;
         });
@@ -103,8 +123,18 @@ class _ConversationPageState extends State<ConversationPage> {
       });
 
       // Enviar mensaje a la API
+      if (_currentUserId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: No se pudo obtener el ID del usuario actual'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       final result = await _messageService.sendMessage(
-        senderId: 1, // TODO: Obtener ID del usuario actual
+        senderId: _currentUserId!,
         receiverId: widget.otherUserId!,
         content: text,
       );

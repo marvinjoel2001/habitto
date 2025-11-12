@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:habitto/features/chat/presentation/pages/conversation_page.dart';
+import 'package:habitto/features/chat/presentation/pages/user_list_page.dart';
+import 'package:habitto/core/services/token_storage.dart';
 import '../../data/services/message_service.dart';
 import '../../data/models/message_model.dart';
 
@@ -14,9 +16,12 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final MessageService _messageService = MessageService();
+  final TokenStorage _tokenStorage = TokenStorage();
   List<ChatMessage> _messages = [];
   bool _isLoading = true;
   String _error = '';
+  int? _currentUserId;
+  Map<String, int> _messageUserIds = {}; // Map message ID to other user ID
 
   @override
   void initState() {
@@ -31,6 +36,23 @@ class _ChatPageState extends State<ChatPage> {
         _error = '';
       });
 
+      // Obtener el ID del usuario actual
+      final currentUserIdStr = await _tokenStorage.getCurrentUserId();
+      final currentUserId = currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
+      
+      if (currentUserId == null) {
+        setState(() {
+          _error = 'Error: No se pudo obtener el ID del usuario actual';
+          _isLoading = false;
+          _messages = _getHardcodedMessages();
+        });
+        return;
+      }
+
+      setState(() {
+        _currentUserId = currentUserId;
+      });
+
       final result = await _messageService.getAllMessages();
       
       if (result['success']) {
@@ -38,11 +60,12 @@ class _ChatPageState extends State<ChatPage> {
         
         // Convertir MessageModel a ChatMessage y agrupar por conversación
         final Map<int, ChatMessage> conversationMap = {};
+        final Map<String, int> userIdMap = {}; // Map message ID to other user ID
         
         for (final message in messages) {
-          final otherUserId = message.sender == 1 ? message.receiver : message.sender; // Asumiendo usuario actual ID = 1
+          final otherUserId = message.sender == _currentUserId ? message.receiver : message.sender;
           final chatMessage = message.toChatMessage(
-            currentUserId: 1, // TODO: Obtener ID del usuario actual desde auth
+            currentUserId: _currentUserId!,
             senderName: 'Usuario $otherUserId',
           );
           
@@ -50,11 +73,13 @@ class _ChatPageState extends State<ChatPage> {
           if (!conversationMap.containsKey(otherUserId) || 
               message.createdAt.isAfter(DateTime.parse('2025-01-01'))) { // Comparación simplificada
             conversationMap[otherUserId] = chatMessage;
+            userIdMap[chatMessage.id] = otherUserId; // Store the mapping
           }
         }
 
         setState(() {
           _messages = conversationMap.values.toList();
+          _messageUserIds = userIdMap; // Store the mapping
           _isLoading = false;
         });
       } else {
@@ -135,8 +160,20 @@ class _ChatPageState extends State<ChatPage> {
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
+
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add, color: Colors.black),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const UserListPage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
             onPressed: () {
@@ -275,7 +312,10 @@ class _ChatPageState extends State<ChatPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ConversationPage(title: message.senderName),
+            builder: (_) => ConversationPage(
+              title: message.senderName,
+              otherUserId: _messageUserIds[message.id],
+            ),
           ),
         );
       },
