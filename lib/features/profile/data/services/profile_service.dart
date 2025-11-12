@@ -422,4 +422,37 @@ class ProfileService {
       };
     }
   }
+
+  /// Crear perfil de búsqueda para el usuario actual
+  /// Ruta: POST /api/profiles/search-profile/
+  /// Datos de negocio: Datos del perfil de búsqueda
+  /// Retorna: SearchProfile entity creado
+  Future<Map<String, dynamic>> createSearchProfile(Map<String, dynamic> searchProfileData) async {
+    try {
+      final response = await _apiService.post(
+        AppConfig.searchProfilesEndpoint,
+        searchProfileData,
+      );
+
+      if (response['success'] && response['data'] != null) {
+        return {
+          'success': true,
+          'data': response['data'],
+          'message': response['message'] ?? 'Perfil de búsqueda creado exitosamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ?? response['message'] ?? 'Error al crear perfil de búsqueda',
+          'data': null,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error creando perfil de búsqueda: $e',
+        'data': null,
+      };
+    }
+  }
 }

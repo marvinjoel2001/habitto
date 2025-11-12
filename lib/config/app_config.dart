@@ -3,8 +3,8 @@ class AppConfig {
   static const String version = '1.0.0';
 
   // API Configuration
-  static const String baseUrl = 'http://192.168.1.128:8000';
-    //static const String baseUrl = 'http://10.0.2.2:8000';
+  //static const String baseUrl = 'http://192.168.1.128:8000';
+  static const String baseUrl = 'http://10.0.2.2:8000';
   static const int timeoutDuration = 30000; // milliseconds
 
   // API Endpoints
@@ -14,6 +14,7 @@ class AppConfig {
   static const String currentProfileEndpoint = '/api/profiles/me/';
   static const String updateProfileEndpoint = '/api/profiles/update_me/';
   static const String uploadProfilePictureEndpoint = '/api/profiles/upload_profile_picture/';
+  static const String searchProfilesEndpoint = '/api/profiles/search-profile/';
   static const String propertiesEndpoint = '/api/properties/';
   static const String amenitiesEndpoint = '/api/amenities/';
   static const String photosEndpoint = '/api/photos/';

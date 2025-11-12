@@ -72,14 +72,14 @@ class _FullScreenMatchContent extends StatelessWidget {
                       Text(
                         'Match',
                         style: const TextStyle(
-                          color: AppTheme.whiteColor,
+                          color: AppTheme.blackColor,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(context).maybePop(),
-                        icon: const Icon(Icons.close, color: Colors.white),
+                        icon: const Icon(Icons.close, color: Colors.black),
                       ),
                     ],
                   ),
@@ -138,7 +138,7 @@ class _FullScreenMatchContent extends StatelessWidget {
                                 width: 60,
                                 height: 60,
                                 decoration: BoxDecoration(
-                                  color: AppTheme.accentMint,
+                                  color: Colors.orange.withOpacity(0.85),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
@@ -313,20 +313,88 @@ class _DraggableCta extends StatefulWidget {
   State<_DraggableCta> createState() => _DraggableCtaState();
 }
 
-class _DraggableCtaState extends State<_DraggableCta> with SingleTickerProviderStateMixin {
+class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMixin {
   double _drag = 0.0;
   late AnimationController _controller;
+  late AnimationController _handController;
+  late AnimationController _tapController;
+  Animation<double>? _handAnimation;
+  Animation<double>? _tapAnimation;
+  bool _showHandHint = true;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+    
+    // Animación de tap (presionar)
+    _tapController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    
+    _tapAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
+      CurvedAnimation(parent: _tapController, curve: Curves.easeInOut),
+    );
+    
+    // Animación de deslizamiento
+    _handController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    );
+    
+    _handAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _handController, curve: Curves.easeInOut),
+    );
+    
+    // Iniciar secuencia de animación
+    _startAnimationSequence();
+  }
+
+  void _startAnimationSequence() async {
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted || !_showHandHint) return;
+    
+    // Repetir 3 veces
+    for (int i = 0; i < 3; i++) {
+      if (!mounted || !_showHandHint) return;
+      
+      // Animación de tap
+      await _tapController.forward();
+      await _tapController.reverse();
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Animación de deslizamiento
+      await _handController.forward();
+      await Future.delayed(const Duration(milliseconds: 300));
+      _handController.reset();
+      
+      if (i < 2) {
+        await Future.delayed(const Duration(milliseconds: 800));
+      }
+    }
+    
+    // Esperar 1 minuto y repetir
+    await Future.delayed(const Duration(seconds: 60));
+    if (mounted && _showHandHint) {
+      _startAnimationSequence();
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _handController.dispose();
+    _tapController.dispose();
     super.dispose();
+  }
+  
+  void _hideHandHint() {
+    if (_showHandHint) {
+      setState(() => _showHandHint = false);
+      _handController.stop();
+      _tapController.stop();
+    }
   }
 
   @override
@@ -354,7 +422,7 @@ class _DraggableCtaState extends State<_DraggableCta> with SingleTickerProviderS
                 children: [
                   // Texto centrado
                   const Text(
-                    'Get Started',
+                    'Enviar mensaje',
                     style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                   // Flechas a la derecha
@@ -362,11 +430,58 @@ class _DraggableCtaState extends State<_DraggableCta> with SingleTickerProviderS
                     right: 18,
                     child: Icon(Icons.keyboard_double_arrow_right, color: Colors.white70, size: 28),
                   ),
+                  // Animación de mano deslizando (hint)
+                  if (_showHandHint && _handAnimation != null && _tapAnimation != null)
+                    AnimatedBuilder(
+                      animation: Listenable.merge([_handAnimation!, _tapAnimation!]),
+                      builder: (context, child) {
+                        final slideProgress = _handAnimation!.value;
+                        final tapScale = _tapAnimation!.value;
+                        final handPosition = 20 + (slideProgress * maxDrag * 0.65);
+                        
+                        // Opacidad: aparece al inicio, se mantiene, desaparece al final
+                        final opacity = slideProgress < 0.05 
+                            ? slideProgress * 20 
+                            : slideProgress > 0.85 
+                                ? (1.0 - slideProgress) * 6.67 
+                                : 1.0;
+                        
+                        return Positioned(
+                          left: handPosition,
+                          child: Opacity(
+                            opacity: opacity * 0.7,
+                            child: Transform.scale(
+                              scale: tapScale,
+                              child: Transform.rotate(
+                                angle: -0.4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  child: const Icon(
+                                    Icons.touch_app,
+                                    color: Colors.white,
+                                    size: 48,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black26,
+                                        blurRadius: 8,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   // Knob arrastrable
                   Positioned(
                     left: 12 + _drag,
                     child: GestureDetector(
+                      onHorizontalDragStart: (_) => _hideHandHint(),
                       onHorizontalDragUpdate: (details) {
+                        _hideHandHint();
                         setState(() {
                           _drag = (_drag + details.delta.dx).clamp(0.0, maxDrag);
                         });
@@ -401,7 +516,7 @@ class _DraggableCtaState extends State<_DraggableCta> with SingleTickerProviderS
                           ],
                           border: Border.all(color: Colors.white.withOpacity(0.35), width: 1),
                         ),
-                        child: const Icon(Icons.favorite, color: Colors.white, size: 22),
+                        child: const Icon(Icons.chat_bubble, color: Colors.white, size: 22),
                       ),
                     ),
                   ),

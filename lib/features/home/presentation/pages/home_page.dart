@@ -8,6 +8,7 @@ import '../../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/swipe_property_card.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
+import '../../../profile/presentation/pages/create_search_profile_page.dart';
 import '../../../search/presentation/pages/search_page.dart' as search;
 import '../../../chat/presentation/pages/chat_page.dart';
 import '../../../profile/domain/entities/profile.dart';
@@ -388,6 +389,41 @@ class _HomeContentState extends State<HomeContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Filter button at the top
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.filter_list, color: Colors.black),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateSearchProfilePage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
