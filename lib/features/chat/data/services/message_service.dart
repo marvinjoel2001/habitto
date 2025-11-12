@@ -45,8 +45,27 @@ class MessageService {
     try {
       final response = await _apiService.get('/api/messages/');
       
+      // Debug: print the response structure
+      print('API Response: $response');
+      
       if (response['success']) {
-        final results = response['data']['results'] as List;
+        // Handle different response structures
+        List<dynamic> results = [];
+        
+        if (response['data'] != null) {
+          if (response['data'] is List) {
+            // Direct list response
+            results = response['data'] as List;
+          } else if (response['data']['results'] != null) {
+            // Paginated response with results field
+            results = response['data']['results'] as List;
+          } else if (response['data'] is Map) {
+            // Handle empty response or different structure
+            print('Unexpected data structure: ${response['data']}');
+            results = [];
+          }
+        }
+        
         final messages = results.map((json) => MessageModel.fromJson(json)).toList();
         
         return {
@@ -58,14 +77,15 @@ class MessageService {
         return {
           'success': false,
           'error': response['error'] ?? response['message'] ?? 'Error al obtener mensajes',
-          'data': null,
+          'data': [],
         };
       }
     } catch (e) {
+      print('Error in getAllMessages: $e');
       return {
         'success': false,
         'error': 'Error al obtener mensajes: $e',
-        'data': null,
+        'data': [],
       };
     }
   }

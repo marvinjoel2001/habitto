@@ -40,6 +40,8 @@ class _ChatPageState extends State<ChatPage> {
       final currentUserIdStr = await _tokenStorage.getCurrentUserId();
       final currentUserId = currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
       
+      print('Current user ID from token: $currentUserId');
+      
       if (currentUserId == null) {
         setState(() {
           _error = 'Error: No se pudo obtener el ID del usuario actual';
@@ -53,10 +55,33 @@ class _ChatPageState extends State<ChatPage> {
         _currentUserId = currentUserId;
       });
 
+      print('Loading messages for user: $currentUserId');
       final result = await _messageService.getAllMessages();
+      print('Message service result: $result');
       
       if (result['success']) {
-        final messages = result['data'] as List<MessageModel>;
+        final messagesData = result['data'];
+        if (messagesData == null || (messagesData as List).isEmpty) {
+          print('No messages found or empty data, using fallback');
+          setState(() {
+            _messages = _getHardcodedMessages(); // Use fallback for empty messages
+            _isLoading = false;
+          });
+          return;
+        }
+        
+        List<MessageModel> messages;
+        try {
+          messages = messagesData as List<MessageModel>;
+        } catch (e) {
+          print('Error casting messages data: $e');
+          setState(() {
+            _error = 'Error al procesar mensajes: formato de datos inválido';
+            _isLoading = false;
+            _messages = _getHardcodedMessages(); // Fallback
+          });
+          return;
+        }
         
         // Convertir MessageModel a ChatMessage y agrupar por conversación
         final Map<int, ChatMessage> conversationMap = {};
