@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
 import 'dart:convert';
 import '../../data/services/message_service.dart';
 import '../../data/models/message_model.dart';
@@ -314,14 +313,29 @@ class _ConversationPageState extends State<ConversationPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          widget.title,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.title,
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.verified, color: Colors.blue, size: 18),
+          ],
         ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -336,6 +350,36 @@ class _ConversationPageState extends State<ConversationPage> {
         ),
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                children: [
+                  const Text('Today', style: TextStyle(color: Colors.black54, fontSize: 13)),
+                  const SizedBox(height: 10),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const CircleAvatar(radius: 28, backgroundColor: Colors.black12),
+                      Positioned(
+                        right: 6,
+                        bottom: 6,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Your matched with ${widget.title} today.', style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                ],
+              ),
+            ),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -343,155 +387,107 @@ class _ConversationPageState extends State<ConversationPage> {
                 itemBuilder: (context, index) {
                   final m = _messages[index];
                   final align = m.fromMe ? Alignment.centerRight : Alignment.centerLeft;
-                  final bubbleRadius = BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(m.fromMe ? 16 : 4),
-                    bottomRight: Radius.circular(m.fromMe ? 4 : 16),
-                  );
 
                   return Align(
                     alignment: align,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: ClipRRect(
-                        borderRadius: bubbleRadius,
-                        child: BackdropFilter(
-                          filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                          child: Container(
-                            constraints: const BoxConstraints(maxWidth: 300),
-                            padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Column(
+                        crossAxisAlignment: m.fromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            constraints: const BoxConstraints(maxWidth: 280),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             decoration: BoxDecoration(
-                              color: (m.fromMe ? cs.primary : cs.surface).withOpacity(m.fromMe ? 0.25 : 0.18),
-                              borderRadius: bubbleRadius,
-                              border: Border.all(
-                                color: cs.primary.withOpacity(m.fromMe ? 0.35 : 0.28),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
+                              color: m.fromMe ? const Color(0xFFD6C4F6) : const Color(0xFFF2F2F2),
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: const [
+                                BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
                               ],
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  m.text,
-                                  style: TextStyle(
-                                    color: m.fromMe ? Colors.black : Colors.black87,
-                                    fontSize: 14,
-                                    height: 1.35,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        m.time,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey[700],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      if (m.fromMe)
-                                        Icon(
-                                          m.status == 'delivered' ? Icons.done_all : Icons.check,
-                                          size: 16,
-                                          color: Colors.black,
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                          child: Text(
+                            m.text,
+                            style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.35),
                           ),
-                        ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                m.time,
+                                style: const TextStyle(fontSize: 11, color: Colors.black45),
+                              ),
+                              if (m.fromMe) ...[
+                                const SizedBox(width: 6),
+                                Icon(
+                                  m.status == 'delivered' ? Icons.done_all : Icons.check,
+                                  size: 16,
+                                  color: Colors.black54,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 8),
-            // Barra de entrada estilo glass
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(25),
-                      child: BackdropFilter(
-                        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(25),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.25),
-                                spreadRadius: 1,
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.add, color: Colors.black54),
+                        const SizedBox(width: 10),
+                        Expanded(
                           child: TextField(
                             controller: _controller,
-                            decoration: InputDecoration(
-                              hintText: 'Escribe un mensaje...',
+                            decoration: const InputDecoration(
+                              hintText: 'Typing here...',
                               border: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              errorBorder: InputBorder.none,
-                              disabledBorder: InputBorder.none,
-                              fillColor: Colors.transparent,
-                              filled: true,
-                              icon: Icon(Icons.message, color: Colors.white.withValues(alpha: 0.7)),
-                              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                             ),
-                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        Icon(Icons.schedule, color: Colors.black54),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: cs.primary.withOpacity(0.25),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: cs.primary.withOpacity(0.35)),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.send, color: Colors.black),
-                          onPressed: () async {
-                            await _sendMessage();
-                          },
-                        ),
-                      ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFF5F9A), Color(0xFFFF8FB7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
                   ),
-                ],
-              ),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_upward, color: Colors.white),
+                    onPressed: () async {
+                      await _sendMessage();
+                    },
+                  ),
+                ),
+              ],
             ),
+          ),
           ],
         ),
       ),

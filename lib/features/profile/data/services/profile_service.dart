@@ -119,6 +119,54 @@ class ProfileService {
     }
   }
 
+  /// Obtener perfil por user_id
+  /// Ruta: GET /api/profiles/?user_id=<id>
+  /// Retorna: Primer Profile correspondiente al usuario
+  Future<Map<String, dynamic>> getProfileByUserId(int userId) async {
+    try {
+      final response = await _apiService.get(AppConfig.profilesEndpoint, queryParameters: {'user_id': userId});
+
+      if (response['success'] && response['data'] != null) {
+        final envelope = response['data'];
+        List<dynamic> results = [];
+        if (envelope is Map && envelope['data'] is Map && (envelope['data'] as Map)['results'] is List) {
+          results = List<dynamic>.from((envelope['data'] as Map)['results'] as List);
+        } else if (envelope is Map && envelope['results'] is List) {
+          results = List<dynamic>.from(envelope['results'] as List);
+        } else if (envelope is List) {
+          results = List<dynamic>.from(envelope);
+        }
+
+        if (results.isNotEmpty) {
+          final profile = Profile.fromJson(Map<String, dynamic>.from(results.first as Map));
+          return {
+            'success': true,
+            'data': profile,
+            'message': response['message'] ?? 'Perfil obtenido exitosamente',
+          };
+        }
+
+        return {
+          'success': false,
+          'error': 'No se encontró perfil para el usuario',
+          'data': null,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener perfil por usuario',
+          'data': null,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error obteniendo perfil por usuario: $e',
+        'data': null,
+      };
+    }
+  }
+
   /// Actualizar perfil del usuario actual
   /// Ruta: PUT/PATCH /api/profiles/update_me/
   /// Datos de negocio: Datos del perfil a actualizar

@@ -70,20 +70,28 @@ class MessageService {
       print('API Response: $response');
       
       if (response['success']) {
-        // Handle different response structures
+        // Extraer resultados de estructuras anidadas comunes
         List<dynamic> results = [];
-        
-        if (response['data'] != null) {
-          if (response['data'] is List) {
-            // Direct list response
-            results = response['data'] as List;
-          } else if (response['data']['results'] != null) {
-            // Paginated response with results field
-            results = response['data']['results'] as List;
-          } else if (response['data'] is Map) {
-            // Handle empty response or different structure
-            print('Unexpected data structure: ${response['data']}');
-            results = [];
+
+        final d = response['data'];
+        if (d != null) {
+          if (d is List) {
+            results = List<dynamic>.from(d);
+          } else if (d is Map) {
+            // Caso 1: { success, message, data: { results: [...] } }
+            if (d['data'] is Map && (d['data'] as Map)['results'] is List) {
+              results = List<dynamic>.from(((d['data'] as Map)['results'] as List));
+            }
+            // Caso 2: { results: [...] }
+            else if (d['results'] is List) {
+              results = List<dynamic>.from(d['results'] as List);
+            }
+            // Caso 3: { data: [...] }
+            else if (d['data'] is List) {
+              results = List<dynamic>.from(d['data'] as List);
+            } else {
+              print('Unexpected data structure in getAllMessages: $d');
+            }
           }
         }
         
