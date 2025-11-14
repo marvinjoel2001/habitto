@@ -43,10 +43,45 @@ class TokenStorage {
     if (accessToken == null || accessToken.isEmpty) {
       return false;
     }
-
-    // Aquí podrías agregar lógica adicional para verificar la expiración del token
-    // Por ahora, simplemente verificamos que el token exista
-    return true;
+    try {
+      final parts = accessToken.split('.');
+      if (parts.length != 3) {
+        return false;
+      }
+      String payload = parts[1];
+      String normalizedPayload = payload;
+      switch (payload.length % 4) {
+        case 1:
+          normalizedPayload += '===';
+          break;
+        case 2:
+          normalizedPayload += '==';
+          break;
+        case 3:
+          normalizedPayload += '=';
+          break;
+      }
+      final decodedBytes = base64Url.decode(normalizedPayload);
+      final decodedString = utf8.decode(decodedBytes);
+      final Map<String, dynamic> payloadMap = json.decode(decodedString);
+      final exp = payloadMap['exp'];
+      if (exp == null) {
+        return true;
+      }
+      final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      const int skew = 30;
+      int expSec;
+      if (exp is int) {
+        expSec = exp;
+      } else if (exp is String) {
+        expSec = int.tryParse(exp) ?? nowSec;
+      } else {
+        expSec = nowSec;
+      }
+      return expSec > (nowSec + skew);
+    } catch (_) {
+      return true;
+    }
   }
 
   /// Obtiene el ID del usuario actual desde el token JWT

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import '../../data/services/user_service.dart';
+import 'package:habitto/core/services/token_storage.dart';
 import 'conversation_page.dart';
 
 class UserListPage extends StatefulWidget {
@@ -35,9 +36,14 @@ class _UserListPageState extends State<UserListPage> {
       final result = await _userService.getAllUsers();
       
       if (result['success']) {
+        final List<dynamic> all = (result['data'] as List<dynamic>?) ?? [];
+        final currentId = await TokenStorage().getCurrentUserId();
+        final filtered = currentId != null
+            ? all.where((u) => (u['id']?.toString() ?? '') != currentId).toList()
+            : all;
         setState(() {
-          _users = result['data'] as List<dynamic>;
-          _filteredUsers = _users;
+          _users = filtered;
+          _filteredUsers = filtered;
           _isLoading = false;
         });
       } else {

@@ -14,16 +14,37 @@ class MessageService {
       List<MessageModel> messages = [];
       
       if (response1['success']) {
-        final results1 = response1['data']['results'] as List;
+        List<dynamic> results1 = [];
+        final d1 = response1['data'];
+        if (d1 is Map && d1['data'] is Map && (d1['data'] as Map)['results'] is List) {
+          results1 = List<dynamic>.from((d1['data'] as Map)['results'] as List);
+        } else if (d1 is Map && d1['results'] is List) {
+          results1 = List<dynamic>.from(d1['results'] as List);
+        } else if (d1 is List) {
+          results1 = List<dynamic>.from(d1);
+        }
         messages.addAll(results1.map((json) => MessageModel.fromJson(json)));
       }
       
       if (response2['success']) {
-        final results2 = response2['data']['results'] as List;
+        List<dynamic> results2 = [];
+        final d2 = response2['data'];
+        if (d2 is Map && d2['data'] is Map && (d2['data'] as Map)['results'] is List) {
+          results2 = List<dynamic>.from((d2['data'] as Map)['results'] as List);
+        } else if (d2 is Map && d2['results'] is List) {
+          results2 = List<dynamic>.from(d2['results'] as List);
+        } else if (d2 is List) {
+          results2 = List<dynamic>.from(d2);
+        }
         messages.addAll(results2.map((json) => MessageModel.fromJson(json)));
       }
 
       // Ordenar por fecha de creación
+      // El backend puede devolver el mismo set para ambas consultas; eliminar duplicados por ID
+      final Map<int, MessageModel> uniq = {
+        for (final m in messages) m.id: m,
+      };
+      messages = uniq.values.toList();
       messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       
       return {

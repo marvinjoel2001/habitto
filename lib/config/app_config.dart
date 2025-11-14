@@ -4,7 +4,7 @@ class AppConfig {
 
   // API Configuration
   //static const String baseUrl = 'http://192.168.1.128:8000';
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  static const String baseUrl = 'http://10.0.2.2:8001';
   static const int timeoutDuration = 30000; // milliseconds
 
   // API Endpoints
@@ -22,7 +22,7 @@ class AppConfig {
   static const String logoutEndpoint = '/api/logout/';
   static const String refreshTokenEndpoint = '/api/refresh/';
 
-  // Endpoints alternativos (compatibilidad con documentación nueva)
+  // Endpoints alternativos (compatibilidad                               con documentación nueva)
   // Algunos despliegues usan SimpleJWT por defecto:
   //  - Obtener tokens: POST /api/token/
   //  - Refrescar token: POST /api/token/refresh/
@@ -33,4 +33,8 @@ class AppConfig {
   // Database Configuration
   static const String databaseName = 'habitto.db';
   static const int databaseVersion = 1;
+
+  static const int wsPort = 8000;
+  static const String wsChatPath = '/ws/chat/';
+  static const String wsTokenQueryName = 'token';
 }

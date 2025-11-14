@@ -430,7 +430,7 @@ class ProfileService {
   Future<Map<String, dynamic>> createSearchProfile(Map<String, dynamic> searchProfileData) async {
     try {
       final response = await _apiService.post(
-        AppConfig.searchProfilesEndpoint,
+        '/api/search_profiles/',
         searchProfileData,
       );
 
@@ -451,6 +451,56 @@ class ProfileService {
       return {
         'success': false,
         'error': 'Error creando perfil de búsqueda: $e',
+        'data': null,
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> addFavoriteViaApi(int propertyId) async {
+    try {
+      final response = await _apiService.post('/api/profiles/add_favorite/', {
+        'property_id': propertyId,
+      });
+      return response['success'] == true
+          ? {
+              'success': true,
+              'data': response['data'],
+              'message': response['message'] ?? 'Favorito agregado',
+            }
+          : {
+              'success': false,
+              'error': response['error'] ?? response['message'] ?? 'Error al agregar favorito',
+              'data': null,
+            };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error al agregar favorito: $e',
+        'data': null,
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> removeFavoriteViaApi(int propertyId) async {
+    try {
+      final response = await _apiService.post('/api/profiles/remove_favorite/', {
+        'property_id': propertyId,
+      });
+      return response['success'] == true
+          ? {
+              'success': true,
+              'data': response['data'],
+              'message': response['message'] ?? 'Favorito removido',
+            }
+          : {
+              'success': false,
+              'error': response['error'] ?? response['message'] ?? 'Error al remover favorito',
+              'data': null,
+            };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error al remover favorito: $e',
         'data': null,
       };
     }

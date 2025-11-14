@@ -119,8 +119,7 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                 // Carrusel de imágenes
                 PageView.builder(
                   controller: _pageController,
-                  physics: const BouncingScrollPhysics(),
-                  dragStartBehavior: DragStartBehavior.down,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: widget.images.isNotEmpty ? widget.images.length : 1,
                   onPageChanged: (i) => setState(() => _page = i),
                   itemBuilder: (_, i) {
@@ -135,25 +134,59 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                         right: 0,
                         bottom: 10,
                       ),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => widget.onOpenImage?.call(i),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
-                          child: Image.network(
-                            url,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
-                              return Container(
-                                color: Colors.black12,
-                                alignment: Alignment.center,
-                                child: const CircularProgressIndicator(),
-                              );
-                            },
-                            errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: Image.network(
+                              url,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return Container(
+                                  color: Colors.black12,
+                                  alignment: Alignment.center,
+                                  child: const CircularProgressIndicator(),
+                                );
+                              },
+                              errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                            ),
                           ),
-                        ),
+                          Positioned.fill(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final w = constraints.maxWidth;
+                                return GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTapDown: (details) {
+                                    final dx = details.localPosition.dx;
+                                    final rightZone = dx > w * 0.66;
+                                    final leftZone = dx < w * 0.34;
+                                    if (rightZone) {
+                                      if (_page < (widget.images.length - 1)) {
+                                        _pageController.animateToPage(
+                                          _page + 1,
+                                          duration: const Duration(milliseconds: 220),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    } else if (leftZone) {
+                                      if (_page > 0) {
+                                        _pageController.animateToPage(
+                                          _page - 1,
+                                          duration: const Duration(milliseconds: 220),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    } else {
+                                      widget.onOpenImage?.call(_page);
+                                    }
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },

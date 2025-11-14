@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'dart:convert';
 import '../../data/services/message_service.dart';
 import '../../data/models/message_model.dart';
 import 'package:habitto/core/services/token_storage.dart';
+import 'package:habitto/config/app_config.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class ConversationPage extends StatefulWidget {
   final String title;
@@ -26,6 +29,7 @@ class _ConversationPageState extends State<ConversationPage> {
   bool _isLoading = true;
   String _error = '';
   int? _currentUserId;
+  WebSocketChannel? _wsChannel;
 
   @override
   void initState() {
@@ -66,11 +70,16 @@ class _ConversationPageState extends State<ConversationPage> {
         _currentUserId = currentUserId;
       });
 
+      _openWebSocket();
+
       final result = await _messageService.getConversation(currentUserId, widget.otherUserId!);
       
       if (result['success']) {
-        final messages = result['data'] as List<MessageModel>;
-        
+        final allMessages = result['data'] as List<MessageModel>;
+        final messages = allMessages.length > 50 
+            ? allMessages.sublist(allMessages.length - 50) 
+            : allMessages;
+
         setState(() {
           _messages = messages.map((message) => message.toConvMessage(
             currentUserId: _currentUserId!,
@@ -91,14 +100,145 @@ class _ConversationPageState extends State<ConversationPage> {
     }
   }
 
+  void _openWebSocket() async {
+    try {
+      if (_currentUserId == null || widget.otherUserId == null) return;
+
+      final roomId = _computeRoomId(_currentUserId!, widget.otherUserId!);
+      final baseUri = Uri.parse(AppConfig.baseUrl);
+      final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
+
+      final accessToken = await _tokenStorage.getAccessToken();
+
+      final wsUri1 = Uri(
+        scheme: wsScheme,
+        host: baseUri.host,
+        port: AppConfig.wsPort,
+        path: AppConfig.wsChatPath + roomId + '/',
+        queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
+      );
+
+      WebSocketChannel? ch;
+      try { ch = WebSocketChannel.connect(wsUri1); } catch (_) {}
+      if (ch == null) {
+        final wsUri2 = Uri(
+          scheme: wsScheme,
+          host: baseUri.host,
+          port: AppConfig.wsPort,
+          path: AppConfig.wsChatPath + roomId,
+          queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
+        );
+        try { ch = WebSocketChannel.connect(wsUri2); } catch (_) {}
+      }
+      if (ch == null) {
+        final roomRev = '${widget.otherUserId!}_${_currentUserId!}';
+        final wsUri3 = Uri(
+          scheme: wsScheme,
+          host: baseUri.host,
+          port: AppConfig.wsPort,
+          path: AppConfig.wsChatPath + roomRev + '/',
+          queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
+        );
+        try { ch = WebSocketChannel.connect(wsUri3); } catch (_) {}
+        if (ch == null) {
+          final wsUri4 = Uri(
+            scheme: wsScheme,
+            host: baseUri.host,
+            port: AppConfig.wsPort,
+            path: AppConfig.wsChatPath + roomRev,
+            queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
+          );
+          try { ch = WebSocketChannel.connect(wsUri4); } catch (_) {}
+        }
+      }
+      if (ch == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('WS 404: ruta /ws/chat/<room_id> no encontrada'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+      _wsChannel = ch;
+
+      _wsChannel!.stream.listen(
+        (raw) {
+          try {
+            final data = raw is String ? jsonDecode(raw) : raw;
+            if (data is Map<String, dynamic>) {
+              final sender = data['sender'] as int?;
+              final receiver = data['receiver'] as int?;
+              final content = data['content'] as String? ?? '';
+              final createdAtStr = data['created_at'] as String?;
+              DateTime createdAt;
+              if (createdAtStr != null) {
+                createdAt = DateTime.tryParse(createdAtStr) ?? DateTime.now();
+              } else {
+                createdAt = DateTime.now();
+              }
+
+              final fromMe = sender != null && sender == _currentUserId;
+              final msg = ConvMessage(
+                text: content,
+                fromMe: fromMe,
+                time: _formatTime(createdAt),
+                status: 'delivered',
+              );
+
+              if (mounted) {
+                if (fromMe) {
+                  final idx = _messages.lastIndexWhere((m) => m.fromMe && m.text == content && m.status == 'sent');
+                  if (idx != -1) {
+                    setState(() {
+                      _messages[idx] = msg;
+                    });
+                  } else {
+                    setState(() {
+                      _messages.add(msg);
+                    });
+                  }
+                } else {
+                  setState(() {
+                    _messages.add(msg);
+                  });
+                }
+              }
+            }
+          } catch (_) {}
+        },
+        onError: (err) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error de WebSocket: $err'), backgroundColor: Colors.red),
+            );
+          }
+        },
+        onDone: () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Conexión WebSocket cerrada'), backgroundColor: Colors.orange),
+            );
+          }
+        },
+        cancelOnError: false,
+      );
+    } catch (_) {}
+  }
+
+  String _computeRoomId(int a, int b) {
+    final u1 = a < b ? a : b;
+    final u2 = a < b ? b : a;
+    return '$u1\_$u2';
+  }
+
   List<ConvMessage> _getHardcodedMessages() {
     return [
-      ConvMessage(text: 'Hola, ¿sigues disponible?', fromMe: false, time: '10:40'),
-      ConvMessage(text: 'Sí, claro. ¿Qué te interesa saber?', fromMe: true, time: '10:41'),
-      ConvMessage(text: '¿Incluye garaje y está cerca del centro?', fromMe: false, time: '10:42'),
-      ConvMessage(text: 'Incluye garaje y está a 10 min del centro.', fromMe: true, time: '10:43'),
-      ConvMessage(text: 'Perfecto, ¿podemos agendar una visita?', fromMe: false, time: '10:44'),
-      ConvMessage(text: 'Mañana a las 15:00 te sirve.', fromMe: true, time: '10:45'),
+      ConvMessage(text: 'Hola, ¿sigues disponible?', fromMe: false, time: '10:40', status: 'delivered'),
+      ConvMessage(text: 'Sí, claro. ¿Qué te interesa saber?', fromMe: true, time: '10:41', status: 'delivered'),
+      ConvMessage(text: '¿Incluye garaje y está cerca del centro?', fromMe: false, time: '10:42', status: 'delivered'),
+      ConvMessage(text: 'Incluye garaje y está a 10 min del centro.', fromMe: true, time: '10:43', status: 'delivered'),
+      ConvMessage(text: 'Perfecto, ¿podemos agendar una visita?', fromMe: false, time: '10:44', status: 'delivered'),
+      ConvMessage(text: 'Mañana a las 15:00 te sirve.', fromMe: true, time: '10:45', status: 'delivered'),
     ];
   }
 
@@ -109,67 +249,56 @@ class _ConversationPageState extends State<ConversationPage> {
     if (widget.otherUserId == null) {
       // Modo offline - solo agregar localmente
       setState(() {
-        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Ahora'));
+        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Ahora', status: 'delivered'));
         _controller.clear();
       });
       return;
     }
 
     try {
-      // Agregar mensaje localmente primero para UX inmediata
       setState(() {
-        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Enviando...'));
+        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Enviando...', status: 'sent'));
         _controller.clear();
       });
 
-      // Enviar mensaje a la API
-      if (_currentUserId == null) {
+      if (_currentUserId == null || widget.otherUserId == null) {
+        return;
+      }
+
+      final payload = {
+        'sender': _currentUserId!,
+        'receiver': widget.otherUserId!,
+        'content': text,
+      };
+
+      if (_wsChannel == null) {
+        final idx = _messages.lastIndexWhere((m) => m.fromMe && m.text == text && m.status == 'sent');
+        if (idx != -1) {
+          setState(() {
+            _messages[idx] = ConvMessage(text: text, fromMe: true, time: 'Error al enviar', status: 'sent');
+          });
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: No se pudo obtener el ID del usuario actual'),
-            backgroundColor: Colors.red,
-          ),
+          const SnackBar(content: Text('Conexión WebSocket no disponible'), backgroundColor: Colors.red),
         );
         return;
       }
 
-      final result = await _messageService.sendMessage(
-        senderId: _currentUserId!,
-        receiverId: widget.otherUserId!,
-        content: text,
-      );
+      _wsChannel!.sink.add(jsonEncode(payload));
 
-      if (result['success']) {
-        // Actualizar el tiempo del último mensaje
-        setState(() {
-          _messages.last = ConvMessage(text: text, fromMe: true, time: 'Ahora');
-        });
-      } else {
-        // Si falla, mostrar error pero mantener el mensaje localmente
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${result['error']}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        
-        setState(() {
-          _messages.last = ConvMessage(text: text, fromMe: true, time: 'Error');
-        });
-      }
-    } catch (e) {
-      // Si falla, mostrar error pero mantener el mensaje localmente
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al enviar mensaje: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      
-      setState(() {
-        _messages.last = ConvMessage(text: text, fromMe: true, time: 'Error');
+      Future.delayed(const Duration(seconds: 5), () {
+        if (!mounted) return;
+        final idx = _messages.lastIndexWhere((m) => m.fromMe && m.text == text && m.status == 'sent');
+        if (idx != -1) {
+          setState(() {
+            _messages[idx] = ConvMessage(text: text, fromMe: true, time: 'Error al enviar', status: 'sent');
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se recibió confirmación del servidor'), backgroundColor: Colors.red),
+          );
+        }
       });
-    }
+    } catch (_) {}
   }
 
   @override
@@ -261,12 +390,24 @@ class _ConversationPageState extends State<ConversationPage> {
                                 const SizedBox(height: 6),
                                 Align(
                                   alignment: Alignment.bottomRight,
-                                  child: Text(
-                                    m.time,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[700],
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        m.time,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      if (m.fromMe)
+                                        Icon(
+                                          m.status == 'delivered' ? Icons.done_all : Icons.check,
+                                          size: 16,
+                                          color: Colors.black,
+                                        ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -342,62 +483,7 @@ class _ConversationPageState extends State<ConversationPage> {
                         child: IconButton(
                           icon: const Icon(Icons.send, color: Colors.black),
                           onPressed: () async {
-                            final text = _controller.text.trim();
-                            if (text.isEmpty) return;
-                            
-                            // Limpiar el campo inmediatamente para mejor UX
-                            _controller.clear();
-                            
-                            // Agregar mensaje localmente primero
-                            final tempMessage = ConvMessage(text: text, fromMe: true, time: 'Enviando...');
-                            setState(() {
-                              _messages.add(tempMessage);
-                            });
-                            
-                            // Enviar mensaje a través del API
-                            if (widget.otherUserId != null) {
-                              final result = await _messageService.sendMessage(
-                                senderId: 1, // TODO: Obtener ID del usuario actual
-                                receiverId: widget.otherUserId!,
-                                content: text,
-                              );
-                              
-                              if (result['success']) {
-                                // Actualizar el mensaje local con tiempo real
-                                setState(() {
-                                  final index = _messages.indexOf(tempMessage);
-                                  if (index != -1) {
-                                    _messages[index] = ConvMessage(
-                                      text: text, 
-                                      fromMe: true, 
-                                      time: _formatTime(DateTime.now())
-                                    );
-                                  }
-                                });
-                              } else {
-                                // En caso de error, mostrar mensaje de error y mantener el mensaje local
-                                setState(() {
-                                  final index = _messages.indexOf(tempMessage);
-                                  if (index != -1) {
-                                    _messages[index] = ConvMessage(
-                                      text: text, 
-                                      fromMe: true, 
-                                      time: 'Error al enviar'
-                                    );
-                                  }
-                                });
-                                
-                                // Mostrar snackbar de error
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Error al enviar mensaje: ${result['error'] ?? 'Error desconocido'}'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              }
-                            }
+                            await _sendMessage();
                           },
                         ),
                       ),
@@ -415,6 +501,9 @@ class _ConversationPageState extends State<ConversationPage> {
   @override
   void dispose() {
     _controller.dispose();
+    try {
+      _wsChannel?.sink.close();
+    } catch (_) {}
     super.dispose();
   }
 

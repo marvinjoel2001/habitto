@@ -52,6 +52,7 @@ class MessageModel {
       text: content,
       fromMe: sender == currentUserId,
       time: _formatTime(createdAt),
+      status: 'delivered',
     );
   }
 
@@ -96,10 +97,12 @@ class ConvMessage {
   final String text;
   final bool fromMe;
   final String time;
+  final String status;
 
   ConvMessage({
     required this.text,
     required this.fromMe,
     required this.time,
+    required this.status,
   });
 }

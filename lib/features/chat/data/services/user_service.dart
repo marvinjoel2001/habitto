@@ -10,9 +10,19 @@ class UserService {
       final response = await _apiService.get(AppConfig.usersEndpoint);
       
       if (response['success']) {
+        final envelope = response['data'];
+        List<dynamic> results = [];
+        if (envelope is Map && envelope['data'] is Map && envelope['data']['results'] is List) {
+          results = List<dynamic>.from(envelope['data']['results'] as List);
+        } else if (envelope is Map && envelope['results'] is List) {
+          results = List<dynamic>.from(envelope['results'] as List);
+        } else if (envelope is List) {
+          results = List<dynamic>.from(envelope);
+        }
+
         return {
           'success': true,
-          'data': response['data']['results'] ?? [],
+          'data': results,
           'message': response['message'] ?? 'Usuarios obtenidos exitosamente',
         };
       } else {
@@ -64,9 +74,19 @@ class UserService {
       final response = await _apiService.get('${AppConfig.usersEndpoint}?search=$query');
       
       if (response['success']) {
+        final envelope = response['data'];
+        List<dynamic> results = [];
+        if (envelope is Map && envelope['data'] is Map && envelope['data']['results'] is List) {
+          results = List<dynamic>.from(envelope['data']['results'] as List);
+        } else if (envelope is Map && envelope['results'] is List) {
+          results = List<dynamic>.from(envelope['results'] as List);
+        } else if (envelope is List) {
+          results = List<dynamic>.from(envelope);
+        }
+
         return {
           'success': true,
-          'data': response['data']['results'] ?? [],
+          'data': results,
           'message': response['message'] ?? 'Usuarios encontrados exitosamente',
         };
       } else {

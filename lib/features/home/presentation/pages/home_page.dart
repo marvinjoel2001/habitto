@@ -7,6 +7,7 @@ import '../../../../shared/widgets/custom_bottom_navigation.dart';
 import '../../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/swipe_property_card.dart';
+import '../../../matching/data/services/matching_service.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
 import '../../../profile/presentation/pages/create_search_profile_page.dart';
 import '../../../search/presentation/pages/search_page.dart' as search;
@@ -238,6 +239,7 @@ class HomeContent extends StatefulWidget {
 class _HomeContentState extends State<HomeContent> {
   late final ApiService _apiService;
   late final PropertyService _propertyService;
+  late final MatchingService _matchingService;
   late final PhotoService _photoService;
   late final ProfileService _profileService;
 
@@ -246,6 +248,7 @@ class _HomeContentState extends State<HomeContent> {
 
   List<HomePropertyCardData> _cards = [];
   final Map<int, List<String>> _photoUrlsByProperty = {};
+  final Map<int, int> _matchIdByPropertyId = {};
   HomePropertyCardData? _currentTopProperty;
   String _currentUserImageUrl = 'assets/images/userempty.png';
   final GlobalKey<PropertySwipeDeckState> _deckKey = GlobalKey<PropertySwipeDeckState>();
@@ -287,6 +290,7 @@ class _HomeContentState extends State<HomeContent> {
     super.initState();
     _apiService = ApiService();
     _propertyService = PropertyService(apiService: _apiService);
+    _matchingService = MatchingService();
     _photoService = PhotoService(_apiService);
     _profileService = ProfileService(apiService: _apiService);
     _loadAllProperties();
@@ -314,37 +318,33 @@ class _HomeContentState extends State<HomeContent> {
       _error = null;
     });
 
-    final result = await _propertyService.getProperties(
-      isActive: true,
-      page: 1,
-      pageSize: 50,
-      ordering: '-created_at',
-    );
-
-    if (result['success'] == true && result['data'] != null) {
-      final data = result['data'];
-      final List<domain.Property> properties = data['properties'] ?? [];
-
+    final recs = await _matchingService.getPropertyRecommendations();
+    if (recs['success'] == true && recs['data'] != null) {
+      final List<dynamic> items = recs['data'] as List<dynamic>;
       final cards = <HomePropertyCardData>[];
-      for (final p in properties) {
-        // Semilla de imágenes: si el backend incluye main_photo, úsalo para evitar repetición y N+1
-        final initialImages = <String>[];
-        if (p.mainPhoto != null && p.mainPhoto!.isNotEmpty) {
-          initialImages.add(p.mainPhoto!);
+      for (final it in items) {
+        final int propertyId = it['propertyId'] as int;
+        final int matchId = it['matchId'] as int;
+        final propRes = await _propertyService.getPropertyById(propertyId);
+        if (propRes['success'] == true && propRes['data'] != null) {
+          final domain.Property p = propRes['data'] as domain.Property;
+          final initialImages = <String>[];
+          if (p.mainPhoto != null && p.mainPhoto!.isNotEmpty) {
+            initialImages.add(p.mainPhoto!);
+          }
+          final typeLabel = p.type.isNotEmpty ? _capitalize(p.type) : 'Propiedad';
+          final addressLabel = p.address.isNotEmpty ? _capitalize(p.address) : 'Propiedad';
+          final formattedTitle = "$typeLabel · $addressLabel";
+          cards.add(HomePropertyCardData(
+            id: p.id,
+            title: formattedTitle,
+            priceLabel: p.price > 0 ? 'Bs. ${p.price.toStringAsFixed(0)}/mes' : '—',
+            images: initialImages,
+            distanceKm: 0.0,
+            tags: [p.type.isNotEmpty ? _capitalize(p.type) : ''],
+          ));
+          _matchIdByPropertyId[p.id] = matchId;
         }
-        // Formatear: anteponer tipo (capitalizado) y capitalizar primera letra de la dirección/título
-        final typeLabel = p.type.isNotEmpty ? _capitalize(p.type) : 'Propiedad';
-        final addressLabel = p.address.isNotEmpty ? _capitalize(p.address) : 'Propiedad';
-        final formattedTitle = "$typeLabel · $addressLabel";
-
-        cards.add(HomePropertyCardData(
-          id: p.id,
-          title: formattedTitle,
-          priceLabel: p.price > 0 ? 'Bs. ${p.price.toStringAsFixed(0)}/mes' : '—',
-          images: initialImages,
-          distanceKm: 0.0,
-          tags: [p.type.isNotEmpty ? _capitalize(p.type) : ''],
-        ));
       }
 
       setState(() {
@@ -352,13 +352,13 @@ class _HomeContentState extends State<HomeContent> {
         _isLoading = false;
       });
 
-      for (final p in properties) {
+      for (final c in cards) {
         if (!mounted) return;
-        await _loadPhotosForProperty(p.id);
+        await _loadPhotosForProperty(c.id);
       }
     } else {
       setState(() {
-        _error = result['error'] ?? 'No se pudieron cargar propiedades';
+        _error = recs['error'] ?? 'No se pudieron cargar recomendaciones';
         _isLoading = false;
       });
     }
@@ -434,6 +434,42 @@ class _HomeContentState extends State<HomeContent> {
                     : PropertySwipeDeck(
                         key: _deckKey,
                         properties: _cards,
+                        onLike: (p) async {
+                          final matchId = _matchIdByPropertyId[p.id];
+                          if (matchId != null) {
+                            final res = await _matchingService.likeMatch(matchId);
+                            if (res['success'] != true) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                                );
+                              }
+                              return;
+                            }
+                            _spawnHeartsBurst();
+                            final userImage = _currentUserImageUrl;
+                            final propertyImage = (p.images.isNotEmpty)
+                                ? p.images[0]
+                                : 'assets/images/empty.jpg';
+                            MatchModal.show(
+                              context,
+                              userImageUrl: userImage,
+                              propertyImageUrl: propertyImage,
+                              propertyTitle: p.title,
+                            );
+                          }
+                        },
+                        onReject: (p) async {
+                          final matchId = _matchIdByPropertyId[p.id];
+                          if (matchId != null) {
+                            final res = await _matchingService.rejectMatch(matchId);
+                            if (res['success'] != true && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(res['error'] ?? 'Error al rechazar')),
+                              );
+                            }
+                          }
+                        },
                         onTopChange: (p) => setState(() => _currentTopProperty = p),
                       ),
           ),
@@ -455,25 +491,48 @@ class _HomeContentState extends State<HomeContent> {
                   icon: Icons.close,
                   bgColor: Colors.white,
                   iconColor: Colors.redAccent,
-                  onTap: _spawnBigXAndSwipeLeft,
+                  onTap: () async {
+                    final p = _currentTopProperty;
+                    if (p != null) {
+                      final matchId = _matchIdByPropertyId[p.id];
+                      if (matchId != null) {
+                        await _matchingService.rejectMatch(matchId);
+                      }
+                    }
+                    _spawnBigXAndSwipeLeft();
+                  },
                 ),
                 const SizedBox(width: 18),
                 _CircleActionButton(
                   icon: Icons.favorite,
                   bgColor: Colors.orange,
                   iconColor: Colors.white,
-                  onTap: () {
-                    _spawnHeartsBurst();
-                    final userImage = _currentUserImageUrl;
-                    final propertyImage = (_currentTopProperty?.images.isNotEmpty ?? false)
-                        ? _currentTopProperty!.images[0]
-                        : 'assets/images/empty.jpg';
-                    MatchModal.show(
-                      context,
-                      userImageUrl: userImage,
-                      propertyImageUrl: propertyImage,
-                      propertyTitle: _currentTopProperty?.title,
-                    );
+                  onTap: () async {
+                    final p = _currentTopProperty;
+                    if (p != null) {
+                      final matchId = _matchIdByPropertyId[p.id];
+                      if (matchId != null) {
+                        final res = await _matchingService.likeMatch(matchId);
+                        if (res['success'] == true) {
+                          _spawnHeartsBurst();
+                          final userImage = _currentUserImageUrl;
+                          final propertyImage = (p.images.isNotEmpty)
+                              ? p.images[0]
+                              : 'assets/images/empty.jpg';
+                          MatchModal.show(
+                            context,
+                            userImageUrl: userImage,
+                            propertyImageUrl: propertyImage,
+                            propertyTitle: p.title,
+                          );
+                          _deckKey.currentState?.swipeRight();
+                        } else if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                          );
+                        }
+                      }
+                    }
                   },
                 ),
                 const SizedBox(width: 18),
@@ -481,6 +540,17 @@ class _HomeContentState extends State<HomeContent> {
                   icon: Icons.star,
                   bgColor: Colors.white,
                   iconColor: Colors.blueAccent,
+                  onTap: () async {
+                    final p = _currentTopProperty;
+                    if (p != null) {
+                      final res = await _profileService.addFavoriteViaApi(p.id);
+                      if (res['success'] != true && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(res['error'] ?? 'Error al agregar favorito')),
+                        );
+                      }
+                    }
+                  },
                 ),
               ],
             ),
@@ -571,10 +641,14 @@ class HomePropertyCardData {
 class PropertySwipeDeck extends StatefulWidget {
   final List<HomePropertyCardData> properties;
   final ValueChanged<HomePropertyCardData>? onTopChange;
+  final ValueChanged<HomePropertyCardData>? onLike;
+  final ValueChanged<HomePropertyCardData>? onReject;
   const PropertySwipeDeck({
     super.key,
     required this.properties,
     this.onTopChange,
+    this.onLike,
+    this.onReject,
   });
 
   @override
@@ -739,6 +813,12 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                         if (shouldDismiss) {
                           final directionPositive = (dragDx + vx * 0.001) > 0;
                           final target = directionPositive ? width * 1.2 : -width * 1.2;
+                          final current = widget.properties[topIndex];
+                          if (directionPositive) {
+                            widget.onLike?.call(current);
+                          } else {
+                            widget.onReject?.call(current);
+                          }
                           _animateTo(target, dismiss: true);
                         } else {
                           _animateTo(0.0, dismiss: false);

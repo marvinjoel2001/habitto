@@ -18,6 +18,8 @@ class ApiService {
 
   late final Dio _dio;
   final TokenStorage _tokenStorage = TokenStorage();
+  bool _isRefreshing = false;
+  Future<Map<String, dynamic>>? _ongoingRefresh;
 
   void _initializeDio() {
     // Ajustar baseUrl según plataforma para coincidir con entorno del backend
@@ -62,7 +64,36 @@ class ApiService {
         final isRefreshPath = error.requestOptions.path == AppConfig.refreshTokenEndpoint ||
             error.requestOptions.path == AppConfig.tokenRefreshEndpoint;
         if (error.response?.statusCode == 401 && !isRefreshPath) {
-          final refreshResult = await _refreshToken();
+          if (_isRefreshing && _ongoingRefresh != null) {
+            final refreshResult = await _ongoingRefresh!;
+            if (refreshResult['success']) {
+              final newToken = refreshResult['access_token'];
+              error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+              try {
+                final response = await _dio.fetch(error.requestOptions);
+                handler.resolve(response);
+                return;
+              } catch (e) {
+                handler.next(error);
+                return;
+              }
+            } else {
+              await _tokenStorage.clearTokens();
+              handler.next(DioException(
+                requestOptions: error.requestOptions,
+                response: error.response,
+                type: DioExceptionType.badResponse,
+                error: 'Token expirado y no se pudo refrescar. Por favor, inicia sesión nuevamente.',
+              ));
+              return;
+            }
+          }
+
+          _isRefreshing = true;
+          _ongoingRefresh = _refreshToken();
+          final refreshResult = await _ongoingRefresh!;
+          _isRefreshing = false;
+          _ongoingRefresh = null;
 
           if (refreshResult['success']) {
             // Reintentar la petición original con el nuevo token
@@ -235,15 +266,23 @@ class ApiService {
       // - { access_token: "..." }
       final envelope = response.data;
       String? newAccessToken;
+      String? newRefreshToken;
       if (envelope is Map<String, dynamic>) {
         if (envelope['access'] is String) {
           newAccessToken = envelope['access'] as String;
-        } else if (envelope['access_token'] is String) {
+        }
+        if (envelope['refresh'] is String) {
+          newRefreshToken = envelope['refresh'] as String;
+        }
+        if (envelope['access_token'] is String) {
           newAccessToken = envelope['access_token'] as String;
-        } else if (envelope['data'] is Map) {
+        }
+        if (envelope['data'] is Map) {
           final data = Map<String, dynamic>.from(envelope['data'] as Map);
           final acc = data['access'] ?? data['access_token'];
+          final ref = data['refresh'] ?? data['refresh_token'];
           if (acc is String) newAccessToken = acc;
+          if (ref is String) newRefreshToken = ref;
         }
       }
 
@@ -254,11 +293,16 @@ class ApiService {
         };
       }
 
-      await _tokenStorage.saveAccessToken(newAccessToken);
+      if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+        await _tokenStorage.saveTokens(newAccessToken, newRefreshToken);
+      } else {
+        await _tokenStorage.saveAccessToken(newAccessToken);
+      }
 
       return {
         'success': true,
         'access_token': newAccessToken,
+        'refresh_token': newRefreshToken,
       };
     } catch (e) {
       return {

@@ -54,7 +54,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
   bool _isMapReady = false;
 
   bool _isLoading = false;
-  final bool _isLoadingData = true;
+  bool _isLoadingData = true;
 
   // Property types
   final List<Map<String, dynamic>> _propertyTypes = [
@@ -106,13 +106,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize Mapbox token using environment variable like in search page
-    MapboxOptions.setAccessToken(const String.fromEnvironment("ACCESS_TOKEN"));
-    _getCurrentLocation();
-    _loadMarkerImage();
-
-    // Set default budget values
-    _budgetMin = 1000000;
+    MapboxOptions.setAccessToken("pk.eyJ1IjoibWFydmluMjAwMSIsImEiOiJjbWdpaDRicTQwOTc3Mm9wcmd3OW5lNzExIn0.ISPECxmLq_6xhipoygxtFg");
+    _initializePage();
+    _budgetMin = 10;
     _budgetMax = 5000000;
   }
 
@@ -127,8 +123,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
   // Get current location
   Future<void> _getCurrentLocation() async {
     try {
-      geo.LocationPermission permission =
-          await geo.Geolocator.checkPermission();
+      geo.LocationPermission permission = await geo.Geolocator.checkPermission();
       if (permission == geo.LocationPermission.denied) {
         permission = await geo.Geolocator.requestPermission();
       }
@@ -238,6 +233,34 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
     if (_currentStep < 3) {
       _nextStep();
     }
+  }
+
+  Future<void> _initializePage() async {
+    setState(() {
+      _isLoadingData = true;
+    });
+    await _loadMarkerImage();
+    await _ensureLocationPermission();
+    await _getCurrentLocation();
+    setState(() {
+      _isLoadingData = false;
+    });
+  }
+
+  Future<void> _ensureLocationPermission() async {
+    try {
+      final serviceEnabled = await geo.Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return;
+      }
+      geo.LocationPermission permission = await geo.Geolocator.checkPermission();
+      if (permission == geo.LocationPermission.denied) {
+        permission = await geo.Geolocator.requestPermission();
+      }
+      if (permission == geo.LocationPermission.deniedForever) {
+        return;
+      }
+    } catch (_) {}
   }
 
   Future<void> _saveSearchProfile() async {
@@ -637,22 +660,22 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Bs. ${_budgetMin.toStringAsFixed(0)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    const Text(
+                      'Arrastra para ajustar',
+                      style: TextStyle(color: Colors.black),
                     ),
                     Text(
                       'Bs. ${_budgetMax.toStringAsFixed(0)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 RangeSlider(
                   values: RangeValues(_budgetMin, _budgetMax),
-                  min: 500000,
+                  min: 1,
                   max: 10000000,
-                  divisions: 95,
+                  divisions: 100,
                   activeColor: AppTheme.primaryColor,
                   inactiveColor: AppTheme.primaryColor.withValues(alpha: 0.3),
                   labels: RangeLabels(
@@ -683,7 +706,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
         children: [
           const Text(
             '¿Qué tipo de propiedad estás buscando?',
-            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+            style: TextStyle(fontSize: 16, color: Colors.black, height: 1.5),
           ),
           const SizedBox(height: 32),
 
@@ -707,14 +730,23 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(type['icon'], size: 16),
+                      Icon(type['icon'], size: 16, color: AppTheme.darkGrayBase),
                       const SizedBox(width: 4),
-                      Text(type['name']),
+                      Text(
+                        type['name'],
+                        style: const TextStyle(color: AppTheme.darkGrayBase),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        color: isSelected ? AppTheme.secondaryColor : Colors.grey,
+                        size: 18,
+                      ),
                     ],
                   ),
                   selected: isSelected,
-                  backgroundColor: Colors.transparent,
-                  selectedColor: Colors.transparent,
+                  backgroundColor: Colors.white,
+                  selectedColor: Colors.white,
                   checkmarkColor: AppTheme.darkGrayBase,
                   onSelected: (selected) {
                     setState(() {
@@ -757,8 +789,10 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Mínimo: $_bedroomsMin'),
-                    Text('Máximo: $_bedroomsMax'),
+                    Text('Mínimo: $_bedroomsMin',
+                        style: const TextStyle(color: Colors.black)),
+                    Text('Máximo: $_bedroomsMax',
+                        style: const TextStyle(color: Colors.black)),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -807,14 +841,23 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(amenity['icon'], size: 16),
+                      Icon(amenity['icon'], size: 16, color: AppTheme.darkGrayBase),
                       const SizedBox(width: 4),
-                      Text(amenity['name']),
+                      Text(
+                        amenity['name'],
+                        style: const TextStyle(color: AppTheme.darkGrayBase),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        color: isSelected ? AppTheme.secondaryColor : Colors.grey,
+                        size: 18,
+                      ),
                     ],
                   ),
                   selected: isSelected,
-                  backgroundColor: Colors.transparent,
-                  selectedColor: Colors.transparent,
+                  backgroundColor: Colors.white,
+                  selectedColor: Colors.white,
                   checkmarkColor: AppTheme.darkGrayBase,
                   onSelected: (selected) {
                     setState(() {
@@ -853,7 +896,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                   children: [
                     const Text(
                       'Espacio para Home Office',
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(fontSize: 16, color: Colors.black),
                     ),
                     Switch(
                       value: _remoteWorkSpace,
@@ -872,7 +915,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                   children: [
                     const Text(
                       'Mascotas Permitidas',
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(fontSize: 16, color: Colors.black),
                     ),
                     Switch(
                       value: _petAllowed,
@@ -902,7 +945,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
         children: [
           const Text(
             '¿Cómo te gustaría compartir tu espacio?',
-            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+            style: TextStyle(fontSize: 16, color: Colors.black, height: 1.5),
           ),
           const SizedBox(height: 32),
 
@@ -990,7 +1033,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
         children: [
           const Text(
             'Cuéntanos sobre tu estilo de vida',
-            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+            style: TextStyle(fontSize: 16, color: Colors.black, height: 1.5),
           ),
           const SizedBox(height: 32),
 
@@ -1005,7 +1048,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
             'Selecciona 3-5 etiquetas (${_selectedLifestyleTags.length}/5)',
             style: const TextStyle(
               fontSize: 14,
-              color: Colors.black54,
+              color: Colors.black,
             ),
           ),
           const SizedBox(height: 12),
@@ -1019,10 +1062,21 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                     ? AppTheme.getMintButtonDecoration()
                     : AppTheme.getGlassCard(),
                 child: FilterChip(
-                  label: Text(tag),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(tag, style: const TextStyle(color: AppTheme.darkGrayBase)),
+                      const SizedBox(width: 8),
+                      Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        color: isSelected ? AppTheme.secondaryColor : Colors.grey,
+                        size: 18,
+                      ),
+                    ],
+                  ),
                   selected: isSelected,
-                  backgroundColor: Colors.transparent,
-                  selectedColor: Colors.transparent,
+                  backgroundColor: Colors.white,
+                  selectedColor: Colors.white,
                   checkmarkColor: AppTheme.darkGrayBase,
                   onSelected: (selected) {
                     setState(() {
@@ -1059,7 +1113,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
               children: [
                 const Text(
                   'Fumador',
-                  style: TextStyle(fontSize: 16),
+                  style: TextStyle(fontSize: 16, color: Colors.black),
                 ),
                 Switch(
                   value: _smoker,
@@ -1093,10 +1147,21 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                     ? AppTheme.getMintButtonDecoration()
                     : AppTheme.getGlassCard(),
                 child: FilterChip(
-                  label: Text(language),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(language, style: const TextStyle(color: AppTheme.darkGrayBase)),
+                      const SizedBox(width: 8),
+                      Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        color: isSelected ? AppTheme.secondaryColor : Colors.grey,
+                        size: 18,
+                      ),
+                    ],
+                  ),
                   selected: isSelected,
-                  backgroundColor: Colors.transparent,
-                  selectedColor: Colors.transparent,
+                  backgroundColor: Colors.white,
+                  selectedColor: Colors.white,
                   checkmarkColor: AppTheme.darkGrayBase,
                   onSelected: (selected) {
                     setState(() {
@@ -1123,7 +1188,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
           ? AppTheme.getMintButtonDecoration()
           : AppTheme.getGlassCard(),
       child: RadioListTile<String>(
-        title: Text(label),
+        title: Text(label, style: const TextStyle(color: Colors.black)),
         value: value,
         groupValue: _roommatePreference,
         onChanged: (value) {
@@ -1159,21 +1224,39 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            decoration: AppTheme.getGlassCard(),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppTheme.darkGrayBase.withValues(alpha: 0.2)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 3)),
+              ],
+            ),
             child: IconButton(
               onPressed: value > min ? () => onChanged(value - 1) : null,
-              icon: const Icon(Icons.remove),
+              icon: const Icon(Icons.remove, color: Colors.black),
             ),
           ),
           Text(
             value.toString(),
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
           ),
           Container(
-            decoration: AppTheme.getMintButtonDecoration(),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppTheme.darkGrayBase.withValues(alpha: 0.2)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 3)),
+              ],
+            ),
             child: IconButton(
               onPressed: value < max ? () => onChanged(value + 1) : null,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add, color: Colors.black),
             ),
           ),
         ],

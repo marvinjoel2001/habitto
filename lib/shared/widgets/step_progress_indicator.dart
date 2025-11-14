@@ -48,8 +48,8 @@ class StepProgressIndicator extends StatelessWidget {
                     child: Center(
                       child: Text(
                         '${index + 1}',
-                        style: TextStyle(
-                          color: isActive ? AppTheme.whiteColor : AppTheme.whiteColor.withOpacity(0.6),
+                        style: const TextStyle(
+                          color: AppTheme.blackColor,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
