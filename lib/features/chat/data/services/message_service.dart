@@ -119,6 +119,84 @@ class MessageService {
     }
   }
 
+  /// Obtiene conversaciones del usuario autenticado con su último mensaje
+  /// Endpoint: GET /api/messages/conversations/
+  Future<Map<String, dynamic>> getConversations() async {
+    try {
+      final response = await _apiService.get('/api/messages/conversations/');
+      if (response['success']) {
+        final envelope = response['data'];
+        final convs = parseConversationsEnvelope(envelope);
+
+        return {
+          'success': true,
+          'data': convs,
+          'message': response['message'] ?? 'Conversaciones obtenidas exitosamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener conversaciones',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error al obtener conversaciones: $e',
+        'data': [],
+      };
+    }
+  }
+
+  List<Map<String, dynamic>> parseConversationsEnvelope(dynamic envelope) {
+    List<dynamic> results = [];
+    if (envelope is Map && envelope['data'] is Map && (envelope['data'] as Map)['results'] is List) {
+      results = List<dynamic>.from((envelope['data'] as Map)['results'] as List);
+    } else if (envelope is Map && envelope['results'] is List) {
+      results = List<dynamic>.from(envelope['results'] as List);
+    } else if (envelope is List) {
+      results = List<dynamic>.from(envelope);
+    }
+
+    return results.map((json) {
+      final m = MessageModel.fromJson(Map<String, dynamic>.from(json['last_message'] as Map));
+      final counterpart = Map<String, dynamic>.from(json['counterpart'] as Map);
+      final unread = json['unread_count'] ?? 0;
+      return {
+        'counterpart_id': counterpart['id'] as int,
+        'counterpart_username': counterpart['username'] as String?,
+        'counterpart_full_name': counterpart['full_name'] as String?,
+        'counterpart_profile_picture': counterpart['profile_picture'] as String?,
+        'unread_count': unread is int ? unread : int.tryParse(unread.toString()) ?? 0,
+        'last_message': m,
+      };
+    }).toList();
+  }
+
+  Future<Map<String, dynamic>> markThreadRead(int otherUserId) async {
+    try {
+      final response = await _apiService.post('/api/messages/mark_thread_read/', {
+        'other_user_id': otherUserId,
+      });
+      if (response['success']) {
+        return {
+          'success': true,
+          'data': response['data'],
+        };
+      }
+      return {
+        'success': false,
+        'error': response['error'] ?? 'Error al marcar como leído',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error al marcar hilo leído: $e',
+      };
+    }
+  }
+
   /// Envía un nuevo mensaje
   Future<Map<String, dynamic>> sendMessage({
     required int senderId,
@@ -181,6 +259,48 @@ class MessageService {
         'success': false,
         'error': 'Error al obtener mensaje: $e',
         'data': null,
+      };
+    }
+  }
+
+  /// Obtiene el hilo con otro usuario (más recientes primero)
+  Future<Map<String, dynamic>> getThread(int otherUserId, {int page = 1, int pageSize = 50}) async {
+    try {
+      final response = await _apiService.get('/api/messages/thread/', queryParameters: {
+        'other_user_id': otherUserId,
+        'page': page,
+        'page_size': pageSize,
+      });
+
+      if (response['success']) {
+        final envelope = response['data'];
+        List<dynamic> results = [];
+        if (envelope is Map && envelope['data'] is Map && (envelope['data'] as Map)['results'] is List) {
+          results = List<dynamic>.from((envelope['data'] as Map)['results'] as List);
+        } else if (envelope is Map && envelope['results'] is List) {
+          results = List<dynamic>.from(envelope['results'] as List);
+        } else if (envelope is List) {
+          results = List<dynamic>.from(envelope);
+        }
+
+        final messages = results.map((json) => MessageModel.fromJson(json)).toList();
+        return {
+          'success': true,
+          'data': messages,
+          'message': response['message'] ?? 'Hilo obtenido exitosamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ?? response['message'] ?? 'Error al obtener hilo',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error al obtener hilo: $e',
+        'data': [],
       };
     }
   }

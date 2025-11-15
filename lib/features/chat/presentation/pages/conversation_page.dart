@@ -5,6 +5,7 @@ import '../../data/models/message_model.dart';
 import 'package:habitto/core/services/token_storage.dart';
 import 'package:habitto/config/app_config.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:habitto/shared/theme/app_theme.dart';
 
 class ConversationPage extends StatefulWidget {
   final String title;
@@ -71,13 +72,11 @@ class _ConversationPageState extends State<ConversationPage> {
 
       _openWebSocket();
 
-      final result = await _messageService.getConversation(currentUserId, widget.otherUserId!);
+      final result = await _messageService.getThread(widget.otherUserId!, page: 1, pageSize: 50);
       
       if (result['success']) {
         final allMessages = result['data'] as List<MessageModel>;
-        final messages = allMessages.length > 50 
-            ? allMessages.sublist(allMessages.length - 50) 
-            : allMessages;
+        final messages = allMessages;
 
         setState(() {
           _messages = messages.map((message) => message.toConvMessage(
@@ -387,6 +386,7 @@ class _ConversationPageState extends State<ConversationPage> {
                 itemBuilder: (context, index) {
                   final m = _messages[index];
                   final align = m.fromMe ? Alignment.centerRight : Alignment.centerLeft;
+                  final cs = Theme.of(context).colorScheme;
 
                   return Align(
                     alignment: align,
@@ -399,16 +399,20 @@ class _ConversationPageState extends State<ConversationPage> {
                             constraints: const BoxConstraints(maxWidth: 280),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             decoration: BoxDecoration(
-                              color: m.fromMe ? const Color(0xFFD6C4F6) : const Color(0xFFF2F2F2),
+                              color: m.fromMe ? cs.primary : AppTheme.grayColor,
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: const [
                                 BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
                               ],
                             ),
-                          child: Text(
-                            m.text,
-                            style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.35),
-                          ),
+                            child: Text(
+                              m.text,
+                              style: TextStyle(
+                                color: m.fromMe ? cs.onPrimary : Colors.black87,
+                                fontSize: 14,
+                                height: 1.35,
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Row(
@@ -457,7 +461,9 @@ class _ConversationPageState extends State<ConversationPage> {
                             decoration: const InputDecoration(
                               hintText: 'Typing here...',
                               border: InputBorder.none,
+                              hintStyle: TextStyle(color: Colors.black38),
                             ),
+                            style: const TextStyle(color: Colors.black),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -470,16 +476,9 @@ class _ConversationPageState extends State<ConversationPage> {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFFF5F9A), Color(0xFFFF8FB7)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
+                  decoration: AppTheme.getMintButtonDecoration(),
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_upward, color: Colors.white),
+                    icon: const Icon(Icons.arrow_upward, color: Colors.black),
                     onPressed: () async {
                       await _sendMessage();
                     },

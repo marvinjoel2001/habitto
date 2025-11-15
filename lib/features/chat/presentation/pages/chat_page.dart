@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:habitto/features/chat/presentation/pages/conversation_page.dart';
 import 'package:habitto/features/chat/presentation/pages/user_list_page.dart';
 import 'package:habitto/core/services/token_storage.dart';
-import 'package:habitto/features/profile/data/services/profile_service.dart';
-import 'package:habitto/features/profile/domain/entities/profile.dart' as domain_profile;
-import 'package:habitto/features/auth/domain/entities/user.dart' as domain_user;
-import '../../data/services/user_service.dart';
+// Backend conversations endpoint provides counterpart info; no extra profile/user fetches
 import '../../data/services/message_service.dart';
 import '../../data/models/message_model.dart';
 
@@ -20,13 +17,12 @@ class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final MessageService _messageService = MessageService();
   final TokenStorage _tokenStorage = TokenStorage();
-  final UserService _userService = UserService();
-  final ProfileService _profileService = ProfileService();
   List<ChatMessage> _messages = [];
   bool _isLoading = true;
   String _error = '';
   int? _currentUserId;
   Map<String, int> _messageUserIds = {}; // Map message ID to other user ID
+  Map<int, int> _unreadByUserId = {};
 
   @override
   void initState() {
@@ -54,174 +50,123 @@ class _ChatPageState extends State<ChatPage> {
       }
 
       // Fallback robusto: intentar obtener el usuario actual desde /api/profiles/me/
-      if (_currentUserId == null) {
-        final meRes = await _profileService.getCurrentProfile();
-        if (meRes['success'] == true && meRes['data'] is Map) {
-          final data = meRes['data'] as Map;
-          final meUser = data['user'] as domain_user.User?;
-          if (meUser != null) {
-            setState(() {
-              _currentUserId = meUser.id;
-            });
-          }
-        }
-      }
+      // Si no hay token/ID, no forzar resolución; evitamos consultas extra
 
-      print('Loading messages for user: $currentUserId');
-      final result = await _messageService.getAllMessages();
-      print('Message service result: $result');
+      print('Loading conversations for user: $currentUserId');
+      Map<String, dynamic> result = await _messageService.getConversations();
+      print('Conversations service result: $result');
       
       if (result['success']) {
-        final messagesData = result['data'];
-        if (messagesData == null || (messagesData as List).isEmpty) {
-          print('No messages found or empty data, using fallback');
+        final data = result['data'];
+        if (data == null || (data as List).isEmpty) {
           setState(() {
-            _messages = _getHardcodedMessages(); // Use fallback for empty messages
+            _messages = [];
+            _messageUserIds = {};
             _isLoading = false;
           });
           return;
         }
-        
-        List<MessageModel> messages;
-        try {
-          messages = messagesData as List<MessageModel>;
-        } catch (e) {
-          print('Error casting messages data: $e');
+        if (data is List && data.isNotEmpty && data.first is Map && (data.first as Map)['last_message'] != null) {
+          final convs = List<Map<String, dynamic>>.from(data as List);
+          final Map<String, int> userIdMap = {};
+          final List<ChatMessage> items = [];
+          for (final c in convs) {
+            final otherUserId = c['counterpart_id'] as int;
+            final lastMsg = c['last_message'] as MessageModel;
+            final counterpartName = (c['counterpart_full_name'] as String?)?.trim();
+            final counterpartUsername = (c['counterpart_username'] as String?)?.trim();
+            final name = (counterpartName != null && counterpartName.isNotEmpty)
+                ? counterpartName
+                : (counterpartUsername != null && counterpartUsername.isNotEmpty
+                    ? counterpartUsername
+                    : 'Usuario $otherUserId');
+            final avatar = _sanitizeUrl((c['counterpart_profile_picture'] as String?) ?? '');
+            final chatMessage = lastMsg.toChatMessage(
+              currentUserId: _currentUserId ?? lastMsg.receiver,
+              senderName: name,
+            );
+            final enriched = ChatMessage(
+              id: chatMessage.id,
+              senderName: name,
+              message: chatMessage.message,
+              time: chatMessage.time,
+              isFromCurrentUser: chatMessage.isFromCurrentUser,
+              avatarUrl: avatar,
+              isOnline: chatMessage.isOnline,
+            );
+            items.add(enriched);
+            userIdMap[enriched.id] = otherUserId;
+            final unread = c['unread_count'] as int? ?? 0;
+            _unreadByUserId[otherUserId] = unread;
+          }
           setState(() {
-            _error = 'Error al procesar mensajes: formato de datos inválido';
+            _messages = items;
+            _messageUserIds = userIdMap;
             _isLoading = false;
-            _messages = _getHardcodedMessages(); // Fallback
           });
-          return;
-        }
-        
-        if (_currentUserId == null && messages.isNotEmpty) {
-          final Map<int, int> freq = {};
-          for (final m in messages) {
-            freq[m.sender] = (freq[m.sender] ?? 0) + 1;
-            freq[m.receiver] = (freq[m.receiver] ?? 0) + 1;
-          }
-          int guessedId = messages.first.sender;
-          int maxCount = -1;
-          freq.forEach((id, count) {
-            if (count > maxCount) {
-              maxCount = count;
-              guessedId = id;
-            }
+          
+        } else {
+          setState(() {
+            _messages = [];
+            _messageUserIds = {};
+            _isLoading = false;
           });
-          _currentUserId = guessedId;
         }
-
-        messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        final Map<int, ChatMessage> conversationMap = {};
-        final Map<String, int> userIdMap = {};
-
-        for (final message in messages) {
-          if (message.sender == message.receiver) {
-            continue;
-          }
-          final otherUserId = message.sender == _currentUserId ? message.receiver : message.sender;
-          if (conversationMap.containsKey(otherUserId)) continue;
-
-          final chatMessage = message.toChatMessage(
-            currentUserId: _currentUserId!,
-            senderName: 'Usuario $otherUserId',
-          );
-
-          conversationMap[otherUserId] = chatMessage;
-          userIdMap[chatMessage.id] = otherUserId;
-        }
-
-        setState(() {
-          _messages = conversationMap.values.toList();
-          _messageUserIds = userIdMap;
-          _isLoading = false;
-        });
-
-        // Enriquecer con nombres y fotos de perfil
-        _enrichConversations(userIdMap);
       } else {
         // Manejar error
         setState(() {
           _error = 'Error: ${result['error']}';
           _isLoading = false;
-          // Usar datos hardcodeados como fallback
-          _messages = _getHardcodedMessages();
+          _messages = [];
         });
       }
     } catch (e) {
       setState(() {
         _error = 'Error al cargar mensajes: $e';
         _isLoading = false;
-        // Usar datos hardcodeados como fallback
-        _messages = _getHardcodedMessages();
+        _messages = [];
       });
     }
   }
 
-  Future<void> _enrichConversations(Map<String, int> userIdMap) async {
-    try {
-      final ids = userIdMap.values.toSet().toList();
-      final Map<int, String> names = {};
-      final Map<int, String> avatars = {};
-
-      for (final uid in ids) {
-        // Intentar obtener perfil por user_id para foto y nombre completo
-        final profRes = await _profileService.getProfileByUserId(uid);
-        if (profRes['success'] == true && profRes['data'] is domain_profile.Profile) {
-          final p = profRes['data'] as domain_profile.Profile;
-          final fullName = p.user.fullName.isNotEmpty ? p.user.fullName : p.user.username;
-          names[uid] = fullName;
-          if (p.profileImage != null && p.profileImage!.isNotEmpty) {
-            avatars[uid] = _sanitizeUrl(p.profileImage!);
-          }
-          continue;
-        }
-
-        // Fallback: obtener usuario para nombre
-        final userRes = await _userService.getUser(uid);
-        if (userRes['success'] == true && userRes['data'] is Map) {
-          final data = Map<String, dynamic>.from(userRes['data'] as Map);
-          final firstName = (data['first_name'] ?? '').toString();
-          final lastName = (data['last_name'] ?? '').toString();
-          final username = (data['username'] ?? '').toString();
-          final fullName = ('$firstName $lastName').trim();
-          names[uid] = fullName.isNotEmpty ? fullName : username.isNotEmpty ? username : 'Usuario $uid';
-        } else {
-          names[uid] = 'Usuario $uid';
-        }
-      }
-
-      // Aplicar enriquecimiento a la lista de mensajes
-      final updated = _messages.map((m) {
-        final uid = userIdMap[m.id];
-        if (uid == null) return m;
-        final name = names[uid];
-        final avatar = avatars[uid];
-        if (name == null && avatar == null) return m;
-        return ChatMessage(
-          id: m.id,
-          senderName: name ?? m.senderName,
-          message: m.message,
-          time: m.time,
-          isFromCurrentUser: m.isFromCurrentUser,
-          avatarUrl: avatar ?? m.avatarUrl,
-          isOnline: m.isOnline,
-        );
-      }).toList();
-
-      if (mounted) {
-        setState(() {
-          _messages = updated;
-        });
-      }
-    } catch (e) {
-      // Silencioso: si falla, mantenemos los datos existentes
-    }
-  }
+  // Enriquecimiento eliminado; backend ya provee los datos requeridos
 
   String _sanitizeUrl(String url) {
     return url.replaceAll('`', '').trim();
+  }
+
+  Widget _buildUnreadBadge(int? otherUserId) {
+    if (otherUserId == null) return const SizedBox.shrink();
+    final count = _unreadByUserId[otherUserId] ?? 0;
+    if (count <= 0) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.redAccent,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        '$count',
+        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Widget _buildLastMessageText(ChatMessage message) {
+    final otherId = _messageUserIds[message.id];
+    final count = otherId != null ? _unreadByUserId[otherId] ?? 0 : 0;
+    final isUnread = count > 0;
+    return Text(
+      message.message,
+      style: TextStyle(
+        fontSize: 14,
+        color: Colors.black54,
+        height: 1.3,
+        fontWeight: isUnread ? FontWeight.w700 : FontWeight.w400,
+      ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
   }
 
   List<ChatMessage> _getHardcodedMessages() {
@@ -383,6 +328,14 @@ class _ChatPageState extends State<ChatPage> {
   Widget _buildMessageTile(ChatMessage message) {
     return InkWell(
       onTap: () {
+        final otherId = _messageUserIds[message.id];
+        if (otherId != null) {
+          _messageService.markThreadRead(otherId).then((_) {
+            setState(() {
+              _unreadByUserId[otherId] = 0;
+            });
+          });
+        }
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -444,13 +397,19 @@ class _ChatPageState extends State<ChatPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        message.senderName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            message.senderName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildUnreadBadge(_messageUserIds[message.id]),
+                        ],
                       ),
                       Row(
                         children: [
@@ -472,16 +431,7 @@ class _ChatPageState extends State<ChatPage> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    message.message,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                      height: 1.3,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  _buildLastMessageText(message),
                 ],
               ),
             ),
