@@ -37,4 +37,41 @@ class AppConfig {
   static const int wsPort = 8000;
   static const String wsChatPath = '/ws/chat/';
   static const String wsTokenQueryName = 'token';
+  static const String wsInboxPath = '/ws/chat/inbox/';
+
+  static Uri httpBaseUri() {
+    // Android emulator usa 10.0.2.2 para apuntar a localhost del host
+    // iOS/macOS/desktop usan localhost directamente
+    try {
+      // dart:io Platform no está importado aquí; usamos el baseUrl como pista
+      final uri = Uri.parse(baseUrl);
+      final isAndroidEmulator = uri.host == '10.0.2.2';
+      if (isAndroidEmulator) {
+        return Uri.parse('http://10.0.2.2:8001');
+      }
+      return Uri.parse('http://localhost:8001');
+    } catch (_) {
+      return Uri.parse('http://localhost:8001');
+    }
+  }
+
+  static String wsScheme() {
+    final http = httpBaseUri();
+    return http.scheme == 'https' ? 'wss' : 'ws';
+  }
+
+  static String wsHost() {
+    final http = httpBaseUri();
+    return http.host;
+  }
+
+  static Uri buildWsUri(String subpath, {String? token}) {
+    return Uri(
+      scheme: wsScheme(),
+      host: wsHost(),
+      port: wsPort,
+      path: subpath,
+      queryParameters: token != null ? {wsTokenQueryName: token} : null,
+    );
+  }
 }

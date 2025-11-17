@@ -23,7 +23,7 @@ class PhotoService {
         final envelope = response['data'];
         final inner = (envelope is Map && envelope['data'] is Map)
             ? Map<String, dynamic>.from(envelope['data'] as Map)
-            : (envelope is Map ? Map<String, dynamic>.from(envelope as Map) : <String, dynamic>{});
+            : (envelope is Map ? Map<String, dynamic>.from(envelope) : <String, dynamic>{});
 
         final List<dynamic> photosJson = inner['results'] ?? [];
         final List<Photo> photos = photosJson.map((json) => Photo.fromJson(json)).toList();
@@ -91,7 +91,7 @@ class PhotoService {
         final envelope = response['data'];
         final inner = (envelope is Map && envelope['data'] is Map)
             ? Map<String, dynamic>.from(envelope['data'] as Map)
-            : (envelope is Map ? Map<String, dynamic>.from(envelope as Map) : <String, dynamic>{});
+            : (envelope is Map ? Map<String, dynamic>.from(envelope) : <String, dynamic>{});
         final photo = Photo.fromJson(inner);
 
         return {
@@ -129,7 +129,7 @@ class PhotoService {
         final envelope = response['data'];
         final inner = (envelope is Map && envelope['data'] is Map)
             ? Map<String, dynamic>.from(envelope['data'] as Map)
-            : (envelope is Map ? Map<String, dynamic>.from(envelope as Map) : <String, dynamic>{});
+            : (envelope is Map ? Map<String, dynamic>.from(envelope) : <String, dynamic>{});
         final photo = Photo.fromJson(inner);
 
         return {

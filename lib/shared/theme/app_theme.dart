@@ -134,7 +134,7 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: const Color.fromARGB(255, 254, 254, 255), // Un gris oscuro claro para los inputs
-      hintStyle: TextStyle(color: const Color.fromARGB(255, 220, 220, 220)),
+      hintStyle: const TextStyle(color: Color.fromARGB(255, 220, 220, 220)),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,

@@ -11,9 +11,9 @@ class PropertyPhotosPage extends StatefulWidget {
   final Property property;
 
   const PropertyPhotosPage({
-    Key? key,
+    super.key,
     required this.property,
-  }) : super(key: key);
+  });
 
   @override
   State<PropertyPhotosPage> createState() => _PropertyPhotosPageState();
@@ -260,7 +260,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
     );
 
     if (confirmed == true) {
-      final result = await _photoService.deletePhoto(photo.id!);
+      final result = await _photoService.deletePhoto(photo.id);
       
       if (result['success']) {
         if (mounted) {
@@ -313,7 +313,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
-                      Icon(Icons.home_outlined, color: AppTheme.primaryColor),
+                      const Icon(Icons.home_outlined, color: AppTheme.primaryColor),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -379,7 +379,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
                           label: const Text('Seleccionar múltiples fotos'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: BorderSide(color: AppTheme.primaryColor),
+                            side: const BorderSide(color: AppTheme.primaryColor),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),

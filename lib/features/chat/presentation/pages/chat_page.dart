@@ -24,7 +24,7 @@ class _ChatPageState extends State<ChatPage> {
   String _error = '';
   int? _currentUserId;
   Map<String, int> _messageUserIds = {}; // Map message ID to other user ID
-  Map<int, int> _unreadByUserId = {};
+  final Map<int, int> _unreadByUserId = {};
   WebSocketChannel? _inboxChannel;
   final Set<String> _processedMessageIds = <String>{};
   int _inboxReconnectDelayMs = 1000;
@@ -72,8 +72,8 @@ class _ChatPageState extends State<ChatPage> {
           });
           return;
         }
-        if (data is List && data.isNotEmpty && data.first is Map && (data.first as Map)['last_message'] != null) {
-          final convs = List<Map<String, dynamic>>.from(data as List);
+        if (data.isNotEmpty && data.first is Map && (data.first as Map)['last_message'] != null) {
+          final convs = List<Map<String, dynamic>>.from(data);
           final Map<String, int> userIdMap = {};
           final List<ChatMessage> items = [];
           for (final c in convs) {
@@ -145,53 +145,27 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _openInboxWebSocket() async {
     if (_currentUserId == null) return;
     if (_inboxChannel != null) return;
-    final baseUri = Uri.parse(AppConfig.baseUrl);
-    final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
     final accessToken = await _tokenStorage.getAccessToken();
     final userId = _currentUserId!;
     WebSocketChannel? ch;
     try {
-      final uri1 = Uri(
-        scheme: wsScheme,
-        host: baseUri.host,
-        port: AppConfig.wsPort,
-        path: AppConfig.wsChatPath + 'inbox/$userId/',
-        queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
-      );
+      final uri1 = AppConfig.buildWsUri('${AppConfig.wsInboxPath}$userId/', token: accessToken);
       ch = WebSocketChannel.connect(uri1);
     } catch (_) {}
     if (ch == null) {
       try {
-        final uri2 = Uri(
-          scheme: wsScheme,
-          host: baseUri.host,
-          port: AppConfig.wsPort,
-          path: AppConfig.wsChatPath + 'inbox/$userId',
-          queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
-        );
+        final uri2 = AppConfig.buildWsUri('${AppConfig.wsInboxPath}$userId', token: accessToken);
         ch = WebSocketChannel.connect(uri2);
       } catch (_) {}
     }
     if (ch == null) {
       try {
-        final uri3 = Uri(
-          scheme: wsScheme,
-          host: baseUri.host,
-          port: AppConfig.wsPort,
-          path: '/ws/notifications/$userId/',
-          queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
-        );
+        final uri3 = AppConfig.buildWsUri('/ws/notifications/$userId/', token: accessToken);
         ch = WebSocketChannel.connect(uri3);
       } catch (_) {}
       if (ch == null) {
         try {
-          final uri4 = Uri(
-            scheme: wsScheme,
-            host: baseUri.host,
-            port: AppConfig.wsPort,
-            path: '/ws/notifications/$userId',
-            queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
-          );
+          final uri4 = AppConfig.buildWsUri('/ws/notifications/$userId', token: accessToken);
           ch = WebSocketChannel.connect(uri4);
         } catch (_) {}
       }
@@ -463,10 +437,10 @@ class _ChatPageState extends State<ChatPage> {
                             ),
                           )
                         : _messages.isEmpty
-                            ? Center(
+                            ? const Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
+                                  children: [
                                     Icon(Icons.chat_bubble_outline, size: 64, color: Colors.black26),
                                     SizedBox(height: 16),
                                     Text('No tienes conversaciones aún', style: TextStyle(color: Colors.black54, fontSize: 18)),

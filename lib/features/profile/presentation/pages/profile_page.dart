@@ -42,7 +42,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   Profile? _currentProfile;
   User? _currentUser;
   List<Property> _userProperties = [];
-  Map<int, List<Photo>> _propertyPhotos = {};
+  final Map<int, List<Photo>> _propertyPhotos = {};
   bool _isLoading = true;
   bool _isLoadingProperties = true;
 
@@ -81,10 +81,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
       // Cargar fotos para cada propiedad
       for (final property in properties) {
-        if (property.id != null) {
-          _loadPropertyPhotos(property.id!);
-        }
-      }
+        _loadPropertyPhotos(property.id!);
+            }
     } else {
       setState(() {
         _isLoadingProperties = false;
@@ -1629,16 +1627,14 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   }
 
   void _navigateToPropertyPhotos(Property property) {
-    if (property.id != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PropertyPhotosPage(property: property),
-        ),
-      ).then((_) {
-        // Recargar fotos después de regresar de la página de gestión
-        _loadPropertyPhotos(property.id!);
-      });
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PropertyPhotosPage(property: property),
+      ),
+    ).then((_) {
+      // Recargar fotos después de regresar de la página de gestión
+      _loadPropertyPhotos(property.id!);
+    });
     }
-  }
 }

@@ -49,7 +49,7 @@ class AuthService {
         if (envelope is Map && envelope['data'] is Map) {
           data = Map<String, dynamic>.from(envelope['data'] as Map);
         } else if (envelope is Map) {
-          data = Map<String, dynamic>.from(envelope as Map);
+          data = Map<String, dynamic>.from(envelope);
         } else {
           data = {};
         }
@@ -116,7 +116,7 @@ class AuthService {
         if (envelope is Map && envelope['data'] is Map) {
           data = Map<String, dynamic>.from(envelope['data'] as Map);
         } else if (envelope is Map) {
-          data = Map<String, dynamic>.from(envelope as Map);
+          data = Map<String, dynamic>.from(envelope);
         } else {
           data = {};
         }
@@ -181,7 +181,7 @@ class AuthService {
         if (envelope is Map && envelope['data'] is Map) {
           data = Map<String, dynamic>.from(envelope['data'] as Map);
         } else if (envelope is Map) {
-          data = Map<String, dynamic>.from(envelope as Map);
+          data = Map<String, dynamic>.from(envelope);
         } else {
           data = {};
         }

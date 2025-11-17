@@ -23,7 +23,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
   late final PageController _controller;
   late int _index;
   bool _isZoomed = false;
-  double _verticalDrag = 0.0;
+  final double _verticalDrag = 0.0;
   late final TransformationController _transformController;
 
   @override

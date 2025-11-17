@@ -500,7 +500,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Comencemos con lo básico. Proporcione los detalles esenciales de su propiedad.',
             style: TextStyle(
               fontSize: 16,
@@ -533,7 +533,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       });
                     }
                   },
-                  icon: Icon(Icons.remove_circle_outline, color: Colors.black54),
+                  icon: const Icon(Icons.remove_circle_outline, color: Colors.black54),
                 ),
               ),
               Expanded(
@@ -601,7 +601,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       });
                     }
                   },
-                  icon: Icon(Icons.remove_circle_outline, color: Colors.black54),
+                  icon: const Icon(Icons.remove_circle_outline, color: Colors.black54),
                 ),
               ),
               Expanded(
@@ -673,7 +673,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Ahora agreguemos los detalles financieros y características especiales.',
             style: TextStyle(
               fontSize: 16,
@@ -889,7 +889,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Ubicación y disponibilidad de la propiedad',
             style: TextStyle(
               fontSize: 16,

@@ -62,9 +62,9 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
     return Container(
       color: Colors.grey[300],
       alignment: Alignment.center,
-      child: Column(
+      child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Icon(Icons.image_not_supported, size: 56, color: Colors.black54),
           SizedBox(height: 8),
           Text(

@@ -22,10 +22,7 @@ class ApiService {
   Future<Map<String, dynamic>>? _ongoingRefresh;
 
   void _initializeDio() {
-    // Ajustar baseUrl según plataforma para coincidir con entorno del backend
-    // - Web: backend en localhost
-    // - Emulador Android: 10.0.2.2
-    final resolvedBaseUrl = kIsWeb ? 'http://localhost:8000' : AppConfig.baseUrl;
+    final resolvedBaseUrl = AppConfig.httpBaseUri().toString();
     _dio = Dio(BaseOptions(
       baseUrl: resolvedBaseUrl,
       connectTimeout: const Duration(seconds: 30),
@@ -253,12 +250,20 @@ class ApiService {
       // Usar el endpoint configurado por el backend
       // Preferimos AppConfig.refreshTokenEndpoint; si el backend usa SimpleJWT,
       // AppConfig.tokenRefreshEndpoint puede apuntar al mismo valor.
-      final response = await _dio.post(
-        AppConfig.refreshTokenEndpoint,
-        data: payload,
-        // Asegurar que no se envíe Authorization y evitar que el interceptor lo reañada
-        options: Options(headers: {'Authorization': null}),
-      );
+      Response response;
+      try {
+        response = await _dio.post(
+          AppConfig.refreshTokenEndpoint,
+          data: payload,
+          options: Options(headers: {'Authorization': null}),
+        );
+      } on DioException {
+        response = await _dio.post(
+          AppConfig.tokenRefreshEndpoint,
+          data: payload,
+          options: Options(headers: {'Authorization': null}),
+        );
+      }
 
       // La API puede responder de varias formas:
       // - { success, message, data: { access } }
@@ -286,7 +291,7 @@ class ApiService {
         }
       }
 
-      if (newAccessToken == null || (newAccessToken is String && newAccessToken.isEmpty)) {
+      if (newAccessToken == null || (newAccessToken.isEmpty)) {
         return {
           'success': false,
           'error': 'No access token received during refresh',

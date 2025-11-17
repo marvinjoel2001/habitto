@@ -37,7 +37,6 @@ class _FullScreenMatchContent extends StatelessWidget {
   final String? propertyTitle;
 
   const _FullScreenMatchContent({
-    super.key,
     required this.userImageUrl,
     required this.propertyImageUrl,
     this.propertyTitle,
@@ -69,9 +68,9 @@ class _FullScreenMatchContent extends StatelessWidget {
                     children: [
                       const SizedBox(width: 48),
                       // Título superior pequeño
-                      Text(
+                      const Text(
                         'Match',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.blackColor,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -188,9 +187,9 @@ class _FullScreenMatchContent extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          TextSpan(
+                          const TextSpan(
                             text: 'Con ',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppTheme.whiteColor,
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -247,7 +246,7 @@ class _RoundedImageCard extends StatelessWidget {
   final String url;
   final Size size;
 
-  const _RoundedImageCard({super.key, required this.url, required this.size});
+  const _RoundedImageCard({required this.url, required this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +281,7 @@ class _RoundedImageCard extends StatelessWidget {
 class _FloatingIcon extends StatelessWidget {
   final Color bg;
   final IconData icon;
-  const _FloatingIcon({super.key, required this.bg, required this.icon});
+  const _FloatingIcon({required this.bg, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -307,7 +306,7 @@ class _FloatingIcon extends StatelessWidget {
 
 class _DraggableCta extends StatefulWidget {
   final VoidCallback onComplete;
-  const _DraggableCta({super.key, required this.onComplete});
+  const _DraggableCta({required this.onComplete});
 
   @override
   State<_DraggableCta> createState() => _DraggableCtaState();

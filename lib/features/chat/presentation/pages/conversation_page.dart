@@ -158,49 +158,23 @@ class _ConversationPageState extends State<ConversationPage> {
       if (_currentUserId == null || widget.otherUserId == null) return;
 
       final roomId = _computeRoomId(_currentUserId!, widget.otherUserId!);
-      final baseUri = Uri.parse(AppConfig.baseUrl);
-      final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
 
       final accessToken = await _tokenStorage.getAccessToken();
 
-      final wsUri1 = Uri(
-        scheme: wsScheme,
-        host: baseUri.host,
-        port: AppConfig.wsPort,
-        path: AppConfig.wsChatPath + roomId + '/',
-        queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
-      );
+      final wsUri1 = AppConfig.buildWsUri('${AppConfig.wsChatPath}$roomId/', token: accessToken);
 
       WebSocketChannel? ch;
       try { ch = WebSocketChannel.connect(wsUri1); } catch (_) {}
       if (ch == null) {
-        final wsUri2 = Uri(
-          scheme: wsScheme,
-          host: baseUri.host,
-          port: AppConfig.wsPort,
-          path: AppConfig.wsChatPath + roomId,
-          queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
-        );
+        final wsUri2 = AppConfig.buildWsUri(AppConfig.wsChatPath + roomId, token: accessToken);
         try { ch = WebSocketChannel.connect(wsUri2); } catch (_) {}
       }
       if (ch == null) {
         final roomRev = '${widget.otherUserId!}-${_currentUserId!}';
-        final wsUri3 = Uri(
-          scheme: wsScheme,
-          host: baseUri.host,
-          port: AppConfig.wsPort,
-          path: AppConfig.wsChatPath + roomRev + '/',
-          queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
-        );
+        final wsUri3 = AppConfig.buildWsUri('${AppConfig.wsChatPath}$roomRev/', token: accessToken);
         try { ch = WebSocketChannel.connect(wsUri3); } catch (_) {}
         if (ch == null) {
-          final wsUri4 = Uri(
-            scheme: wsScheme,
-            host: baseUri.host,
-            port: AppConfig.wsPort,
-            path: AppConfig.wsChatPath + roomRev,
-            queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
-          );
+          final wsUri4 = AppConfig.buildWsUri(AppConfig.wsChatPath + roomRev, token: accessToken);
           try { ch = WebSocketChannel.connect(wsUri4); } catch (_) {}
         }
       }
@@ -548,7 +522,7 @@ class _ConversationPageState extends State<ConversationPage> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.add, color: Colors.black54),
+                        const Icon(Icons.add, color: Colors.black54),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
@@ -562,7 +536,7 @@ class _ConversationPageState extends State<ConversationPage> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Icon(Icons.schedule, color: Colors.black54),
+                        const Icon(Icons.schedule, color: Colors.black54),
                       ],
                     ),
                   ),

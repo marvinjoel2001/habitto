@@ -112,9 +112,9 @@ class _HomePageState extends State<HomePage> {
     return Container(
       color: Colors.grey[300],
       alignment: Alignment.center,
-      child: Column(
+      child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Icon(Icons.image_not_supported, size: 56, color: Colors.black54),
           SizedBox(height: 8),
           Text('Sin imagen', style: TextStyle(color: Colors.black54, fontSize: 16)),
@@ -162,7 +162,6 @@ class _CircleActionButton extends StatefulWidget {
   final VoidCallback? onTap;
 
   const _CircleActionButton({
-    super.key,
     required this.icon,
     required this.bgColor,
     required this.iconColor,
@@ -255,7 +254,6 @@ class _HomeContentState extends State<HomeContent> {
 
   void _spawnHeartsBurst() {
     final overlay = Overlay.of(context);
-    if (overlay == null) return;
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (ctx) => const _HeartsBurstOverlay(),
@@ -268,10 +266,6 @@ class _HomeContentState extends State<HomeContent> {
 
   void _spawnBigXAndSwipeLeft() {
     final overlay = Overlay.of(context);
-    if (overlay == null) {
-      _deckKey.currentState?.swipeLeft();
-      return;
-    }
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (ctx) => const _BigXOverlay(),
@@ -931,9 +925,9 @@ class _PropertyCardState extends State<PropertyCard> {
     return Container(
       color: Colors.grey[300],
       alignment: Alignment.center,
-      child: Column(
+      child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Icon(Icons.image_not_supported, size: 56, color: Colors.black54),
           SizedBox(height: 8),
           Text(
@@ -947,7 +941,7 @@ class _PropertyCardState extends State<PropertyCard> {
 
   @override
   Widget build(BuildContext context) {
-    final double bottomSpace = 16; // ligeramente por encima del bottom navigation
+    const double bottomSpace = 16; // ligeramente por encima del bottom navigation
     return SizedBox.expand(
       child: AnimatedScale(
         scale: widget.isDragging ? 0.96 : 1.0,
@@ -1320,7 +1314,7 @@ class _FloatingCategoryItemState extends State<_FloatingCategoryItem>
 
 // Overlay de burst de corazones al presionar el botón de like
 class _HeartsBurstOverlay extends StatefulWidget {
-  const _HeartsBurstOverlay({super.key});
+  const _HeartsBurstOverlay();
 
   @override
   State<_HeartsBurstOverlay> createState() => _HeartsBurstOverlayState();
@@ -1435,7 +1429,7 @@ class _HeartParticle {
 
 // Overlay de X grande antes de avanzar
 class _BigXOverlay extends StatefulWidget {
-  const _BigXOverlay({super.key});
+  const _BigXOverlay();
 
   @override
   State<_BigXOverlay> createState() => _BigXOverlayState();

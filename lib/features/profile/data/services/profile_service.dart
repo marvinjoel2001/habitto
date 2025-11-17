@@ -37,7 +37,7 @@ class ProfileService {
         final userProfile = envelope is Map && envelope['data'] is Map
             ? Map<String, dynamic>.from(envelope['data'] as Map)
             : envelope is Map
-                ? Map<String, dynamic>.from(envelope as Map)
+                ? Map<String, dynamic>.from(envelope)
                 : null;
         print('ProfileService: Datos del perfil extraídos: $userProfile');
 
@@ -200,7 +200,7 @@ class ProfileService {
         final profileJson = envelope is Map && envelope['data'] is Map
             ? Map<String, dynamic>.from(envelope['data'] as Map)
             : envelope is Map
-                ? Map<String, dynamic>.from(envelope as Map)
+                ? Map<String, dynamic>.from(envelope)
                 : <String, dynamic>{};
 
         // Si no vino el perfil en esta respuesta, usar el último perfil de la subida
@@ -256,7 +256,7 @@ class ProfileService {
         final profileJson = envelope is Map && envelope['data'] is Map
             ? Map<String, dynamic>.from(envelope['data'] as Map)
             : envelope is Map
-                ? Map<String, dynamic>.from(envelope as Map)
+                ? Map<String, dynamic>.from(envelope)
                 : <String, dynamic>{};
 
         if (profileJson.isEmpty) {

@@ -1,12 +1,10 @@
 // Clase: SearchPage
 
-import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:video_player/video_player.dart';
 import '../../../../shared/theme/app_theme.dart';
 
 

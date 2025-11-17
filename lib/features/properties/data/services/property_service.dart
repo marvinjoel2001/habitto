@@ -133,7 +133,7 @@ class PropertyService {
         if (envelope is Map && envelope['data'] is Map) {
           data = Map<String, dynamic>.from(envelope['data'] as Map);
         } else if (envelope is Map) {
-          data = Map<String, dynamic>.from(envelope as Map);
+          data = Map<String, dynamic>.from(envelope);
         } else {
           data = {};
         }
@@ -357,7 +357,7 @@ class PropertyService {
           final profileRes = await profileService.getCurrentProfile();
           if (profileRes['success'] == true && profileRes['data'] != null && profileRes['data']['user'] != null) {
             final user = profileRes['data']['user'] as User;
-            currentUserId = user.id?.toString();
+            currentUserId = user.id.toString();
           }
         } catch (e) {
           // Ignorar y devolver error más abajo si sigue faltando el ID
