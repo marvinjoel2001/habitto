@@ -136,14 +136,14 @@ class _ConversationPageState extends State<ConversationPage> {
       if (widget.otherUserId == null) return;
       if ((widget.avatarUrl ?? '').isNotEmpty) {
         setState(() {
-          _counterpartAvatarUrl = widget.avatarUrl;
+          _counterpartAvatarUrl = _resolveAvatar(widget.avatarUrl!);
         });
         return;
       }
       final res = await _profileService.getProfileByUserId(widget.otherUserId!);
       if (res['success'] == true && res['data'] != null) {
         final profile = res['data'] as Profile;
-        final url = profile.profileImage ?? '';
+        final url = _resolveAvatar(profile.profileImage ?? '');
         if (url.isNotEmpty && mounted) {
           setState(() {
             _counterpartAvatarUrl = url;
@@ -268,6 +268,20 @@ class _ConversationPageState extends State<ConversationPage> {
     final u1 = a < b ? a : b;
     final u2 = a < b ? b : a;
     return '$u1-$u2';
+  }
+
+  String _resolveAvatar(String url) {
+    final u = (url).trim();
+    if (u.isEmpty) return '';
+    if (u.startsWith('http://') || u.startsWith('https://')) return u;
+    final baseUri = Uri.parse(AppConfig.baseUrl);
+    final abs = Uri(
+      scheme: baseUri.scheme,
+      host: baseUri.host,
+      port: baseUri.port == 0 ? null : baseUri.port,
+      path: u.startsWith('/') ? u : '/$u',
+    );
+    return abs.toString();
   }
 
   List<ConvMessage> _getHardcodedMessages() {

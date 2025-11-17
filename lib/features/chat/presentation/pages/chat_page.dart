@@ -25,6 +25,7 @@ class _ChatPageState extends State<ChatPage> {
   int? _currentUserId;
   Map<String, int> _messageUserIds = {}; // Map message ID to other user ID
   final Map<int, int> _unreadByUserId = {};
+  final Map<int, String> _avatarByUserId = {};
   WebSocketChannel? _inboxChannel;
   final Set<String> _processedMessageIds = <String>{};
   int _inboxReconnectDelayMs = 1000;
@@ -86,7 +87,7 @@ class _ChatPageState extends State<ChatPage> {
                 : (counterpartUsername != null && counterpartUsername.isNotEmpty
                     ? counterpartUsername
                     : 'Usuario $otherUserId');
-            final avatar = _sanitizeUrl((c['counterpart_profile_picture'] as String?) ?? '');
+            final avatar = _resolveAvatar((c['counterpart_profile_picture'] as String?) ?? '');
             final chatMessage = lastMsg.toChatMessage(
               currentUserId: _currentUserId ?? lastMsg.receiver,
               senderName: name,
@@ -104,6 +105,9 @@ class _ChatPageState extends State<ChatPage> {
             userIdMap[enriched.id] = otherUserId;
             final unread = c['unread_count'] as int? ?? 0;
             _unreadByUserId[otherUserId] = unread;
+            if (avatar.isNotEmpty) {
+              _avatarByUserId[otherUserId] = avatar;
+            }
           }
           setState(() {
             _messages = items;
@@ -140,6 +144,20 @@ class _ChatPageState extends State<ChatPage> {
 
   String _sanitizeUrl(String url) {
     return url.replaceAll('`', '').trim();
+  }
+
+  String _resolveAvatar(String url) {
+    final u = _sanitizeUrl(url);
+    if (u.isEmpty) return '';
+    if (u.startsWith('http://') || u.startsWith('https://')) return u;
+    final baseUri = Uri.parse(AppConfig.baseUrl);
+    final abs = Uri(
+      scheme: baseUri.scheme,
+      host: baseUri.host,
+      port: baseUri.port == 0 ? null : baseUri.port,
+      path: u.startsWith('/') ? u : '/$u',
+    );
+    return abs.toString();
   }
 
   Future<void> _openInboxWebSocket() async {
@@ -193,7 +211,7 @@ class _ChatPageState extends State<ChatPage> {
           final displayName = (nameRaw != null && nameRaw.isNotEmpty)
               ? nameRaw
               : (usernameRaw != null && usernameRaw.isNotEmpty ? usernameRaw : 'Usuario $other');
-          final avatar = _sanitizeUrl(((data['counterpart_profile_picture'] as String?) ?? '').trim());
+          final avatar = _resolveAvatar(((data['counterpart_profile_picture'] as String?) ?? '').trim());
           final timeStr = _formatTime(createdAt);
           final existingIndex = _messages.indexWhere((m) => _messageUserIds[m.id] == other);
           if (existingIndex != -1) {
@@ -204,7 +222,7 @@ class _ChatPageState extends State<ChatPage> {
               message: content.isNotEmpty ? content : prev.message,
               time: timeStr,
               isFromCurrentUser: sender == _currentUserId,
-              avatarUrl: avatar.isNotEmpty ? avatar : prev.avatarUrl,
+              avatarUrl: (_avatarByUserId[other] ?? (avatar.isNotEmpty ? avatar : prev.avatarUrl)),
               isOnline: prev.isOnline,
             );
             setState(() {
@@ -215,6 +233,9 @@ class _ChatPageState extends State<ChatPage> {
               if (sender != _currentUserId) {
                 _unreadByUserId[other] = (_unreadByUserId[other] ?? 0) + 1;
               }
+              if (avatar.isNotEmpty) {
+                _avatarByUserId[other] = avatar;
+              }
             });
           } else {
             final added = ChatMessage(
@@ -223,7 +244,7 @@ class _ChatPageState extends State<ChatPage> {
               message: content,
               time: timeStr,
               isFromCurrentUser: sender == _currentUserId,
-              avatarUrl: avatar,
+              avatarUrl: (_avatarByUserId[other] ?? avatar),
               isOnline: false,
             );
             setState(() {
@@ -231,6 +252,9 @@ class _ChatPageState extends State<ChatPage> {
               _messageUserIds[added.id] = other;
               if (sender != _currentUserId) {
                 _unreadByUserId[other] = (_unreadByUserId[other] ?? 0) + 1;
+              }
+              if (avatar.isNotEmpty) {
+                _avatarByUserId[other] = avatar;
               }
             });
           }
@@ -504,18 +528,22 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             Stack(
               children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: message.avatarUrl.isNotEmpty ? NetworkImage(message.avatarUrl) : null,
-                  child: message.avatarUrl.isEmpty
-                      ? Icon(
-                          Icons.person,
-                          color: Colors.grey[600],
-                          size: 28,
-                        )
-                      : null,
-                ),
+                Builder(builder: (context) {
+                  final otherId = _messageUserIds[message.id];
+                  final url = otherId != null ? (_avatarByUserId[otherId] ?? message.avatarUrl) : message.avatarUrl;
+                  return CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: url.isNotEmpty ? NetworkImage(url) : null,
+                    child: url.isEmpty
+                        ? Icon(
+                            Icons.person,
+                            color: Colors.grey[600],
+                            size: 28,
+                          )
+                        : null,
+                  );
+                }),
                 if (message.isOnline)
                   Positioned(
                     bottom: 0,
