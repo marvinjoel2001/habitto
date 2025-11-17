@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:habitto/features/chat/presentation/pages/conversation_page.dart';
 import 'package:habitto/features/chat/presentation/pages/user_list_page.dart';
 import 'package:habitto/core/services/token_storage.dart';
-// Backend conversations endpoint provides counterpart info; no extra profile/user fetches
 import '../../data/services/message_service.dart';
 import '../../data/models/message_model.dart';
+import 'dart:convert';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:habitto/config/app_config.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -23,6 +25,9 @@ class _ChatPageState extends State<ChatPage> {
   int? _currentUserId;
   Map<String, int> _messageUserIds = {}; // Map message ID to other user ID
   Map<int, int> _unreadByUserId = {};
+  WebSocketChannel? _inboxChannel;
+  final Set<String> _processedMessageIds = <String>{};
+  int _inboxReconnectDelayMs = 1000;
 
   @override
   void initState() {
@@ -47,6 +52,7 @@ class _ChatPageState extends State<ChatPage> {
         setState(() {
           _currentUserId = currentUserId;
         });
+        _openInboxWebSocket();
       }
 
       // Fallback robusto: intentar obtener el usuario actual desde /api/profiles/me/
@@ -104,6 +110,7 @@ class _ChatPageState extends State<ChatPage> {
             _messageUserIds = userIdMap;
             _isLoading = false;
           });
+          _openInboxWebSocket();
           
         } else {
           setState(() {
@@ -133,6 +140,167 @@ class _ChatPageState extends State<ChatPage> {
 
   String _sanitizeUrl(String url) {
     return url.replaceAll('`', '').trim();
+  }
+
+  Future<void> _openInboxWebSocket() async {
+    if (_currentUserId == null) return;
+    if (_inboxChannel != null) return;
+    final baseUri = Uri.parse(AppConfig.baseUrl);
+    final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
+    final accessToken = await _tokenStorage.getAccessToken();
+    final userId = _currentUserId!;
+    WebSocketChannel? ch;
+    try {
+      final uri1 = Uri(
+        scheme: wsScheme,
+        host: baseUri.host,
+        port: AppConfig.wsPort,
+        path: AppConfig.wsChatPath + 'inbox/$userId/',
+        queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
+      );
+      ch = WebSocketChannel.connect(uri1);
+    } catch (_) {}
+    if (ch == null) {
+      try {
+        final uri2 = Uri(
+          scheme: wsScheme,
+          host: baseUri.host,
+          port: AppConfig.wsPort,
+          path: AppConfig.wsChatPath + 'inbox/$userId',
+          queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
+        );
+        ch = WebSocketChannel.connect(uri2);
+      } catch (_) {}
+    }
+    if (ch == null) {
+      try {
+        final uri3 = Uri(
+          scheme: wsScheme,
+          host: baseUri.host,
+          port: AppConfig.wsPort,
+          path: '/ws/notifications/$userId/',
+          queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
+        );
+        ch = WebSocketChannel.connect(uri3);
+      } catch (_) {}
+      if (ch == null) {
+        try {
+          final uri4 = Uri(
+            scheme: wsScheme,
+            host: baseUri.host,
+            port: AppConfig.wsPort,
+            path: '/ws/notifications/$userId',
+            queryParameters: accessToken != null ? {AppConfig.wsTokenQueryName: accessToken} : null,
+          );
+          ch = WebSocketChannel.connect(uri4);
+        } catch (_) {}
+      }
+    }
+    if (ch == null) return;
+    _inboxChannel = ch;
+    ch.stream.listen((raw) {
+      try {
+        final data = raw is String ? _tryParseJson(raw) : raw;
+        if (data is Map<String, dynamic>) {
+          final mid = (data['message_id'] ?? data['id'])?.toString();
+          if (mid != null && _processedMessageIds.contains(mid)) return;
+          if (mid != null) _processedMessageIds.add(mid);
+          final sender = data['sender'] as int?;
+          final receiver = data['receiver'] as int?;
+          final content = (data['content'] as String?) ?? '';
+          final createdAtStr = data['created_at'] as String?;
+          DateTime createdAt = DateTime.now();
+          if (createdAtStr != null) {
+            createdAt = DateTime.tryParse(createdAtStr) ?? DateTime.now();
+          }
+          final other = (sender == _currentUserId) ? (receiver ?? sender ?? 0) : (sender ?? receiver ?? 0);
+          final nameRaw = (data['counterpart_full_name'] as String?)?.trim();
+          final usernameRaw = (data['counterpart_username'] as String?)?.trim();
+          final displayName = (nameRaw != null && nameRaw.isNotEmpty)
+              ? nameRaw
+              : (usernameRaw != null && usernameRaw.isNotEmpty ? usernameRaw : 'Usuario $other');
+          final avatar = _sanitizeUrl(((data['counterpart_profile_picture'] as String?) ?? '').trim());
+          final timeStr = _formatTime(createdAt);
+          final existingIndex = _messages.indexWhere((m) => _messageUserIds[m.id] == other);
+          if (existingIndex != -1) {
+            final prev = _messages[existingIndex];
+            final updated = ChatMessage(
+              id: mid ?? prev.id,
+              senderName: displayName.isNotEmpty ? displayName : prev.senderName,
+              message: content.isNotEmpty ? content : prev.message,
+              time: timeStr,
+              isFromCurrentUser: sender == _currentUserId,
+              avatarUrl: avatar.isNotEmpty ? avatar : prev.avatarUrl,
+              isOnline: prev.isOnline,
+            );
+            setState(() {
+              _messages.removeAt(existingIndex);
+              _messages.insert(0, updated);
+              _messageUserIds.remove(prev.id);
+              _messageUserIds[updated.id] = other;
+              if (sender != _currentUserId) {
+                _unreadByUserId[other] = (_unreadByUserId[other] ?? 0) + 1;
+              }
+            });
+          } else {
+            final added = ChatMessage(
+              id: mid ?? '${DateTime.now().microsecondsSinceEpoch}',
+              senderName: displayName,
+              message: content,
+              time: timeStr,
+              isFromCurrentUser: sender == _currentUserId,
+              avatarUrl: avatar,
+              isOnline: false,
+            );
+            setState(() {
+              _messages.insert(0, added);
+              _messageUserIds[added.id] = other;
+              if (sender != _currentUserId) {
+                _unreadByUserId[other] = (_unreadByUserId[other] ?? 0) + 1;
+              }
+            });
+          }
+        }
+      } catch (_) {}
+    }, onError: (err) {
+      _inboxChannel = null;
+      _scheduleInboxReconnect();
+    }, onDone: () {
+      _inboxChannel = null;
+      _scheduleInboxReconnect();
+    }, cancelOnError: false);
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+    if (diff.inDays > 0) {
+      return '${dateTime.day}/${dateTime.month}';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours}h';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}m';
+    } else {
+      return 'Ahora';
+    }
+  }
+
+  Map<String, dynamic>? _tryParseJson(String s) {
+    try {
+      return s.isNotEmpty ? Map<String, dynamic>.from(jsonDecode(s) as Map) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _scheduleInboxReconnect() {
+    final delay = Duration(milliseconds: _inboxReconnectDelayMs);
+    Future.delayed(delay, () {
+      if (mounted && _inboxChannel == null) {
+        _openInboxWebSocket();
+        _inboxReconnectDelayMs = (_inboxReconnectDelayMs * 2).clamp(1000, 10000);
+      }
+    });
   }
 
   Widget _buildUnreadBadge(int? otherUserId) {
@@ -447,6 +615,9 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     _messageController.dispose();
+    try {
+      _inboxChannel?.sink.close();
+    } catch (_) {}
     super.dispose();
   }
 }

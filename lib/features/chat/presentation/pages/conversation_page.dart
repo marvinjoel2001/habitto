@@ -184,7 +184,7 @@ class _ConversationPageState extends State<ConversationPage> {
         try { ch = WebSocketChannel.connect(wsUri2); } catch (_) {}
       }
       if (ch == null) {
-        final roomRev = '${widget.otherUserId!}_${_currentUserId!}';
+        final roomRev = '${widget.otherUserId!}-${_currentUserId!}';
         final wsUri3 = Uri(
           scheme: wsScheme,
           host: baseUri.host,
@@ -293,7 +293,7 @@ class _ConversationPageState extends State<ConversationPage> {
   String _computeRoomId(int a, int b) {
     final u1 = a < b ? a : b;
     final u2 = a < b ? b : a;
-    return '$u1\_$u2';
+    return '$u1-$u2';
   }
 
   List<ConvMessage> _getHardcodedMessages() {
