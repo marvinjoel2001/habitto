@@ -358,6 +358,53 @@ class _HomeContentState extends State<HomeContent> {
     }
   }
 
+  Widget _EmptyMatches() {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.fromLTRB(24, 48, 24, 36),
+        decoration: BoxDecoration(
+          gradient: AppTheme.getCardGradient(opacity: 0.14),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+          boxShadow: const [
+            BoxShadow(color: Color(0x22000000), blurRadius: 12, offset: Offset(0, 6)),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 86,
+              height: 86,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.20),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withOpacity(0.35), width: 1.5),
+              ),
+              child: const Icon(Icons.favorite_border, color: Colors.white, size: 38),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Por el momento no tenemos matchs',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Desliza hacia abajo para recargar',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            const _PullHintHand(),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadPhotosForProperty(int propertyId) async {
     final res = await _photoService.getPropertyPhotos(propertyId);
     if (res['success'] == true && res['data'] != null) {
@@ -419,27 +466,118 @@ class _HomeContentState extends State<HomeContent> {
             ),
           ),
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? Center(
-                        child: Text(_error!, style: const TextStyle(color: Colors.white)),
-                      )
-                    : PropertySwipeDeck(
-                        key: _deckKey,
-                        properties: _cards,
-                        onLike: (p) async {
-                          final matchId = _matchIdByPropertyId[p.id];
-                          if (matchId != null) {
-                            final res = await _matchingService.likeMatch(matchId);
-                            if (res['success'] != true) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
-                                );
-                              }
-                              return;
-                            }
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await _loadAllProperties();
+              },
+              child: _isLoading
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 200),
+                        Center(child: CircularProgressIndicator()),
+                        SizedBox(height: 600),
+                      ],
+                    )
+                  : (_cards.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            const SizedBox(height: 40),
+                            _EmptyMatches(),
+                            const SizedBox(height: 800),
+                          ],
+                        )
+                      : ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            PropertySwipeDeck(
+                              key: _deckKey,
+                              properties: _cards,
+                              onLike: (p) async {
+                                final matchId = _matchIdByPropertyId[p.id];
+                                if (matchId != null) {
+                                  final res = await _matchingService.likeMatch(matchId);
+                                  if (res['success'] != true) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                                      );
+                                    }
+                                    return;
+                                  }
+                                  _spawnHeartsBurst();
+                                  final userImage = _currentUserImageUrl;
+                                  final propertyImage = (p.images.isNotEmpty)
+                                      ? p.images[0]
+                                      : 'assets/images/empty.jpg';
+                                  MatchModal.show(
+                                    context,
+                                    userImageUrl: userImage,
+                                    propertyImageUrl: propertyImage,
+                                    propertyTitle: p.title,
+                                  );
+                                }
+                              },
+                              onReject: (p) async {
+                                final matchId = _matchIdByPropertyId[p.id];
+                                if (matchId != null) {
+                                  final res = await _matchingService.rejectMatch(matchId);
+                                  if (res['success'] != true && mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(res['error'] ?? 'Error al rechazar')),
+                                    );
+                                  }
+                                }
+                              },
+                              onTopChange: (p) => setState(() => _currentTopProperty = p),
+                            ),
+                          ],
+                        )),
+            ),
+          ),
+          if (!_isLoading && _currentTopProperty != null && _cards.isNotEmpty)
+            Container(
+              color: Colors.transparent,
+              margin: const EdgeInsets.only(top: 20),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _CircleActionButton(
+                    icon: Icons.rotate_left,
+                    bgColor: Colors.white,
+                    iconColor: Colors.amber,
+                    onTap: () => _deckKey.currentState?.goBack(),
+                  ),
+                  const SizedBox(width: 18),
+                  _CircleActionButton(
+                    icon: Icons.close,
+                    bgColor: Colors.white,
+                    iconColor: Colors.redAccent,
+                    onTap: () async {
+                      final p = _currentTopProperty;
+                      if (p != null) {
+                        final matchId = _matchIdByPropertyId[p.id];
+                        if (matchId != null) {
+                          await _matchingService.rejectMatch(matchId);
+                        }
+                      }
+                      _spawnBigXAndSwipeLeft();
+                    },
+                  ),
+                  const SizedBox(width: 18),
+                  _CircleActionButton(
+                    icon: Icons.favorite,
+                    bgColor: Colors.orange,
+                    iconColor: Colors.white,
+                    onTap: () async {
+                      final p = _currentTopProperty;
+                      if (p != null) {
+                        final matchId = _matchIdByPropertyId[p.id];
+                        if (matchId != null) {
+                          final res = await _matchingService.likeMatch(matchId);
+                          if (res['success'] == true) {
                             _spawnHeartsBurst();
                             final userImage = _currentUserImageUrl;
                             final propertyImage = (p.images.isNotEmpty)
@@ -451,104 +589,36 @@ class _HomeContentState extends State<HomeContent> {
                               propertyImageUrl: propertyImage,
                               propertyTitle: p.title,
                             );
+                            _deckKey.currentState?.swipeRight();
+                          } else if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                            );
                           }
-                        },
-                        onReject: (p) async {
-                          final matchId = _matchIdByPropertyId[p.id];
-                          if (matchId != null) {
-                            final res = await _matchingService.rejectMatch(matchId);
-                            if (res['success'] != true && mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(res['error'] ?? 'Error al rechazar')),
-                              );
-                            }
-                          }
-                        },
-                        onTopChange: (p) => setState(() => _currentTopProperty = p),
-                      ),
-          ),
-          Container(
-            color: Colors.transparent,
-            margin: const EdgeInsets.only(top: 20),
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _CircleActionButton(
-                  icon: Icons.rotate_left,
-                  bgColor: Colors.white,
-                  iconColor: Colors.amber,
-                  onTap: () => _deckKey.currentState?.goBack(),
-                ),
-                const SizedBox(width: 18),
-                _CircleActionButton(
-                  icon: Icons.close,
-                  bgColor: Colors.white,
-                  iconColor: Colors.redAccent,
-                  onTap: () async {
-                    final p = _currentTopProperty;
-                    if (p != null) {
-                      final matchId = _matchIdByPropertyId[p.id];
-                      if (matchId != null) {
-                        await _matchingService.rejectMatch(matchId);
+                        }
                       }
-                    }
-                    _spawnBigXAndSwipeLeft();
-                  },
-                ),
-                const SizedBox(width: 18),
-                _CircleActionButton(
-                  icon: Icons.favorite,
-                  bgColor: Colors.orange,
-                  iconColor: Colors.white,
-                  onTap: () async {
-                    final p = _currentTopProperty;
-                    if (p != null) {
-                      final matchId = _matchIdByPropertyId[p.id];
-                      if (matchId != null) {
-                        final res = await _matchingService.likeMatch(matchId);
-                        if (res['success'] == true) {
-                          _spawnHeartsBurst();
-                          final userImage = _currentUserImageUrl;
-                          final propertyImage = (p.images.isNotEmpty)
-                              ? p.images[0]
-                              : 'assets/images/empty.jpg';
-                          MatchModal.show(
-                            context,
-                            userImageUrl: userImage,
-                            propertyImageUrl: propertyImage,
-                            propertyTitle: p.title,
-                          );
-                          _deckKey.currentState?.swipeRight();
-                        } else if (mounted) {
+                    },
+                  ),
+                  const SizedBox(width: 18),
+                  _CircleActionButton(
+                    icon: Icons.star,
+                    bgColor: Colors.white,
+                    iconColor: Colors.blueAccent,
+                    onTap: () async {
+                      final p = _currentTopProperty;
+                      if (p != null) {
+                        final res = await _profileService.addFavoriteViaApi(p.id);
+                        if (res['success'] != true && mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                            SnackBar(content: Text(res['error'] ?? 'Error al agregar favorito')),
                           );
                         }
                       }
-                    }
-                  },
-                ),
-                const SizedBox(width: 18),
-                _CircleActionButton(
-                  icon: Icons.star,
-                  bgColor: Colors.white,
-                  iconColor: Colors.blueAccent,
-                  onTap: () async {
-                    final p = _currentTopProperty;
-                    if (p != null) {
-                      final res = await _profileService.addFavoriteViaApi(p.id);
-                      if (res['success'] != true && mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(res['error'] ?? 'Error al agregar favorito')),
-                        );
-                      }
-                    }
-                  },
-                ),
-              ],
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
           const SizedBox(height: 28),
         ],
       ),
@@ -591,6 +661,75 @@ class HomePropertyCardData {
       images: images ?? this.images,
       distanceKm: distanceKm,
       tags: tags,
+    );
+  }
+}
+
+class _PullHintHand extends StatefulWidget {
+  const _PullHintHand();
+
+  @override
+  State<_PullHintHand> createState() => _PullHintHandState();
+}
+
+class _PullHintHandState extends State<_PullHintHand> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _offset;
+  int _cycles = 0;
+  bool _running = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _offset = Tween<Offset>(begin: Offset.zero, end: const Offset(0, 0.25)).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _startSequence();
+  }
+
+  Future<void> _startSequence() async {
+    if (_running) return;
+    _running = true;
+    _cycles = 0;
+    for (int i = 0; i < 3; i++) {
+      await _controller.forward();
+      await Future.delayed(const Duration(milliseconds: 150));
+      await _controller.reverse();
+      await Future.delayed(const Duration(milliseconds: 300));
+      _cycles++;
+    }
+    _running = false;
+    await Future.delayed(const Duration(minutes: 1));
+    if (mounted) _startSequence();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 80,
+      child: SlideTransition(
+        position: _offset,
+        child: Opacity(
+          opacity: 0.7,
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withOpacity(0.25), width: 1.2),
+            ),
+            child: const Icon(Icons.touch_app, color: Colors.white, size: 30),
+          ),
+        ),
+      ),
     );
   }
 }
