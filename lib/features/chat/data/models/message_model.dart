@@ -4,6 +4,7 @@ class MessageModel {
   final int receiver;
   final String content;
   final DateTime createdAt;
+  final bool isRead;
 
   MessageModel({
     required this.id,
@@ -11,6 +12,7 @@ class MessageModel {
     required this.receiver,
     required this.content,
     required this.createdAt,
+    required this.isRead,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,11 @@ class MessageModel {
       receiver: json['receiver'],
       content: json['content'],
       createdAt: DateTime.parse(json['created_at']),
+      isRead: (json['is_read'] is bool)
+          ? json['is_read'] as bool
+          : (json['is_read'] == null
+              ? false
+              : json['is_read'].toString().toLowerCase() == 'true'),
     );
   }
 
@@ -53,6 +60,7 @@ class MessageModel {
       fromMe: sender == currentUserId,
       time: _formatTime(createdAt),
       status: 'delivered',
+      isRead: isRead,
     );
   }
 
@@ -98,11 +106,13 @@ class ConvMessage {
   final bool fromMe;
   final String time;
   final String status;
+  final bool isRead;
 
   ConvMessage({
     required this.text,
     required this.fromMe,
     required this.time,
     required this.status,
+    required this.isRead,
   });
 }

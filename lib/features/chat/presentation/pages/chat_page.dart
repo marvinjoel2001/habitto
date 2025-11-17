@@ -342,6 +342,7 @@ class _ChatPageState extends State<ChatPage> {
             builder: (_) => ConversationPage(
               title: message.senderName,
               otherUserId: _messageUserIds[message.id],
+              avatarUrl: message.avatarUrl,
             ),
           ),
         );

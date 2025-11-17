@@ -6,15 +6,19 @@ import 'package:habitto/core/services/token_storage.dart';
 import 'package:habitto/config/app_config.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:habitto/shared/theme/app_theme.dart';
+import '../../../profile/data/services/profile_service.dart';
+import '../../../profile/domain/entities/profile.dart';
 
 class ConversationPage extends StatefulWidget {
   final String title;
   final int? otherUserId; // ID del otro usuario en la conversación
+  final String? avatarUrl;
 
   const ConversationPage({
     super.key, 
     required this.title,
     this.otherUserId,
+    this.avatarUrl,
   });
 
   @override
@@ -25,11 +29,15 @@ class _ConversationPageState extends State<ConversationPage> {
   final TextEditingController _controller = TextEditingController();
   final MessageService _messageService = MessageService();
   final TokenStorage _tokenStorage = TokenStorage();
+  final ScrollController _scrollController = ScrollController();
+  final ProfileService _profileService = ProfileService();
+  List<GlobalKey> _itemKeys = [];
   List<ConvMessage> _messages = [];
   bool _isLoading = true;
   String _error = '';
   int? _currentUserId;
   WebSocketChannel? _wsChannel;
+  String? _counterpartAvatarUrl;
 
   @override
   void initState() {
@@ -43,6 +51,15 @@ class _ConversationPageState extends State<ConversationPage> {
       setState(() {
         _messages = _getHardcodedMessages();
         _isLoading = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (mounted) {
+              _jumpToFirstUnreadOrBottom();
+            }
+          });
+        }
       });
       return;
     }
@@ -70,19 +87,35 @@ class _ConversationPageState extends State<ConversationPage> {
         _currentUserId = currentUserId;
       });
 
+      _loadCounterpartAvatar();
       _openWebSocket();
 
       final result = await _messageService.getThread(widget.otherUserId!, page: 1, pageSize: 50);
-      
+
       if (result['success']) {
         final allMessages = result['data'] as List<MessageModel>;
-        final messages = allMessages;
+        final messages = List<MessageModel>.from(allMessages)
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
         setState(() {
-          _messages = messages.map((message) => message.toConvMessage(
-            currentUserId: _currentUserId!,
-          )).toList();
+          _messages = messages
+              .map((message) => message.toConvMessage(
+                    currentUserId: _currentUserId!,
+                  ))
+              .toList();
+          // Generar keys para todos los mensajes
+          _itemKeys = List.generate(_messages.length, (index) => GlobalKey());
           _isLoading = false;
+        });
+        // Esperar a que se renderice completamente
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Future.delayed(const Duration(milliseconds: 50), () {
+              if (mounted) {
+                _jumpToFirstUnreadOrBottom();
+              }
+            });
+          }
         });
       } else {
         setState(() {
@@ -96,6 +129,28 @@ class _ConversationPageState extends State<ConversationPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loadCounterpartAvatar() async {
+    try {
+      if (widget.otherUserId == null) return;
+      if ((widget.avatarUrl ?? '').isNotEmpty) {
+        setState(() {
+          _counterpartAvatarUrl = widget.avatarUrl;
+        });
+        return;
+      }
+      final res = await _profileService.getProfileByUserId(widget.otherUserId!);
+      if (res['success'] == true && res['data'] != null) {
+        final profile = res['data'] as Profile;
+        final url = profile.profileImage ?? '';
+        if (url.isNotEmpty && mounted) {
+          setState(() {
+            _counterpartAvatarUrl = url;
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   void _openWebSocket() async {
@@ -181,6 +236,7 @@ class _ConversationPageState extends State<ConversationPage> {
                 fromMe: fromMe,
                 time: _formatTime(createdAt),
                 status: 'delivered',
+                isRead: fromMe ? true : false,
               );
 
               if (mounted) {
@@ -195,11 +251,22 @@ class _ConversationPageState extends State<ConversationPage> {
                       _messages.add(msg);
                     });
                   }
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      _scrollToBottom();
+                    }
+                  });
                 } else {
                   setState(() {
                     _messages.add(msg);
                   });
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      _scrollToBottom();
+                    }
+                  });
                 }
+                // Posición sin animaciones gestionada al entrar al chat
               }
             }
           } catch (_) {}
@@ -231,12 +298,12 @@ class _ConversationPageState extends State<ConversationPage> {
 
   List<ConvMessage> _getHardcodedMessages() {
     return [
-      ConvMessage(text: 'Hola, ¿sigues disponible?', fromMe: false, time: '10:40', status: 'delivered'),
-      ConvMessage(text: 'Sí, claro. ¿Qué te interesa saber?', fromMe: true, time: '10:41', status: 'delivered'),
-      ConvMessage(text: '¿Incluye garaje y está cerca del centro?', fromMe: false, time: '10:42', status: 'delivered'),
-      ConvMessage(text: 'Incluye garaje y está a 10 min del centro.', fromMe: true, time: '10:43', status: 'delivered'),
-      ConvMessage(text: 'Perfecto, ¿podemos agendar una visita?', fromMe: false, time: '10:44', status: 'delivered'),
-      ConvMessage(text: 'Mañana a las 15:00 te sirve.', fromMe: true, time: '10:45', status: 'delivered'),
+      ConvMessage(text: 'Hola, ¿sigues disponible?', fromMe: false, time: '10:40', status: 'delivered', isRead: false),
+      ConvMessage(text: 'Sí, claro. ¿Qué te interesa saber?', fromMe: true, time: '10:41', status: 'delivered', isRead: true),
+      ConvMessage(text: '¿Incluye garaje y está cerca del centro?', fromMe: false, time: '10:42', status: 'delivered', isRead: false),
+      ConvMessage(text: 'Incluye garaje y está a 10 min del centro.', fromMe: true, time: '10:43', status: 'delivered', isRead: true),
+      ConvMessage(text: 'Perfecto, ¿podemos agendar una visita?', fromMe: false, time: '10:44', status: 'delivered', isRead: false),
+      ConvMessage(text: 'Mañana a las 15:00 te sirve.', fromMe: true, time: '10:45', status: 'delivered', isRead: true),
     ];
   }
 
@@ -247,7 +314,7 @@ class _ConversationPageState extends State<ConversationPage> {
     if (widget.otherUserId == null) {
       // Modo offline - solo agregar localmente
       setState(() {
-        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Ahora', status: 'delivered'));
+        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Ahora', status: 'delivered', isRead: true));
         _controller.clear();
       });
       return;
@@ -255,8 +322,13 @@ class _ConversationPageState extends State<ConversationPage> {
 
     try {
       setState(() {
-        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Enviando...', status: 'sent'));
+        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Enviando...', status: 'sent', isRead: true));
         _controller.clear();
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _scrollToBottom();
+        }
       });
 
       if (_currentUserId == null || widget.otherUserId == null) {
@@ -273,7 +345,7 @@ class _ConversationPageState extends State<ConversationPage> {
         final idx = _messages.lastIndexWhere((m) => m.fromMe && m.text == text && m.status == 'sent');
         if (idx != -1) {
           setState(() {
-            _messages[idx] = ConvMessage(text: text, fromMe: true, time: 'Error al enviar', status: 'sent');
+            _messages[idx] = ConvMessage(text: text, fromMe: true, time: 'Error al enviar', status: 'sent', isRead: true);
           });
         }
         ScaffoldMessenger.of(context).showSnackBar(
@@ -289,7 +361,7 @@ class _ConversationPageState extends State<ConversationPage> {
         final idx = _messages.lastIndexWhere((m) => m.fromMe && m.text == text && m.status == 'sent');
         if (idx != -1) {
           setState(() {
-            _messages[idx] = ConvMessage(text: text, fromMe: true, time: 'Error al enviar', status: 'sent');
+            _messages[idx] = ConvMessage(text: text, fromMe: true, time: 'Error al enviar', status: 'sent', isRead: true);
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('No se recibió confirmación del servidor'), backgroundColor: Colors.red),
@@ -305,7 +377,7 @@ class _ConversationPageState extends State<ConversationPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
+  appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         leading: IconButton(
@@ -330,9 +402,19 @@ class _ConversationPageState extends State<ConversationPage> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {},
+            onSelected: (value) async {
+              if (value == 'clear') {
+                await _confirmAndClearConversation();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem<String>(
+                value: 'clear',
+                child: Text('Vaciar chat'),
+              ),
+            ],
           ),
         ],
       ),
@@ -355,25 +437,34 @@ class _ConversationPageState extends State<ConversationPage> {
                 children: [
                   const Text('Today', style: TextStyle(color: Colors.black54, fontSize: 13)),
                   const SizedBox(height: 10),
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      const CircleAvatar(radius: 28, backgroundColor: Colors.black12),
-                      Positioned(
-                        right: 6,
-                        bottom: 6,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                        ),
-                      ),
-                    ],
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: Colors.black12,
+                  backgroundImage: (_counterpartAvatarUrl ?? '').isNotEmpty
+                      ? NetworkImage(_counterpartAvatarUrl!)
+                      : null,
+                  child: (_counterpartAvatarUrl ?? '').isEmpty
+                      ? const Icon(Icons.person, color: Colors.black54)
+                      : null,
+                ),
+                Positioned(
+                  right: 6,
+                  bottom: 6,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
                   ),
+                ),
+              ],
+            ),
                   const SizedBox(height: 8),
                   Text('Your matched with ${widget.title} today.', style: const TextStyle(color: Colors.black54, fontSize: 13)),
                 ],
@@ -381,20 +472,23 @@ class _ConversationPageState extends State<ConversationPage> {
             ),
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                controller: _scrollController,
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
                   final m = _messages[index];
                   final align = m.fromMe ? Alignment.centerRight : Alignment.centerLeft;
                   final cs = Theme.of(context).colorScheme;
 
-                  return Align(
-                    alignment: align,
-                    child: Padding(
+                  return KeyedSubtree(
+                    key: _getItemKey(index),
+                    child: Align(
+                      alignment: align,
+                      child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Column(
+                        child: Column(
                         crossAxisAlignment: m.fromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                        children: [
+                          children: [
                           Container(
                             constraints: const BoxConstraints(maxWidth: 280),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -432,7 +526,8 @@ class _ConversationPageState extends State<ConversationPage> {
                               ],
                             ],
                           ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -493,9 +588,52 @@ class _ConversationPageState extends State<ConversationPage> {
     );
   }
 
+  Future<void> _confirmAndClearConversation() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Vaciar chat'),
+          content: const Text('Esta acción vacía el chat solo para tu cuenta. ¿Continuar?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Vaciar')),
+          ],
+        );
+      },
+    );
+    if (ok != true) return;
+
+    if (widget.otherUserId == null) {
+      setState(() {
+        _messages = [];
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chat vaciado localmente')),
+      );
+      return;
+    }
+
+    final res = await _messageService.clearConversation(widget.otherUserId!);
+    if (res['success'] == true) {
+      setState(() {
+        _messages = [];
+        _itemKeys = [];
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chat vaciado para tu cuenta')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${res['error']}'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
+    _scrollController.dispose();
     try {
       _wsChannel?.sink.close();
     } catch (_) {}
@@ -515,5 +653,52 @@ class _ConversationPageState extends State<ConversationPage> {
     } else {
       return '${dateTime.day}/${dateTime.month}';
     }
+  }
+
+  GlobalKey _getItemKey(int index) {
+    if (index < _itemKeys.length) return _itemKeys[index];
+    while (_itemKeys.length <= index) {
+      _itemKeys.add(GlobalKey());
+    }
+    return _itemKeys[index];
+  }
+
+  void _jumpToFirstUnreadOrBottom() {
+    if (_messages.isEmpty) return;
+    // Buscar el ÚLTIMO mensaje no leído del otro usuario, avanzando hacia abajo
+    int idx = _messages.lastIndexWhere((m) => !m.isRead && !m.fromMe);
+    // Si no hay mensajes no leídos, ir al final (último mensaje de abajo)
+    if (idx == -1) idx = _messages.length - 1;
+    if (idx < 0 || idx >= _messages.length) return;
+    final key = _getItemKey(idx);
+    final ctx = key.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: Duration.zero,
+        alignment: 1.0, // Posicionar el objetivo hacia la parte inferior del viewport
+      );
+    }
+    // Si no se encontró el contexto, intentar después de un pequeño delay
+    else {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          final retryCtx = key.currentContext;
+          if (retryCtx != null) {
+            Scrollable.ensureVisible(
+              retryCtx,
+              duration: Duration.zero,
+              alignment: 1.0, // Posicionar el objetivo hacia la parte inferior del viewport
+            );
+          }
+        }
+      });
+    }
+  }
+
+  void _scrollToBottom() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position.maxScrollExtent;
+    _scrollController.jumpTo(pos);
   }
 }

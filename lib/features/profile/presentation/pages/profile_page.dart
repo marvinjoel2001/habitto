@@ -316,7 +316,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
             icon: const Icon(
               Icons.arrow_back_ios,
               color: Colors.black,

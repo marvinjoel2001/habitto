@@ -197,6 +197,30 @@ class MessageService {
     }
   }
 
+  Future<Map<String, dynamic>> clearConversation(int otherUserId) async {
+    try {
+      final response = await _apiService.post('/api/messages/clear_conversation/', {
+        'other_user_id': otherUserId,
+      });
+      if (response['success']) {
+        return {
+          'success': true,
+          'data': response['data'],
+          'message': response['message'] ?? 'Conversación vaciada',
+        };
+      }
+      return {
+        'success': false,
+        'error': response['error'] ?? response['message'] ?? 'Error al vaciar conversación',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error al vaciar conversación: $e',
+      };
+    }
+  }
+
   /// Envía un nuevo mensaje
   Future<Map<String, dynamic>> sendMessage({
     required int senderId,

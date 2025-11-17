@@ -2955,9 +2955,10 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
 }
 ```
 - El backend guarda el mensaje en PostgreSQL y lo difunde a todos los clientes de la sala.
- - Errores comunes:
-   - `{"error":"room_id mismatch","expected_room_id":"5-7","provided_room_id":"prop-123"}`
-   - `{"error":"IDs inválidos: sender y receiver deben ser enteros"}`
+- Errores comunes:
+  - `{"error":"room_id mismatch","expected_room_id":"5-7","provided_room_id":"prop-123"}`
+  - `{"error":"IDs inválidos: sender y receiver deben ser enteros"}`
+ - Normalización de sala: si te conectas a `ws/chat/2_3`, el servidor normaliza a `2-3`.
 
 ### Recepción
 - Evento recibido por el cliente:
@@ -2971,8 +2972,7 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
   "content": "Texto",
   "created_at": "2025-11-14T12:34:56Z",
   "createdAt": "2025-11-14T12:34:56Z",
-  "is_read": false,
-  "read": false
+  "is_read": false
 }
 ```
 
@@ -3017,6 +3017,16 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
   ]
 }
 ```
+
+### `POST /api/messages/clear_conversation/`
+- Autenticación: requerida (JWT)
+- Body o query: `{ "other_user_id": <id> }`
+- Semántica: marca la conversación como borrada solo para el usuario autenticado.
+  - Mensajes donde el usuario es remitente → `deleted_for_sender = true`
+  - Mensajes donde el usuario es receptor → `deleted_for_receiver = true`
+- Los endpoints `conversations` y `thread` excluyen estos mensajes para el usuario autenticado.
+- La otra persona no pierde su historial.
+- Respuesta: `{ "status": "ok", "updated_sender": <count>, "updated_receiver": <count> }`
 
 - Filtro opcional: `?counterpart=<user_id>` para obtener sólo la conversación con ese usuario.
 
