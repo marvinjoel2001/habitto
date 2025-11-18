@@ -14,6 +14,7 @@ class SwipePropertyCard extends StatefulWidget {
   final double likeProgress; // 0..1 para overlay corazón
   final bool isDragging; // feedback visual al arrastrar
   final ValueChanged<int>? onOpenImage; // índice del image tap
+  final double dragDx; // posición actual del drag para calcular opacidad
 
   final double sidePadding;
   final double imageTopPadding;
@@ -31,6 +32,7 @@ class SwipePropertyCard extends StatefulWidget {
     required this.likeProgress,
     this.isDragging = false,
     this.onOpenImage,
+    this.dragDx = 0.0,
     this.sidePadding = 0.0,
     this.imageTopPadding = 0.0,
     this.overlayBottomSpace = 16.0,
@@ -74,6 +76,21 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
         ],
       ),
     );
+  }
+
+  // Función para calcular la opacidad del icono de rechazo (X)
+  double _rejectProgressFromDx(double dx, double width) {
+    // Solo izquierda; progreso en función del ancho
+    if (dx >= 0) return 0.0; // No hay rechazo si se arrastra a la derecha
+    final required = width * 0.35;
+    final p = ((-dx) / required).clamp(0.0, 1.0);
+    return p;
+  }
+
+  // Función para calcular la opacidad inicial (30%) cuando empieza el drag
+  double _calculateInitialOpacity(double progress) {
+    if (progress <= 0) return 0.0;
+    return (0.3 + (progress * 0.7)).clamp(0.0, 1.0);
   }
 
   @override
@@ -185,6 +202,33 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                       ],
                     );
                   },
+                ),
+
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: IgnorePointer(
+                      child: Container(
+                        color: Colors.black.withValues(
+                          alpha: (0.0 + (widget.likeProgress * 0.45)).clamp(0.0, 0.45),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: IgnorePointer(
+                      child: Container(
+                        color: Colors.white.withValues(
+                          alpha: (0.0 + (_rejectProgressFromDx(widget.dragDx, MediaQuery.of(context).size.width) * 0.45))
+                              .clamp(0.0, 0.45),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
 
                 Positioned(
@@ -315,20 +359,57 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                   ),
                 ),
 
-                // Overlay de corazón (like) cuando arrastra a la derecha
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: Opacity(
-                    opacity: widget.likeProgress,
-                    child: Container(
-                      width: 56,
-                      height: 56,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
+                // Overlay de corazón (like) cuando arrastra a la derecha (centrado, verde del tema, tamaño grande)
+                Align(
+                  alignment: Alignment.center,
+                  child: IgnorePointer(
+                    child: Opacity(
+                      opacity: _calculateInitialOpacity(widget.likeProgress),
+                      child: Transform.scale(
+                        scale: 0.9 + (widget.likeProgress * 0.3),
+                        child: Container(
+                          width: 160,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.95),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.secondaryColor.withOpacity(0.35),
+                                blurRadius: 36,
+                                spreadRadius: 10,
+                              ),
+                            ],
+                            border: Border.all(
+                              color: AppTheme.secondaryColor.withOpacity(0.65),
+                              width: 3,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.favorite,
+                            color: AppTheme.secondaryColor,
+                            size: 88,
+                          ),
+                        ),
                       ),
-                      child: const Icon(Icons.favorite, color: Colors.redAccent),
+                    ),
+                  ),
+                ),
+
+                // Overlay de X (reject) cuando arrastra a la izquierda - SIN fondo circular (centrado, tamaño grande)
+                Align(
+                  alignment: Alignment.center,
+                  child: IgnorePointer(
+                    child: Opacity(
+                      opacity: _calculateInitialOpacity(_rejectProgressFromDx(widget.dragDx, MediaQuery.of(context).size.width)),
+                      child: Transform.scale(
+                        scale: 0.9 + (_rejectProgressFromDx(widget.dragDx, MediaQuery.of(context).size.width) * 0.3),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.red,
+                          size: 140,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -351,9 +432,9 @@ class _GlassTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.28)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
       ),
       child: Text(
         label,

@@ -57,6 +57,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   int _bedrooms = 3;
   int _bathrooms = 2;
   final List<int> _selectedAmenityIds = [];
+  final List<String> _selectedAmenityNames = [];
   final List<int> _selectedPaymentMethodIds = [];
 
   List<Amenity> _availableAmenities = [];
@@ -77,6 +78,27 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     'habitacion': 'Habitación',
     'anticretico': 'Anticrético',
   };
+
+  IconData _iconForAmenityName(String name) {
+    final key = name.toLowerCase();
+    if (key.contains('wifi')) return Icons.wifi;
+    if (key.contains('estacion')) return Icons.local_parking;
+    if (key.contains('lavander')) return Icons.local_laundry_service;
+    if (key.contains('gym') || key.contains('gimnas')) return Icons.fitness_center;
+    if (key.contains('piscina') || key.contains('pool')) return Icons.pool;
+    if (key.contains('jard') || key.contains('garden')) return Icons.park;
+    return Icons.check_circle_outline;
+  }
+
+  // Amenidades canónicas iguales a CreateSearchProfilePage
+  final List<Map<String, dynamic>> _canonicalAmenities = const [
+    {'id': 'wifi', 'name': 'WiFi', 'icon': Icons.wifi},
+    {'id': 'parking', 'name': 'Estacionamiento', 'icon': Icons.local_parking},
+    {'id': 'laundry', 'name': 'Lavandería', 'icon': Icons.local_laundry_service},
+    {'id': 'gym', 'name': 'Gimnasio', 'icon': Icons.fitness_center},
+    {'id': 'pool', 'name': 'Piscina', 'icon': Icons.pool},
+    {'id': 'garden', 'name': 'Jardín', 'icon': Icons.park},
+  ];
 
   @override
   void initState() {
@@ -283,7 +305,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         'size': double.parse(_areaController.text.isNotEmpty ? _areaController.text : _sizeController.text),
         'bedrooms': _bedrooms,
         'bathrooms': _bathrooms,
-        'amenities': _selectedAmenityIds,
+        'amenities': _selectedAmenityNames,
         'availability_date': _availabilityDateController.text.isNotEmpty
             ? _availabilityDateController.text
             : DateTime.now().add(const Duration(days: 1)).toIso8601String().split('T')[0],
@@ -742,30 +764,41 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _availableAmenities.map((amenity) {
-              final isSelected = _selectedAmenityIds.contains(amenity.id);
+            children: _canonicalAmenities.map((amenity) {
+              final String name = amenity['name'] as String;
+              final bool isSelected = _selectedAmenityNames.contains(name);
               return Container(
                 decoration: isSelected
-                  ? AppTheme.getMintButtonDecoration()
-                  : AppTheme.getGlassCard(),
+                    ? AppTheme.getMintButtonDecoration()
+                    : AppTheme.getGlassCard(),
                 child: FilterChip(
-                  label: Text(
-                    amenity.name,
-                    style: TextStyle(
-                      color: isSelected ? AppTheme.darkGrayBase : Colors.black,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(amenity['icon'] as IconData, size: 16, color: AppTheme.darkGrayBase),
+                      const SizedBox(width: 6),
+                      Text(
+                        name,
+                        style: const TextStyle(color: AppTheme.darkGrayBase),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        color: isSelected ? AppTheme.secondaryColor : Colors.grey,
+                        size: 18,
+                      ),
+                    ],
                   ),
                   selected: isSelected,
-                  backgroundColor: Colors.transparent,
-                  selectedColor: Colors.transparent,
+                  backgroundColor: Colors.white,
+                  selectedColor: Colors.white,
                   checkmarkColor: AppTheme.darkGrayBase,
                   onSelected: (selected) {
                     setState(() {
                       if (selected) {
-                        _selectedAmenityIds.add(amenity.id);
+                        _selectedAmenityNames.add(name);
                       } else {
-                        _selectedAmenityIds.remove(amenity.id);
+                        _selectedAmenityNames.remove(name);
                       }
                     });
                   },
