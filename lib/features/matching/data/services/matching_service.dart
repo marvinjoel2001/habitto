@@ -111,7 +111,26 @@ class MatchingService {
             return {'success': true, 'data': mm['id']};
           }
         }
-        return {'success': false, 'error': 'No se encontró match para la propiedad', 'data': null};
+        // Si no existe, intentar crearlo
+        final createResp = await _apiService.post('/api/search_profiles/$spId/matches/', {
+          'type': 'property',
+          'subject_id': propertyId,
+        });
+        if (createResp['success'] == true && createResp['data'] != null) {
+          final d = createResp['data'];
+          if (d is Map && d['id'] is int) {
+            return {'success': true, 'data': d['id']};
+          }
+          // Algunos backends envuelven la respuesta en { data: {...} }
+          if (d is Map && d['data'] is Map && (d['data'] as Map)['id'] is int) {
+            return {'success': true, 'data': (d['data'] as Map)['id']};
+          }
+        }
+        return {
+          'success': false,
+          'error': createResp['error'] ?? 'No se pudo crear match para la propiedad',
+          'data': null,
+        };
       }
       return {'success': false, 'error': resp['error'] ?? 'Error obteniendo matches', 'data': null};
     } catch (e) {

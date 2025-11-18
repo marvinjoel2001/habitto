@@ -127,17 +127,10 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                       return _noImagePlaceholder();
                     }
                     final url = widget.images[i];
-                    print('SwipePropertyCard: loading url ' + url);
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        top: widget.imageTopPadding,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
+                    return Stack(
+                      children: [
+                        Positioned.fill(
+                          child: ClipRRect(
                             borderRadius: BorderRadius.circular(24),
                             child: Image.network(
                               url,
@@ -150,49 +143,46 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                                   child: const CircularProgressIndicator(),
                                 );
                               },
-                              errorBuilder: (context, error, stack) {
-                                print('SwipePropertyCard: error loading ' + url + ' -> ' + error.toString());
-                                return _noImagePlaceholder();
-                              },
+                              errorBuilder: (context, error, stack) => _noImagePlaceholder(),
                               semanticLabel: 'property-image',
                             ),
                           ),
-                          Positioned.fill(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final w = constraints.maxWidth;
-                                return GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTapDown: (details) {
-                                    final dx = details.localPosition.dx;
-                                    final rightZone = dx > w * 0.66;
-                                    final leftZone = dx < w * 0.34;
-                                    if (rightZone) {
-                                      if (_page < (widget.images.length - 1)) {
-                                        _pageController.animateToPage(
-                                          _page + 1,
-                                          duration: const Duration(milliseconds: 220),
-                                          curve: Curves.easeOut,
-                                        );
-                                      }
-                                    } else if (leftZone) {
-                                      if (_page > 0) {
-                                        _pageController.animateToPage(
-                                          _page - 1,
-                                          duration: const Duration(milliseconds: 220),
-                                          curve: Curves.easeOut,
-                                        );
-                                      }
-                                    } else {
-                                      widget.onOpenImage?.call(_page);
+                        ),
+                        Positioned.fill(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final w = constraints.maxWidth;
+                              return GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTapDown: (details) {
+                                  final dx = details.localPosition.dx;
+                                  final rightZone = dx > w * 0.66;
+                                  final leftZone = dx < w * 0.34;
+                                  if (rightZone) {
+                                    if (_page < (widget.images.length - 1)) {
+                                      _pageController.animateToPage(
+                                        _page + 1,
+                                        duration: const Duration(milliseconds: 220),
+                                        curve: Curves.easeOut,
+                                      );
                                     }
-                                  },
-                                );
-                              },
-                            ),
+                                  } else if (leftZone) {
+                                    if (_page > 0) {
+                                      _pageController.animateToPage(
+                                        _page - 1,
+                                        duration: const Duration(milliseconds: 220),
+                                        curve: Curves.easeOut,
+                                      );
+                                    }
+                                  } else {
+                                    widget.onOpenImage?.call(_page);
+                                  }
+                                },
+                              );
+                            },
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     );
                   },
                 ),

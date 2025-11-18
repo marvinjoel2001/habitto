@@ -209,15 +209,30 @@ class _CircleActionButtonState extends State<_CircleActionButton>
       onTap: _handleTap,
       child: ScaleTransition(
         scale: _scale,
-        child: Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            color: widget.bgColor,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withOpacity(0.25), width: 1),
+        child: ClipOval(
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: AppTheme.getCardGradient(opacity: 0.28),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.30),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(widget.icon, color: widget.iconColor, size: 28),
+            ),
           ),
-          child: Icon(widget.icon, color: widget.iconColor, size: 28),
         ),
       ),
     );
@@ -470,6 +485,7 @@ class _HomeContentState extends State<HomeContent> {
               child: _isLoading
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
                       children: const [
                         SizedBox(height: 200),
                         Center(child: CircularProgressIndicator()),
@@ -479,6 +495,7 @@ class _HomeContentState extends State<HomeContent> {
                   : (_cards.isEmpty
                       ? ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.zero,
                           children: [
                             const SizedBox(height: 40),
                             _EmptyMatches(),
@@ -487,6 +504,7 @@ class _HomeContentState extends State<HomeContent> {
                         )
                       : ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.zero,
                           children: [
                             SizedBox(
                               height: MediaQuery.of(context).size.height * 0.66,
@@ -1009,7 +1027,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                         ),
                         isDragging: _isDragging,
                         onOpenImage: (index) => _openFullScreen(property.images, index),
-                        outerTopPadding: 16.0,
+                        outerTopPadding: 0.0,
                         overlayBottomSpace: 0.0,
                       ),
                     ),
@@ -1024,7 +1042,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                 likeProgress: 0.0,
                 isDragging: false,
                 onOpenImage: (index) => _openFullScreen(property.images, index),
-                outerTopPadding: 16.0,
+                outerTopPadding: 0.0,
                 overlayBottomSpace: 0.0,
               ),
         ),
@@ -1165,27 +1183,31 @@ class _PropertyCardState extends State<PropertyCard> {
                     return _noImagePlaceholder();
                   }
                   final url = widget.property.images[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 24, left: 20, right: 20, bottom: 10),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => _openFullScreen(i),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Image.network(
-                          url,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return Container(
-                              color: Colors.black12,
-                              alignment: Alignment.center,
-                              child: const CircularProgressIndicator(),
-                            );
-                          },
-                          errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _openFullScreen(i),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Positioned.fill(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.network(
+                              url,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return Container(
+                                  color: Colors.black12,
+                                  alignment: Alignment.center,
+                                  child: const CircularProgressIndicator(),
+                                );
+                              },
+                              errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   );
                 },

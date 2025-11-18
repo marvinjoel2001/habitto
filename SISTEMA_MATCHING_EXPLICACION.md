@@ -12,6 +12,7 @@
 - Almacenamiento: `update_or_create` evita duplicados y solo persiste si `score >= 70` (utils/matching.py:201–208).
 - Ordenamiento: matches se listan por `score` descendente (matching/views.py:63–73).
 - Interacción del usuario: acciones `like`, `accept`, `reject` modifican el estado y generan notificaciones/mensajes (matching/views.py:118–227).
+- Like directo sobre propiedad: permite crear/actualizar el `Match` y registrar `MatchFeedback` aunque no exista previamente (property/views.py:367–391).
 - Regla de auto-aceptación: si `score >= 95` y `owner_prefs_score >= 90`, el `like` convierte el match a `accepted` (matching/views.py:148–165).
 
 ```mermaid
@@ -114,6 +115,13 @@ POST /api/properties/
 - `POST /api/matches/{id}/like/`: registra feedback, notifica y puede auto-aceptar (matching/views.py:118–170).
 - `POST /api/matches/{id}/accept/`: cambia estado a `accepted`, notifica y crea mensaje (matching/views.py:172–207).
 - `POST /api/matches/{id}/reject/`: cambia estado a `rejected` y crea `MatchFeedback` con razón opcional (matching/views.py:209–227).
+ - `POST /api/properties/{id}/like/`: crea/actualiza `Match` aún si no existía y registra `MatchFeedback`; notifica y abre chat (property/views.py:367–391).
+ - `POST /api/properties/{id}/reject/`: crea/actualiza `Match` y lo marca `rejected`; registra `MatchFeedback` (property/views.py:393–405).
+
+ Propietario/Agente:
+ - `GET /api/matches/pending_requests/`: lista solicitudes de match pendientes para propiedades del usuario (matching/views.py:274–307).
+ - `POST /api/matches/{id}/owner_accept/`: acepta solicitud pendiente (matching/views.py:309–329).
+ - `POST /api/matches/{id}/owner_reject/`: rechaza solicitud y registra feedback (matching/views.py:331–354).
 
 ### Control de favoritos, vistos y re-vistos
 - Favoritos: `POST /api/profiles/add_favorite/` y `POST /api/profiles/remove_favorite/` (user/views.py:183–219).
@@ -121,7 +129,8 @@ POST /api/properties/
 - Registro de vistas cada vez que el usuario ve una propiedad:
   - Automático al `GET /api/properties/{id}/` si el usuario está autenticado.
   - Manual: `POST /api/properties/{id}/view/`.
-  - Consulta: `GET /api/properties/views/` devuelve conteos y última vista por propiedad.
+- Consulta: `GET /api/properties/views/` devuelve conteos y última vista por propiedad.
+ - Eventos de re‑vista: cada visualización se registra en `PropertyViewEvent` para mantener histórico de interacciones (property/models.py:131–138).
 
 ### Listado de propiedades con score
 - `GET /api/properties/?match_score=80&order_by_match=true`: aplica cálculo por `SearchProfile` del usuario, filtra y ordena por `_match_score` (property/views.py:102–141).
@@ -186,6 +195,83 @@ flowchart TD
   E -->|No| G[status permanece]
 ```
 
+### Like directo y solicitud de match
+```mermaid
+flowchart TD
+  A[POST /api/properties/{id}/like/] --> B[calculate_property_match_score]
+  B --> C[update_or_create Match status=pending]
+  C --> D[Crear MatchFeedback like]
+  D --> E[Notificar propietario + crear mensaje]
+```
+
+### Aceptación/Rechazo por propietario/agente
+```mermaid
+sequenceDiagram
+  participant Owner
+  participant API
+  participant DB
+  Owner->>API: GET /api/matches/pending_requests/
+  API->>DB: Query matches match_type=property status=pending por subject owner/agent
+  DB-->>API: Lista solicitudes con property + interested_user
+  Owner->>API: POST /api/matches/{id}/owner_accept/
+  API->>DB: Actualiza status=accepted, crea notificaciones
+  Owner->>API: POST /api/matches/{id}/owner_reject/
+  API->>DB: Actualiza status=rejected, crea feedback + notificaciones
+```
+
+## Especificación Técnica de Endpoints
+### Resumen
+- Listados por score: `GET /api/properties/?match_score=<num>&order_by_match=true`
+- Recomendaciones: `GET /api/recommendations/?type=property|roommate|agent|mixed`
+- Matches del perfil: `GET /api/search_profiles/{id}/matches/?type=...&status=...`
+- Acciones de match (usuario): `POST /api/matches/{id}/like|accept|reject`
+- Like/Reject directo sobre propiedad: `POST /api/properties/{id}/like|reject`
+- Solicitudes pendientes (propietario/agente): `GET /api/matches/pending_requests/`
+- Decisión de propietario/agente: `POST /api/matches/{id}/owner_accept|owner_reject`
+- Favoritos: `POST /api/profiles/add_favorite/`, `POST /api/profiles/remove_favorite/`
+- Vistos: `GET /api/properties/seen/`, `POST /api/properties/{id}/view/`, `GET /api/properties/views/`
+
+### Detalle y ejemplos
+- `GET /api/properties/?match_score=80&order_by_match=true`
+  - 200 OK: lista paginada con `_match_score` y orden por compatibilidad
+  - 401 Unauthorized si no hay usuario para cálculo de score
+
+- `POST /api/matches/{id}/like/`
+  - Body opcional: `{ "reason": "string" }`
+  - 200 OK: `{ status, match }`
+  - 403 si el `match.target_user != requester`
+  - Side effects: mensaje + notificaciones; auto‑aceptación si aplica
+
+- `POST /api/properties/{id}/like/`
+  - 200 OK: `{ status: "pending", match_id, score }`
+  - Crea/actualiza `Match` aunque no existiera; registra `MatchFeedback`.
+  - Side effects: mensaje al propietario + notificación.
+
+- `POST /api/properties/{id}/reject/`
+  - 200 OK: `{ status: "rejected", match_id }`
+  - Crea/actualiza `Match` y lo marca como `rejected`; registra `MatchFeedback`.
+
+- `GET /api/matches/pending_requests/`
+  - 200 OK: lista de `{ match, property{...}, interested_user{...} }`
+  - Filtra por propiedades del owner/agent autenticado.
+
+- `POST /api/matches/{id}/owner_accept/`
+  - 200 OK: `{ status: "accepted", match }`
+  - 403 si el solicitante no es owner/agent de la propiedad
+
+- `POST /api/matches/{id}/owner_reject/`
+  - Body opcional: `{ "reason": "string" }`
+  - 200 OK: `{ status: "rejected", match }`
+  - Registra `MatchFeedback` del lado del propietario/agente
+
+### Códigos de estado y errores
+- 200 OK: operación exitosa
+- 201 Created: creación de recursos (p.ej. mensajes)
+- 400 Bad Request: parámetros inválidos o faltantes
+- 401 Unauthorized: requiere autenticación
+- 403 Forbidden: usuario no autorizado para la acción
+- 404 Not Found: recurso inexistente
+
 ## Rendimiento y Limitaciones
 - Límites de candidatos: 500 propiedades/roommates y 200 agentes por generación para evitar cargas excesivas (utils/matching.py:228–236, 241–245).
 - Distancia geodésica aproximada: el cálculo usa `distance * 100` y una penalización lineal; ajustar si se requiere precisión geográfica (utils/matching.py:16–21).
@@ -208,6 +294,22 @@ POST /api/matches/123/like/
 
 # Listado de propiedades ordenado por compatibilidad
 GET /api/properties/?match_score=85&order_by_match=true
+
+# Like directo sobre una propiedad
+POST /api/properties/45/like/
+{ "reason": "Me encanta la zona" }
+
+# Rechazar una propiedad sin match previo
+POST /api/properties/45/reject/
+{ "reason": "Muy lejos" }
+
+# Solicitudes de match pendientes para propietario/agente
+GET /api/matches/pending_requests/
+
+# Aceptar/Rechazar una solicitud de match por propietario/agente
+POST /api/matches/123/owner_accept/
+POST /api/matches/123/owner_reject/
+{ "reason": "Preferimos no alquilar a fumadores" }
 ```
 
 ## Referencias de Código

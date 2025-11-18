@@ -64,20 +64,7 @@ class PropertyCard extends StatelessWidget {
                         color: AppTheme.grayColor,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Image.asset(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: AppTheme.grayColor,
-                            child: Icon(
-                              Icons.home,
-                              color: AppTheme.whiteColor.withOpacity(0.7),
-                              size: 32,
-                            ),
-                          );
-                        },
-                      ),
+                      child: _PropertyImage(imageUrl: imageUrl),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -217,4 +204,35 @@ class PropertyStatus {
   static const Color mantenimiento = Color(0xFFFF9800); // Naranja
   static const Color inactivo = Color(0xFF9E9E9E); // Gris
   static const Color pendiente = Color(0xFFFFC107); // Amarillo
+}
+class _PropertyImage extends StatelessWidget {
+  final String imageUrl;
+  const _PropertyImage({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final isNetwork = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+    final placeholder = Container(
+      color: AppTheme.grayColor,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.home,
+        color: AppTheme.whiteColor.withOpacity(0.7),
+        size: 32,
+      ),
+    );
+
+    if (isNetwork) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => placeholder,
+      );
+    }
+    return Image.asset(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => placeholder,
+    );
+  }
 }
