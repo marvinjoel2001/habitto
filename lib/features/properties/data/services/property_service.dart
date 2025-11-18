@@ -174,6 +174,8 @@ class PropertyService {
     int? agent,
     String? search,
     String? ordering,
+    bool orderByMatch = false,
+    int? matchScore,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -187,6 +189,8 @@ class PropertyService {
       if (agent != null) queryParams['agent'] = agent.toString();
       if (search != null) queryParams['search'] = search;
       if (ordering != null) queryParams['ordering'] = ordering;
+      if (orderByMatch) queryParams['order_by_match'] = 'true';
+      if (matchScore != null) queryParams['match_score'] = matchScore.toString();
       queryParams['page'] = page.toString();
       queryParams['page_size'] = pageSize.toString();
 
@@ -213,6 +217,7 @@ class PropertyService {
             'count': backendData['count'],
             'next': backendData['next'],
             'previous': backendData['previous'],
+            'raw': backendData,
           },
           'message': response['data']['message'] ?? 'Propiedades obtenidas exitosamente',
         };

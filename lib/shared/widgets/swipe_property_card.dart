@@ -78,6 +78,7 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
 
   @override
   Widget build(BuildContext context) {
+    print('SwipePropertyCard: images length ' + widget.images.length.toString());
     return Padding(
       padding: EdgeInsets.fromLTRB(
         widget.outerHorizontalPadding,
@@ -116,7 +117,6 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Carrusel de imágenes
                 PageView.builder(
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
@@ -127,17 +127,18 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                       return _noImagePlaceholder();
                     }
                     final url = widget.images[i];
+                    print('SwipePropertyCard: loading url ' + url);
                     return Padding(
                       padding: EdgeInsets.only(
                         top: widget.imageTopPadding,
                         left: 0,
                         right: 0,
-                        bottom: 10,
+                        bottom: 0,
                       ),
                       child: Stack(
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(24),
                             child: Image.network(
                               url,
                               fit: BoxFit.cover,
@@ -149,7 +150,11 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                                   child: const CircularProgressIndicator(),
                                 );
                               },
-                              errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                              errorBuilder: (context, error, stack) {
+                                print('SwipePropertyCard: error loading ' + url + ' -> ' + error.toString());
+                                return _noImagePlaceholder();
+                              },
+                              semanticLabel: 'property-image',
                             ),
                           ),
                           Positioned.fill(
@@ -192,7 +197,6 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                   },
                 ),
 
-                // Indicadores del carrusel
                 Positioned(
                   top: 36,
                   left: 0,

@@ -25,6 +25,10 @@ class Profile extends BaseModel {
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
+    String clean(dynamic v) {
+      final s = v?.toString() ?? '';
+      return s.replaceAll('`', '').replaceAll('"', '').trim();
+    }
     return Profile(
       id: json['id'],
       user: User.fromJson(json['user']),
@@ -34,7 +38,7 @@ class Profile extends BaseModel {
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       favorites: List<int>.from(json['favorites'] ?? []),
-      profileImage: json['profile_picture'],
+      profileImage: clean(json['profile_picture']).isNotEmpty ? clean(json['profile_picture']) : null,
     );
   }
 

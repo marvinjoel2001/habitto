@@ -16,10 +16,14 @@ class Photo extends BaseModel {
   });
 
   factory Photo.fromJson(Map<String, dynamic> json) {
+    String clean(dynamic v) {
+      final s = v?.toString() ?? '';
+      return s.replaceAll('`', '').replaceAll('"', '').trim();
+    }
     return Photo(
       id: json['id'],
       property: json['property'],
-      image: json['image'],
+      image: clean(json['image']),
       caption: json['caption'],
       createdAt: DateTime.parse(json['created_at']),
     );

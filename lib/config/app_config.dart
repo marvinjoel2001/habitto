@@ -55,6 +55,29 @@ class AppConfig {
     }
   }
 
+  // Sanitiza URLs recibidas del backend y ajusta host/puerto según plataforma
+  static String sanitizeUrl(String url) {
+    final raw = url.replaceAll('`', '').replaceAll('"', '').trim();
+    if (raw.isEmpty) return raw;
+    Uri? u;
+    try { u = Uri.parse(raw); } catch (_) {}
+    if (u == null || !u.hasScheme) return raw;
+    final http = httpBaseUri();
+    final isLocalHost = (u.host == 'localhost' || u.host == '127.0.0.1');
+    final host = isLocalHost ? http.host : u.host;
+    final port = isLocalHost ? http.port : (u.hasPort ? u.port : http.port);
+    final scheme = http.scheme;
+    final rebuilt = Uri(
+      scheme: scheme,
+      host: host,
+      port: port,
+      path: u.path,
+      query: u.query.isNotEmpty ? u.query : null,
+      fragment: u.fragment.isNotEmpty ? u.fragment : null,
+    );
+    return rebuilt.toString();
+  }
+
   static String wsScheme() {
     final http = httpBaseUri();
     return http.scheme == 'https' ? 'wss' : 'ws';
@@ -74,4 +97,5 @@ class AppConfig {
       queryParameters: token != null ? {wsTokenQueryName: token} : null,
     );
   }
+
 }

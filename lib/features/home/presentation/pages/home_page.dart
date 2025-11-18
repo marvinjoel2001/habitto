@@ -19,6 +19,7 @@ import '../../../properties/data/services/photo_service.dart';
 import '../../../properties/domain/entities/property.dart' as domain;
 import '../../../properties/domain/entities/photo.dart' as domain_photo;
 import '../../../../core/services/api_service.dart';
+import '../../../../config/app_config.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -214,13 +215,7 @@ class _CircleActionButtonState extends State<_CircleActionButton>
           decoration: BoxDecoration(
             color: widget.bgColor,
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.25),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            border: Border.all(color: Colors.white.withOpacity(0.25), width: 1),
           ),
           child: Icon(widget.icon, color: widget.iconColor, size: 28),
         ),
@@ -296,7 +291,9 @@ class _HomeContentState extends State<HomeContent> {
       final res = await _profileService.getCurrentProfile();
       if (res['success'] == true && res['data'] != null) {
         final profile = res['data']['profile'];
-        final url = (profile?.profileImage ?? '') as String;
+        final urlRaw = (profile?.profileImage ?? '') as String;
+        final url = AppConfig.sanitizeUrl(urlRaw);
+        print('Home: profileImage -> ' + url);
         if (url.isNotEmpty && mounted) {
           setState(() => _currentUserImageUrl = url);
         }
@@ -312,33 +309,28 @@ class _HomeContentState extends State<HomeContent> {
       _error = null;
     });
 
-    final recs = await _matchingService.getPropertyRecommendations();
-    if (recs['success'] == true && recs['data'] != null) {
-      final List<dynamic> items = recs['data'] as List<dynamic>;
+    final propsRes = await _propertyService.getProperties(orderByMatch: true, matchScore: 0, pageSize: 50);
+    if (propsRes['success'] == true && propsRes['data'] != null) {
+      final backendData = propsRes['data'] as Map<String, dynamic>;
+      final List<domain.Property> props = List<domain.Property>.from(backendData['properties'] as List);
       final cards = <HomePropertyCardData>[];
-      for (final it in items) {
-        final int propertyId = it['propertyId'] as int;
-        final int matchId = it['matchId'] as int;
-        final propRes = await _propertyService.getPropertyById(propertyId);
-        if (propRes['success'] == true && propRes['data'] != null) {
-          final domain.Property p = propRes['data'] as domain.Property;
-          final initialImages = <String>[];
-          if (p.mainPhoto != null && p.mainPhoto!.isNotEmpty) {
-            initialImages.add(p.mainPhoto!);
-          }
-          final typeLabel = p.type.isNotEmpty ? _capitalize(p.type) : 'Propiedad';
-          final addressLabel = p.address.isNotEmpty ? _capitalize(p.address) : 'Propiedad';
-          final formattedTitle = "$typeLabel · $addressLabel";
-          cards.add(HomePropertyCardData(
-            id: p.id,
-            title: formattedTitle,
-            priceLabel: p.price > 0 ? 'Bs. ${p.price.toStringAsFixed(0)}/mes' : '—',
-            images: initialImages,
-            distanceKm: 0.0,
-            tags: [p.type.isNotEmpty ? _capitalize(p.type) : ''],
-          ));
-          _matchIdByPropertyId[p.id] = matchId;
+      for (final p in props) {
+        final initialImages = <String>[];
+        if (p.mainPhoto != null && p.mainPhoto!.isNotEmpty) {
+          initialImages.add(AppConfig.sanitizeUrl(p.mainPhoto!));
+          print('Home: property ' + p.id.toString() + ' mainPhoto -> ' + AppConfig.sanitizeUrl(p.mainPhoto!));
         }
+        final typeLabel = p.type.isNotEmpty ? _capitalize(p.type) : 'Propiedad';
+        final addressLabel = p.address.isNotEmpty ? _capitalize(p.address) : 'Propiedad';
+        final formattedTitle = "$typeLabel · $addressLabel";
+        cards.add(HomePropertyCardData(
+          id: p.id,
+          title: formattedTitle,
+          priceLabel: p.price > 0 ? 'Bs. ${p.price.toStringAsFixed(0)}/mes' : '—',
+          images: initialImages,
+          distanceKm: 0.0,
+          tags: [p.type.isNotEmpty ? _capitalize(p.type) : ''],
+        ));
       }
 
       setState(() {
@@ -352,7 +344,7 @@ class _HomeContentState extends State<HomeContent> {
       }
     } else {
       setState(() {
-        _error = recs['error'] ?? 'No se pudieron cargar recomendaciones';
+        _error = propsRes['error'] ?? 'No se pudieron cargar propiedades';
         _isLoading = false;
       });
     }
@@ -410,7 +402,12 @@ class _HomeContentState extends State<HomeContent> {
     if (res['success'] == true && res['data'] != null) {
       final photos = (res['data']['photos'] as List<domain_photo.Photo>?);
       // Unificar y evitar duplicados; mantener main_photo si existe
-      final urls = (photos ?? []).map((ph) => ph.image).where((u) => u.isNotEmpty).toSet().toList();
+      final urls = List<String>.from((photos ?? [])
+          .map((ph) => AppConfig.sanitizeUrl(ph.image))
+          .where((u) => u.isNotEmpty)
+          .toSet()
+          .toList());
+      print('Home: property ' + propertyId.toString() + ' photo urls -> ' + urls.join(', '));
       setState(() {
         _photoUrlsByProperty[propertyId] = urls;
         _cards = _cards.map((c) => c.id == propertyId ? c.copyWith(images: urls) : c).toList();
@@ -491,36 +488,58 @@ class _HomeContentState extends State<HomeContent> {
                       : ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           children: [
-                            PropertySwipeDeck(
-                              key: _deckKey,
-                              properties: _cards,
-                              onLike: (p) async {
-                                final matchId = _matchIdByPropertyId[p.id];
-                                if (matchId != null) {
-                                  final res = await _matchingService.likeMatch(matchId);
-                                  if (res['success'] != true) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
-                                      );
-                                    }
-                                    return;
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.66,
+                              child: PropertySwipeDeck(
+                                key: _deckKey,
+                                properties: _cards,
+                                onLike: (p) async {
+                                int? matchId = _matchIdByPropertyId[p.id];
+                                if (matchId == null) {
+                                  final midRes = await _matchingService.getOrCreateMatchIdForProperty(p.id);
+                                  if (midRes['success'] == true && midRes['data'] != null) {
+                                    matchId = midRes['data'] as int;
+                                    _matchIdByPropertyId[p.id] = matchId;
                                   }
-                                  _spawnHeartsBurst();
-                                  final userImage = _currentUserImageUrl;
-                                  final propertyImage = (p.images.isNotEmpty)
-                                      ? p.images[0]
-                                      : 'assets/images/empty.jpg';
-                                  MatchModal.show(
-                                    context,
-                                    userImageUrl: userImage,
-                                    propertyImageUrl: propertyImage,
-                                    propertyTitle: p.title,
-                                  );
                                 }
+                                if (matchId == null) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('No se pudo obtener match')),
+                                    );
+                                  }
+                                  return;
+                                }
+                                final res = await _matchingService.likeMatch(matchId);
+                                if (res['success'] != true) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                                    );
+                                  }
+                                  return;
+                                }
+                                _spawnHeartsBurst();
+                                final userImage = _currentUserImageUrl;
+                                final propertyImage = (p.images.isNotEmpty)
+                                    ? p.images[0]
+                                    : 'assets/images/empty.jpg';
+                                MatchModal.show(
+                                  context,
+                                  userImageUrl: userImage,
+                                  propertyImageUrl: propertyImage,
+                                  propertyTitle: p.title,
+                                );
                               },
                               onReject: (p) async {
-                                final matchId = _matchIdByPropertyId[p.id];
+                                int? matchId = _matchIdByPropertyId[p.id];
+                                if (matchId == null) {
+                                  final midRes = await _matchingService.getOrCreateMatchIdForProperty(p.id);
+                                  if (midRes['success'] == true && midRes['data'] != null) {
+                                    matchId = midRes['data'] as int;
+                                    _matchIdByPropertyId[p.id] = matchId;
+                                  }
+                                }
                                 if (matchId != null) {
                                   final res = await _matchingService.rejectMatch(matchId);
                                   if (res['success'] != true && mounted) {
@@ -532,6 +551,7 @@ class _HomeContentState extends State<HomeContent> {
                               },
                               onTopChange: (p) => setState(() => _currentTopProperty = p),
                             ),
+                            ),
                           ],
                         )),
             ),
@@ -539,26 +559,33 @@ class _HomeContentState extends State<HomeContent> {
           if (!_isLoading && _currentTopProperty != null && _cards.isNotEmpty)
             Container(
               color: Colors.transparent,
-              margin: const EdgeInsets.only(top: 20),
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              margin: EdgeInsets.zero,
+              padding: EdgeInsets.zero,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _CircleActionButton(
                     icon: Icons.rotate_left,
-                    bgColor: Colors.white,
+                    bgColor: Colors.transparent,
                     iconColor: Colors.amber,
                     onTap: () => _deckKey.currentState?.goBack(),
                   ),
                   const SizedBox(width: 18),
                   _CircleActionButton(
                     icon: Icons.close,
-                    bgColor: Colors.white,
+                    bgColor: Colors.transparent,
                     iconColor: Colors.redAccent,
                     onTap: () async {
                       final p = _currentTopProperty;
                       if (p != null) {
-                        final matchId = _matchIdByPropertyId[p.id];
+                        int? matchId = _matchIdByPropertyId[p.id];
+                        if (matchId == null) {
+                          final midRes = await _matchingService.getOrCreateMatchIdForProperty(p.id);
+                          if (midRes['success'] == true && midRes['data'] != null) {
+                            matchId = midRes['data'] as int;
+                            _matchIdByPropertyId[p.id] = matchId;
+                          }
+                        }
                         if (matchId != null) {
                           await _matchingService.rejectMatch(matchId);
                         }
@@ -569,32 +596,45 @@ class _HomeContentState extends State<HomeContent> {
                   const SizedBox(width: 18),
                   _CircleActionButton(
                     icon: Icons.favorite,
-                    bgColor: Colors.orange,
-                    iconColor: Colors.white,
+                    bgColor: Colors.transparent,
+                    iconColor: Colors.orange,
                     onTap: () async {
                       final p = _currentTopProperty;
                       if (p != null) {
-                        final matchId = _matchIdByPropertyId[p.id];
-                        if (matchId != null) {
-                          final res = await _matchingService.likeMatch(matchId);
-                          if (res['success'] == true) {
-                            _spawnHeartsBurst();
-                            final userImage = _currentUserImageUrl;
-                            final propertyImage = (p.images.isNotEmpty)
-                                ? p.images[0]
-                                : 'assets/images/empty.jpg';
-                            MatchModal.show(
-                              context,
-                              userImageUrl: userImage,
-                              propertyImageUrl: propertyImage,
-                              propertyTitle: p.title,
-                            );
-                            _deckKey.currentState?.swipeRight();
-                          } else if (mounted) {
+                        int? matchId = _matchIdByPropertyId[p.id];
+                        if (matchId == null) {
+                          final midRes = await _matchingService.getOrCreateMatchIdForProperty(p.id);
+                          if (midRes['success'] == true && midRes['data'] != null) {
+                            matchId = midRes['data'] as int;
+                            _matchIdByPropertyId[p.id] = matchId;
+                          }
+                        }
+                        if (matchId == null) {
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                              const SnackBar(content: Text('No se pudo obtener match')),
                             );
                           }
+                          return;
+                        }
+                        final res = await _matchingService.likeMatch(matchId);
+                        if (res['success'] == true) {
+                          _spawnHeartsBurst();
+                          final userImage = _currentUserImageUrl;
+                          final propertyImage = (p.images.isNotEmpty)
+                              ? p.images[0]
+                              : 'assets/images/empty.jpg';
+                          MatchModal.show(
+                            context,
+                            userImageUrl: userImage,
+                            propertyImageUrl: propertyImage,
+                            propertyTitle: p.title,
+                          );
+                          _deckKey.currentState?.swipeRight();
+                        } else if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                          );
                         }
                       }
                     },
@@ -602,7 +642,7 @@ class _HomeContentState extends State<HomeContent> {
                   const SizedBox(width: 18),
                   _CircleActionButton(
                     icon: Icons.star,
-                    bgColor: Colors.white,
+                    bgColor: Colors.transparent,
                     iconColor: Colors.blueAccent,
                     onTap: () async {
                       final p = _currentTopProperty;
@@ -969,22 +1009,24 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                         ),
                         isDragging: _isDragging,
                         onOpenImage: (index) => _openFullScreen(property.images, index),
-                        outerTopPadding: 28.0,
+                        outerTopPadding: 16.0,
+                        overlayBottomSpace: 0.0,
                       ),
                     ),
                   ),
                 )
-              : SwipePropertyCard(
-                  images: property.images,
-                  title: property.title,
-                  priceLabel: property.priceLabel,
-                  tags: property.tags,
-                  distanceKm: property.distanceKm,
-                  likeProgress: 0.0,
-                  isDragging: false,
-                  onOpenImage: (index) => _openFullScreen(property.images, index),
-                  outerTopPadding: 28.0,
-                ),
+            : SwipePropertyCard(
+                images: property.images,
+                title: property.title,
+                priceLabel: property.priceLabel,
+                tags: property.tags,
+                distanceKm: property.distanceKm,
+                likeProgress: 0.0,
+                isDragging: false,
+                onOpenImage: (index) => _openFullScreen(property.images, index),
+                outerTopPadding: 16.0,
+                overlayBottomSpace: 0.0,
+              ),
         ),
       );
       cards.add(card);

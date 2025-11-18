@@ -79,6 +79,11 @@ class Property extends BaseModel {
       }
     }
 
+    String clean(dynamic v) {
+      final s = v?.toString() ?? '';
+      return s.replaceAll('`', '').replaceAll('"', '').trim();
+    }
+
     return Property(
       id: parseInt(json['id'] ?? json['pk']),
       type: json['type']?.toString() ?? '',
@@ -101,8 +106,8 @@ class Property extends BaseModel {
       availabilityDate: json['availability_date'] != null
           ? parseDate(json['availability_date'])
           : null,
-      mainPhoto: (json['main_photo']?.toString().isNotEmpty ?? false)
-          ? json['main_photo'].toString()
+      mainPhoto: (clean(json['main_photo']).isNotEmpty)
+          ? clean(json['main_photo'])
           : null,
     );
   }
