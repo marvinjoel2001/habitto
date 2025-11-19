@@ -86,6 +86,28 @@ class MatchingService {
     }
   }
 
+  Future<Map<String, dynamic>> likeProperty(int propertyId) async {
+    try {
+      final response = await _apiService.post('/api/properties/$propertyId/like/', {});
+      return response['success'] == true
+          ? {'success': true, 'data': response['data']}
+          : {'success': false, 'error': response['error'] ?? 'Error al hacer like a la propiedad', 'data': null};
+    } catch (e) {
+      return {'success': false, 'error': 'Error al hacer like a la propiedad: $e', 'data': null};
+    }
+  }
+
+  Future<Map<String, dynamic>> rejectProperty(int propertyId) async {
+    try {
+      final response = await _apiService.post('/api/properties/$propertyId/reject/', {});
+      return response['success'] == true
+          ? {'success': true, 'data': response['data']}
+          : {'success': false, 'error': response['error'] ?? 'Error al rechazar la propiedad', 'data': null};
+    } catch (e) {
+      return {'success': false, 'error': 'Error al rechazar la propiedad: $e', 'data': null};
+    }
+  }
+
   Future<Map<String, dynamic>> getOrCreateMatchIdForProperty(int propertyId) async {
     try {
       final sp = await getCurrentSearchProfileId();

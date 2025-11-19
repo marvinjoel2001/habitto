@@ -26,6 +26,8 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = true;
     });
 
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final response = await _authService.login(
         _emailController.text,
@@ -33,14 +35,14 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response['success']) {
-        Navigator.pushReplacementNamed(context, '/home');
+        navigator.pushReplacementNamed('/home');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(content: Text(response['error'] ?? 'Error de autenticación')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
     } finally {
@@ -59,19 +61,19 @@ class _LoginPageState extends State<LoginPage> {
         children: [
           // Fondo sin blur ni overlays encima
           Image.asset(
-            'assets/images/loginConexion.jpg',
+            'assets/images/loginboys.jpg',
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
           ),
-          // Overlay con tinte verde (usando el color primario del tema)
+          // Overlay con tinte más oscuro (mejor legibilidad)
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
-                    Colors.black.withValues(alpha: 0.10),
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+                    Colors.black.withValues(alpha: 0.25),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -83,9 +85,12 @@ class _LoginPageState extends State<LoginPage> {
           SafeArea(
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Padding(
-                // Subimos el contenedor (antes 24/30), ahora 56
-                padding: const EdgeInsets.only(bottom: 56),
+              child: AnimatedPadding(
+                padding: EdgeInsets.only(
+                  bottom: 56 + MediaQuery.of(context).viewInsets.bottom,
+                ),
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOut,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: BackdropFilter(
@@ -107,11 +112,13 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                             const SizedBox(height: 8),
                             Center(
                               child: Text(
@@ -252,7 +259,8 @@ class _LoginPageState extends State<LoginPage> {
                                 ],
                               ),
                             ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),

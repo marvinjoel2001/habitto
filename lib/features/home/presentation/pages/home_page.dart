@@ -596,17 +596,7 @@ class _HomeContentState extends State<HomeContent> {
                     onTap: () async {
                       final p = _currentTopProperty;
                       if (p != null) {
-                        int? matchId = _matchIdByPropertyId[p.id];
-                        if (matchId == null) {
-                          final midRes = await _matchingService.getOrCreateMatchIdForProperty(p.id);
-                          if (midRes['success'] == true && midRes['data'] != null) {
-                            matchId = midRes['data'] as int;
-                            _matchIdByPropertyId[p.id] = matchId;
-                          }
-                        }
-                        if (matchId != null) {
-                          await _matchingService.rejectMatch(matchId);
-                        }
+                        await _matchingService.rejectProperty(p.id);
                       }
                       _spawnBigXAndSwipeLeft();
                     },
@@ -615,42 +605,24 @@ class _HomeContentState extends State<HomeContent> {
                   _CircleActionButton(
                     icon: Icons.favorite,
                     bgColor: Colors.transparent,
-                    iconColor: Colors.orange,
+                    iconColor: AppTheme.secondaryColor,
                     onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
                       final p = _currentTopProperty;
                       if (p != null) {
-                        int? matchId = _matchIdByPropertyId[p.id];
-                        if (matchId == null) {
-                          final midRes = await _matchingService.getOrCreateMatchIdForProperty(p.id);
-                          if (midRes['success'] == true && midRes['data'] != null) {
-                            matchId = midRes['data'] as int;
-                            _matchIdByPropertyId[p.id] = matchId;
-                          }
-                        }
-                        if (matchId == null) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('No se pudo obtener match')),
-                            );
-                          }
-                          return;
-                        }
-                        final res = await _matchingService.likeMatch(matchId);
+                        final res = await _matchingService.likeProperty(p.id);
                         if (res['success'] == true) {
                           _spawnHeartsBurst();
-                          final userImage = _currentUserImageUrl;
-                          final propertyImage = (p.images.isNotEmpty)
-                              ? p.images[0]
-                              : 'assets/images/empty.jpg';
-                          MatchModal.show(
-                            context,
-                            userImageUrl: userImage,
-                            propertyImageUrl: propertyImage,
-                            propertyTitle: p.title,
+                          messenger.showSnackBar(
+                            const SnackBar(
+                              content: Text('¡Like enviado! El propietario será notificado.'),
+                              backgroundColor: AppTheme.secondaryColor,
+                              duration: Duration(seconds: 2),
+                            ),
                           );
                           _deckKey.currentState?.swipeRight();
-                        } else if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                        } else {
+                          messenger.showSnackBar(
                             SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
                           );
                         }
@@ -1338,7 +1310,7 @@ class _PropertyCardState extends State<PropertyCard> {
                 ),
               ),
 
-              // Overlay corazón cuando se arrastra a la derecha (rojo)
+              // Overlay corazón cuando se arrastra a la derecha (tema)
               Positioned(
                 right: 16,
                 bottom: 16,
@@ -1348,18 +1320,24 @@ class _PropertyCardState extends State<PropertyCard> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.secondaryColor.withValues(alpha: 0.95),
+                          AppTheme.secondaryColor.withValues(alpha: 0.75),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.redAccent.withOpacity(0.45),
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.35),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
                       ],
                     ),
-                    child:
-                        const Icon(Icons.favorite, color: Colors.redAccent),
+                    child: const Icon(Icons.favorite, color: Colors.white),
                   ),
                 ),
               ),
@@ -1598,10 +1576,22 @@ class _HeartsBurstOverlayState extends State<_HeartsBurstOverlay>
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.favorite,
-                          color: Colors.orange,
-                          size: p.baseSize,
+                        child: ShaderMask(
+                          shaderCallback: (Rect bounds) {
+                            return LinearGradient(
+                              colors: [
+                                AppTheme.secondaryColor.withValues(alpha: 0.95),
+                                AppTheme.secondaryColor.withValues(alpha: 0.7),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ).createShader(bounds);
+                          },
+                          child: Icon(
+                            Icons.favorite,
+                            color: Colors.white,
+                            size: p.baseSize,
+                          ),
                         ),
                       ),
                     ),
