@@ -108,6 +108,47 @@ class MatchingService {
     }
   }
 
+  Future<Map<String, dynamic>> getPendingMatchRequests() async {
+    try {
+      final response = await _apiService.get('/api/matches/pending_requests/');
+      if (response['success'] == true) {
+        final data = response['data'];
+        List<dynamic> requests = [];
+        if (data is Map && data['results'] is List) {
+          requests = List<dynamic>.from(data['results'] as List);
+        } else if (data is List) {
+          requests = List<dynamic>.from(data);
+        }
+        return {'success': true, 'data': requests};
+      }
+      return {'success': false, 'error': response['error'] ?? 'Error obteniendo solicitudes de match', 'data': null};
+    } catch (e) {
+      return {'success': false, 'error': 'Error obteniendo solicitudes de match: $e', 'data': null};
+    }
+  }
+
+  Future<Map<String, dynamic>> acceptMatchRequest(int matchId) async {
+    try {
+      final response = await _apiService.post('/api/matches/$matchId/owner_accept/', {});
+      return response['success'] == true
+          ? {'success': true, 'data': response['data']}
+          : {'success': false, 'error': response['error'] ?? 'Error al aceptar solicitud', 'data': null};
+    } catch (e) {
+      return {'success': false, 'error': 'Error al aceptar solicitud: $e', 'data': null};
+    }
+  }
+
+  Future<Map<String, dynamic>> rejectMatchRequest(int matchId) async {
+    try {
+      final response = await _apiService.post('/api/matches/$matchId/owner_reject/', {});
+      return response['success'] == true
+          ? {'success': true, 'data': response['data']}
+          : {'success': false, 'error': response['error'] ?? 'Error al rechazar solicitud', 'data': null};
+    } catch (e) {
+      return {'success': false, 'error': 'Error al rechazar solicitud: $e', 'data': null};
+    }
+  }
+
   Future<Map<String, dynamic>> getOrCreateMatchIdForProperty(int propertyId) async {
     try {
       final sp = await getCurrentSearchProfileId();

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:habitto/features/chat/presentation/pages/conversation_page.dart';
 import 'package:habitto/features/chat/presentation/pages/user_list_page.dart';
 import 'package:habitto/core/services/token_storage.dart';
+import 'package:habitto/core/services/api_service.dart';
 import '../../data/services/message_service.dart';
 import '../../data/models/message_model.dart';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:habitto/config/app_config.dart';
+import 'package:habitto/features/matching/data/services/matching_service.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -19,6 +21,7 @@ class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final MessageService _messageService = MessageService();
   final TokenStorage _tokenStorage = TokenStorage();
+  final ApiService _apiService = ApiService();
   List<ChatMessage> _messages = [];
   bool _isLoading = true;
   String _error = '';
@@ -29,11 +32,50 @@ class _ChatPageState extends State<ChatPage> {
   WebSocketChannel? _inboxChannel;
   final Set<String> _processedMessageIds = <String>{};
   int _inboxReconnectDelayMs = 1000;
+  int _pendingMatchRequestsCount = 0;
+  int _unreadNotificationsCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
+    _loadPendingMatchRequests();
+    _loadUnreadNotificationsCount();
+  }
+
+  Future<void> _loadPendingMatchRequests() async {
+    try {
+      final matchingService = MatchingService();
+      final result = await matchingService.getPendingMatchRequests();
+      if (result['success'] && result['data'] != null) {
+        final requests = result['data'] as List<dynamic>;
+        setState(() {
+          _pendingMatchRequestsCount = requests.length;
+        });
+      }
+    } catch (e) {
+      print('Error loading pending match requests: $e');
+    }
+  }
+
+  Future<void> _loadUnreadNotificationsCount() async {
+    try {
+      final resp = await _apiService.get('/api/notifications/', queryParameters: {'is_read': false});
+      if (resp['success'] == true) {
+        final data = resp['data'];
+        int count = 0;
+        if (data is Map && data['count'] is int) {
+          count = data['count'] as int;
+        } else if (data is Map && data['results'] is List) {
+          count = (data['results'] as List).length;
+        } else if (data is List) {
+          count = data.length;
+        }
+        setState(() {
+          _unreadNotificationsCount = count;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadMessages() async {
@@ -407,10 +449,6 @@ class _ChatPageState extends State<ChatPage> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black),
-            onPressed: () {},
-          ),
         ],
       ),
       body: Column(
@@ -456,34 +494,30 @@ class _ChatPageState extends State<ChatPage> {
                                 const SizedBox(height: 16),
                                 Text(_error, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54, fontSize: 16)),
                                 const SizedBox(height: 16),
-                                ElevatedButton(onPressed: _loadMessages, child: const Text('Reintentar')),
+                                ElevatedButton(onPressed: () async { await _loadMessages(); await _loadPendingMatchRequests(); }, child: const Text('Reintentar')),
                               ],
                             ),
                           )
-                        : _messages.isEmpty
-                            ? const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.chat_bubble_outline, size: 64, color: Colors.black26),
-                                    SizedBox(height: 16),
-                                    Text('No tienes conversaciones aún', style: TextStyle(color: Colors.black54, fontSize: 18)),
-                                    SizedBox(height: 8),
-                                    Text('Inicia una conversación con otros usuarios', style: TextStyle(color: Colors.black45, fontSize: 14)),
-                                  ],
-                                ),
-                              )
-                            : RefreshIndicator(
-                                onRefresh: _loadMessages,
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                  itemCount: _messages.length,
-                                  itemBuilder: (context, index) {
-                                    final message = _messages[index];
-                                    return _buildMessageTile(message);
-                                  },
-                                ),
-                              ),
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              await _loadMessages();
+                              await _loadPendingMatchRequests();
+                              await _loadUnreadNotificationsCount();
+                            },
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              itemCount: _messages.length + 2,
+                              itemBuilder: (context, index) {
+                                if (index == 0) {
+                                  return _buildNotificationsShortcutTile();
+                                } else if (index == 1) {
+                                  return _buildMatchRequestsShortcutTile();
+                                }
+                                final message = _messages[index - 2];
+                                return _buildMessageTile(message);
+                              },
+                            ),
+                          ),
               ),
             ),
           ],
@@ -612,7 +646,131 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  
+  Widget _buildMatchRequestsShortcutTile() {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const _MatchRequestsPage(),
+          ),
+        ).then((_) {
+          _loadPendingMatchRequests();
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          boxShadow: const [
+            BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
+          ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+              child: const Icon(Icons.favorite, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Solicitudes de Match',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(10)),
+                            child: Text('$_pendingMatchRequestsCount', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                      const Icon(Icons.arrow_forward_ios, color: Color(0xFF9CA3AF), size: 16),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _pendingMatchRequestsCount > 0 ? 'Toca para revisar y aceptar' : 'Por el momento no tienes solicitudes',
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationsShortcutTile() {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const _NotificationsPage(),
+          ),
+        ).then((_) {
+          _loadUnreadNotificationsCount();
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEEF2FF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFDBEAFE)),
+          boxShadow: const [
+            BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
+          ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.indigoAccent.withValues(alpha: 0.3),
+              child: const Icon(Icons.notifications_none, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('Notificaciones', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black)),
+                  SizedBox(height: 4),
+                  Text('Revisa tus avisos recientes', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                ],
+              ),
+            ),
+            if (_unreadNotificationsCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: Colors.indigoAccent, borderRadius: BorderRadius.circular(10)),
+                child: Text('$_unreadNotificationsCount', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_ios, color: Color(0xFF9CA3AF), size: 16),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -621,5 +779,466 @@ class _ChatPageState extends State<ChatPage> {
       _inboxChannel?.sink.close();
     } catch (_) {}
     super.dispose();
+  }
+}
+
+class _MatchRequestsPage extends StatefulWidget {
+  const _MatchRequestsPage({super.key});
+
+  @override
+  State<_MatchRequestsPage> createState() => _MatchRequestsPageState();
+}
+
+class _NotificationsPage extends StatefulWidget {
+  const _NotificationsPage({super.key});
+
+  @override
+  State<_NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends State<_NotificationsPage> {
+  final ApiService _api = ApiService();
+  List<Map<String, dynamic>> _items = [];
+  bool _isLoading = true;
+  String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      setState(() { _isLoading = true; _error = ''; });
+      final resp = await _api.get('/api/notifications/', queryParameters: {'page_size': 50});
+      if (resp['success'] == true) {
+        final data = resp['data'];
+        List<Map<String, dynamic>> results = [];
+        if (data is Map && data['results'] is List) {
+          results = List<Map<String, dynamic>>.from((data['results'] as List).map((e) => Map<String, dynamic>.from(e as Map)));
+        } else if (data is List) {
+          results = List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e as Map)));
+        }
+        setState(() { _items = results; _isLoading = false; });
+      } else {
+        setState(() { _error = 'Error: ${resp['error']}'; _isLoading = false; });
+      }
+    } catch (e) {
+      setState(() { _error = 'Error al cargar notificaciones: $e'; _isLoading = false; });
+    }
+  }
+
+  Future<void> _markRead(int id) async {
+    try {
+      final resp = await _api.post('/api/notifications/$id/mark_as_read/', {});
+      if (resp['success'] == true) {
+        setState(() {
+          final idx = _items.indexWhere((n) => (n['id'] as int?) == id);
+          if (idx != -1) {
+            _items[idx]['is_read'] = true;
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notificación marcada como leída'), duration: Duration(seconds: 2)));
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
+        title: const Text('Notificaciones', style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600)),
+        actions: [IconButton(icon: const Icon(Icons.refresh, color: Colors.black), onPressed: _load)],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error.isNotEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 64, color: Colors.black26),
+                      const SizedBox(height: 16),
+                      Text(_error, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54, fontSize: 16)),
+                      const SizedBox(height: 16),
+                      ElevatedButton(onPressed: _load, child: const Text('Reintentar')),
+                    ],
+                  ),
+                )
+              : _items.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.notifications_off, size: 64, color: Colors.black26),
+                          SizedBox(height: 16),
+                          Text('Por el momento no tienes notificaciones', style: TextStyle(color: Colors.black54, fontSize: 18)),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        itemCount: _items.length,
+                        itemBuilder: (context, index) {
+                          final n = _items[index];
+                          final title = (n['title'] as String?) ?? 'Notificación';
+                          final message = (n['message'] as String?) ?? (n['content'] as String?) ?? '';
+                          final isRead = (n['is_read'] as bool?) ?? false;
+                          final createdAt = (n['created_at'] as String?) ?? '';
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isRead ? const Color(0xFFF9FAFB) : const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE5E7EB)),
+                              boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4))],
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: Colors.indigoAccent.withValues(alpha: 0.25),
+                                  child: const Icon(Icons.notifications, color: Colors.white, size: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black)),
+                                          Text(createdAt, style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(message, style: const TextStyle(fontSize: 14, color: Colors.black87), maxLines: 3, overflow: TextOverflow.ellipsis),
+                                      const SizedBox(height: 8),
+                                      if (!isRead)
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: TextButton.icon(
+                                            onPressed: () => _markRead((n['id'] as int?) ?? 0),
+                                            icon: const Icon(Icons.done, size: 16),
+                                            label: const Text('Marcar como leída'),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+    );
+  }
+}
+
+class _MatchRequestsPageState extends State<_MatchRequestsPage> {
+  final MatchingService _matchingService = MatchingService();
+  List<dynamic> _matchRequests = [];
+  bool _isLoading = true;
+  String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMatchRequests();
+  }
+
+  Future<void> _loadMatchRequests() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = '';
+      });
+      final result = await _matchingService.getPendingMatchRequests();
+      if (result['success']) {
+        final requests = (result['data'] as List<dynamic>?) ?? [];
+        setState(() {
+          _matchRequests = requests;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = 'Error: ${result['error']}';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Error al cargar solicitudes: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _acceptMatchRequest(int matchId) async {
+    try {
+      final result = await _matchingService.acceptMatchRequest(matchId);
+      if (result['success']) {
+        setState(() {
+          _matchRequests.removeWhere((request) => (request['match'] as Map?)?['id'] == matchId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Solicitud de match aceptada'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${result['error']}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al aceptar: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _rejectMatchRequest(int matchId) async {
+    try {
+      final result = await _matchingService.rejectMatchRequest(matchId);
+      if (result['success']) {
+        setState(() {
+          _matchRequests.removeWhere((request) => (request['match'] as Map?)?['id'] == matchId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Solicitud de match rechazada'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${result['error']}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al rechazar: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Solicitudes de Match',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: _loadMatchRequests,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _error.isNotEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                            const SizedBox(height: 16),
+                            Text(_error, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                            const SizedBox(height: 16),
+                            ElevatedButton(onPressed: _loadMatchRequests, child: const Text('Reintentar')),
+                          ],
+                        ),
+                      )
+                    : _matchRequests.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.favorite_border, size: 64, color: Colors.grey[400]),
+                                const SizedBox(height: 16),
+                                Text('No tienes solicitudes de match pendientes', style: TextStyle(color: Colors.grey[600], fontSize: 18)),
+                                const SizedBox(height: 8),
+                                Text('Las nuevas solicitudes aparecerán aquí', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadMatchRequests,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              itemCount: _matchRequests.length,
+                              itemBuilder: (context, index) {
+                                final request = _matchRequests[index] as Map<String, dynamic>;
+                                return _buildMatchRequestTile(request);
+                              },
+                            ),
+                          ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchRequestTile(Map<String, dynamic> request) {
+    final match = request['match'] as Map<String, dynamic>? ?? {};
+    final property = request['property'] as Map<String, dynamic>? ?? {};
+    final interestedUser = request['interested_user'] as Map<String, dynamic>? ?? {};
+    final matchId = match['id'] as int? ?? 0;
+    final propertyTitle = property['title'] as String? ?? 'Propiedad sin título';
+    final propertyAddress = property['address'] as String? ?? 'Dirección no especificada';
+    final userName = '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'.trim();
+    final userUsername = interestedUser['username'] as String? ?? 'Usuario';
+    final displayName = userName.isNotEmpty ? userName : userUsername;
+    final score = match['score'] as int? ?? 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+                child: const Icon(Icons.person, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(displayName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black)),
+                    const SizedBox(height: 2),
+                    Text('@$userUsername', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.withValues(alpha: 0.3), width: 1),
+                ),
+                child: Text('$score%', style: TextStyle(color: Colors.green[700], fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(propertyTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
+                const SizedBox(height: 4),
+                Text(propertyAddress, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _rejectMatchRequest(matchId),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.withValues(alpha: 0.1),
+                    foregroundColor: Colors.red[700],
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.red.withValues(alpha: 0.3), width: 1),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Rechazar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _acceptMatchRequest(matchId),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.withValues(alpha: 0.1),
+                    foregroundColor: Colors.green[700],
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.green.withValues(alpha: 0.3), width: 1),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Aceptar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
