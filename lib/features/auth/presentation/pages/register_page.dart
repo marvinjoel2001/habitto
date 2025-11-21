@@ -135,14 +135,14 @@ class _RegisterPageState extends State<RegisterPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
         ),
       ),
       body: Stack(
         children: [
           // Fondo
           Image.asset(
-            'assets/images/loginConexion.jpg',
+            'assets/images/loginboys2.jpg',
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
@@ -153,8 +153,8 @@ class _RegisterPageState extends State<RegisterPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.25),
-                    Colors.black.withOpacity(0.10),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.10),
+                    Colors.black.withOpacity(0.85),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -178,9 +178,14 @@ class _RegisterPageState extends State<RegisterPage> {
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.25),
-                          ),
+                          border: Border.all(color: Colors.white.withOpacity(0.25)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.10),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
                         child: Form(
                           key: _formKey,
@@ -189,7 +194,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               Text(
                                 'Crear Cuenta',
                                 style: TextStyle(
-                                  fontSize: 28,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                   shadows: [
@@ -380,7 +385,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      Navigator.pop(context);
+                                      Navigator.pushReplacementNamed(context, '/login');
                                     },
                                     child: Text(
                                       'Inicia sesión',

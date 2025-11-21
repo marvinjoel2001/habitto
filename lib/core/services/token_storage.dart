@@ -4,6 +4,8 @@ import 'dart:convert';
 class TokenStorage {
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
+  static const String _hasLoggedOnceKey = 'has_logged_once';
+  static const String _onboardingSeenKey = 'onboarding_seen';
 
   Future<void> saveTokens(String accessToken, String refreshToken) async {
     final prefs = await SharedPreferences.getInstance();
@@ -126,5 +128,25 @@ class TokenStorage {
       print('Error decodificando token: $e');
       return null;
     }
+  }
+
+  Future<void> setHasLoggedOnce(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_hasLoggedOnceKey, value);
+  }
+
+  Future<bool> getHasLoggedOnce() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_hasLoggedOnceKey) ?? false;
+  }
+
+  Future<void> setOnboardingSeen(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_onboardingSeenKey, value);
+  }
+
+  Future<bool> hasOnboardingSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_onboardingSeenKey) ?? false;
   }
 }

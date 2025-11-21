@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import '../../../../core/services/token_storage.dart';
 import 'dart:ui';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/progress_indicator.dart';
@@ -24,6 +25,7 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
   @override
   void initState() {
     super.initState();
+    Future.microtask(_guardEntry);
     _initializeVideo();
     _initializeAnimations();
 
@@ -36,6 +38,22 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
         _fadeController.forward();
       }
     });
+  }
+
+  Future<void> _guardEntry() async {
+    final ts = TokenStorage();
+    final isValid = await ts.isTokenValid();
+    if (isValid) {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
+      return;
+    }
+    final hasLoggedOnce = await ts.getHasLoggedOnce();
+    if (hasLoggedOnce) {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/login');
+      return;
+    }
   }
 
   void _initializeVideo() {

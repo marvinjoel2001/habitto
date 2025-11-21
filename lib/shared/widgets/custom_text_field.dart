@@ -11,6 +11,9 @@ class CustomTextField extends StatefulWidget {
   final Widget? suffixIcon;
   final int maxLines;
   final VoidCallback? onTap;
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
+  final Function(String)? onFieldSubmitted;
 
   const CustomTextField({
     super.key,
@@ -23,6 +26,9 @@ class CustomTextField extends StatefulWidget {
     this.suffixIcon,
     this.maxLines = 1,
     this.onTap,
+    this.focusNode,
+    this.textInputAction,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -38,8 +44,11 @@ class _CustomTextFieldState extends State<CustomTextField> {
     final inputTheme = Theme.of(context).inputDecorationTheme;
     return TextFormField(
       controller: widget.controller,
+      focusNode: widget.focusNode,
       obscureText: widget.isPassword ? _obscureText : false,
       keyboardType: widget.keyboardType,
+      textInputAction: widget.textInputAction,
+      onFieldSubmitted: widget.onFieldSubmitted,
       validator: widget.validator,
       maxLines: widget.isPassword ? 1 : widget.maxLines,
       onTap: widget.onTap,
@@ -68,9 +77,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 },
               )
             : widget.suffixIcon,
-            filled: true,
-            // Mantener el relleno del Theme (no negro). Si no existe, usar el color de diseño.
-            fillColor: inputTheme.fillColor ?? AppTheme.lightGrayishDark,
+        filled: true,
+        // Mantener el relleno del Theme (no negro). Si no existe, usar el color de diseño.
+        fillColor: inputTheme.fillColor ?? AppTheme.lightGrayishDark,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

@@ -60,6 +60,7 @@ class AuthService {
           // Guardar tokens usando TokenStorage
           await _tokenStorage.saveTokens(data['access'], data['refresh']);
           print('AuthService: Tokens guardados exitosamente');
+          await _tokenStorage.setHasLoggedOnce(true);
 
           return {
             'success': true,

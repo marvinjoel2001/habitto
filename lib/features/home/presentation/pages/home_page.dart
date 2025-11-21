@@ -506,8 +506,19 @@ class _HomeContentState extends State<HomeContent> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: EdgeInsets.zero,
                           children: [
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.66,
+                            Builder(builder: (ctx) {
+                              final sz = MediaQuery.of(ctx).size;
+                              final pad = MediaQuery.of(ctx).padding;
+                              const double actionRowHeight = 64.0;
+                              const double rowSpacing = 28.0;
+                              const double bottomNavApprox = 96.0;
+                              const double topAreaApprox = 140.0;
+                              final double reservedBottom = actionRowHeight + rowSpacing + bottomNavApprox + pad.bottom;
+                              final double available = sz.height - topAreaApprox - reservedBottom;
+                              final double candidate = math.min(sz.height * 0.66, available);
+                              final double dynamicHeight = math.max(candidate, 320.0);
+                              return SizedBox(
+                              height: dynamicHeight,
                               child: PropertySwipeDeck(
                                 key: _deckKey,
                                 properties: _cards,
@@ -569,7 +580,8 @@ class _HomeContentState extends State<HomeContent> {
                               },
                               onTopChange: (p) => setState(() => _currentTopProperty = p),
                             ),
-                            ),
+                              );
+                            }),
                           ],
                         )),
             ),
