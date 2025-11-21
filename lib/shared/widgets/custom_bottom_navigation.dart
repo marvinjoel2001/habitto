@@ -76,7 +76,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
         },
         onMoreTap: () {
           _hideOwnerOverlay();
-          widget.onMoreTap();
+          Navigator.pushNamed(ctx, '/add-property');
         },
         onClose: _hideOwnerOverlay,
         onSocialAreasTap: () {
@@ -268,8 +268,6 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
             ],
           ),
         ),
-        // Overlays ahora se insertan usando OverlayEntry a nivel de app,
-        // no dentro del bottom navigation
       ],
     );
   }

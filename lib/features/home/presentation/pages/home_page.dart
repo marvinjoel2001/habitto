@@ -31,7 +31,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 2; // Home is now at index 2 (center position)
+  int _currentIndex = 1;
   profile.UserMode _userMode = profile.UserMode.inquilino;
   final ProfileService _profileService = ProfileService();
   bool _isInitializingProfile = false; // Flag to prevent repeated calls
@@ -75,6 +75,7 @@ class _HomePageState extends State<HomePage> {
         if (mounted) {
           setState(() {
             _userMode = mode;
+            _currentIndex = mode == profile.UserMode.inquilino ? 2 : 1;
           });
         }
       }
