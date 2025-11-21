@@ -42,11 +42,18 @@ class CustomBottomNavigation extends StatefulWidget {
 
 class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   bool _isFloatingMenuVisible = false;
+  OverlayEntry? _ownerOverlayEntry;
+  OverlayEntry? _tenantOverlayEntry;
 
   void _toggleFloatingMenu() {
     setState(() {
       _isFloatingMenuVisible = !_isFloatingMenuVisible;
     });
+    if (_isFloatingMenuVisible) {
+      _showOwnerOverlay();
+    } else {
+      _hideOwnerOverlay();
+    }
   }
 
   void _closeFloatingMenu() {
@@ -55,58 +62,104 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
         _isFloatingMenuVisible = false;
       });
     }
+    _hideOwnerOverlay();
+  }
+
+  void _showOwnerOverlay() {
+    if (_ownerOverlayEntry != null) return;
+    _ownerOverlayEntry = OverlayEntry(
+      builder: (ctx) => FloatingActionMenu(
+        isVisible: true,
+        onHomeTap: () {
+          _hideOwnerOverlay();
+          widget.onHomeTap();
+        },
+        onMoreTap: () {
+          _hideOwnerOverlay();
+          widget.onMoreTap();
+        },
+        onClose: _hideOwnerOverlay,
+        onSocialAreasTap: () {
+          _hideOwnerOverlay();
+          Navigator.pushNamed(ctx, '/social-areas');
+        },
+        onAlertHistoryTap: () {
+          _hideOwnerOverlay();
+          Navigator.pushNamed(ctx, '/alert-history');
+        },
+      ),
+    );
+    Overlay.of(context).insert(_ownerOverlayEntry!);
+  }
+
+  void _hideOwnerOverlay() {
+    _ownerOverlayEntry?.remove();
+    _ownerOverlayEntry = null;
+  }
+
+  void _showTenantOverlay() {
+    if (_tenantOverlayEntry != null) return;
+    _tenantOverlayEntry = OverlayEntry(
+      builder: (ctx) => TenantFloatingMenu(
+        isVisible: true,
+        onClose: () {
+          _hideTenantOverlay();
+          widget.onTenantMenuClose();
+        },
+        onSwipeLeft: () {
+          _hideTenantOverlay();
+          widget.onSwipeLeft();
+        },
+        onSwipeRight: () {
+          _hideTenantOverlay();
+          widget.onSwipeRight();
+        },
+        onGoBack: () {
+          _hideTenantOverlay();
+          widget.onGoBack();
+        },
+        onAddFavorite: () {
+          _hideTenantOverlay();
+          widget.onAddFavorite();
+        },
+      ),
+    );
+    Overlay.of(context).insert(_tenantOverlayEntry!);
+  }
+
+  void _hideTenantOverlay() {
+    _tenantOverlayEntry?.remove();
+    _tenantOverlayEntry = null;
+  }
+
+  @override
+  void didUpdateWidget(CustomBottomNavigation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.isOwnerOrAgent) {
+      if (widget.showTenantFloatingMenu && _tenantOverlayEntry == null) {
+        _showTenantOverlay();
+      } else if (!widget.showTenantFloatingMenu &&
+          _tenantOverlayEntry != null) {
+        _hideTenantOverlay();
+      }
+    } else {
+      if (_tenantOverlayEntry != null) {
+        _hideTenantOverlay();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _hideOwnerOverlay();
+    _hideTenantOverlay();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Full screen overlay for owners/agents when menu is visible - positioned outside SafeArea
-        if (widget.isOwnerOrAgent && _isFloatingMenuVisible)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: FloatingActionMenu(
-              isVisible: _isFloatingMenuVisible,
-              onHomeTap: () {
-                _closeFloatingMenu();
-                widget.onHomeTap();
-              },
-              onMoreTap: () {
-                _closeFloatingMenu();
-                widget.onMoreTap();
-              },
-              onClose: _closeFloatingMenu,
-              onSocialAreasTap: () {
-                _closeFloatingMenu();
-                // Navegar a áreas sociales
-                Navigator.pushNamed(context, '/social-areas');
-              },
-              onAlertHistoryTap: () {
-                _closeFloatingMenu();
-                // Navegar a historial de alertas
-                Navigator.pushNamed(context, '/alert-history');
-              },
-            ),
-          ),
-        // Tenant floating menu overlay - also positioned outside SafeArea
-        if (!widget.isOwnerOrAgent && widget.showTenantFloatingMenu)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: TenantFloatingMenu(
-              isVisible: widget.showTenantFloatingMenu,
-              onClose: widget.onTenantMenuClose,
-              onSwipeLeft: widget.onSwipeLeft,
-              onSwipeRight: widget.onSwipeRight,
-              onGoBack: widget.onGoBack,
-              onAddFavorite: widget.onAddFavorite,
-            ),
-          ),
         // Main navigation container with SafeArea
         SafeArea(
           top: false,
@@ -215,6 +268,8 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
             ],
           ),
         ),
+        // Overlays ahora se insertan usando OverlayEntry a nivel de app,
+        // no dentro del bottom navigation
       ],
     );
   }
