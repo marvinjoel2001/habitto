@@ -12,6 +12,7 @@ import '../../../profile/presentation/pages/profile_page.dart' as profile;
 import '../../../profile/presentation/pages/create_search_profile_page.dart';
 import '../../../search/presentation/pages/search_page.dart' as search;
 import '../../../chat/presentation/pages/chat_page.dart';
+import '../../../likes/presentation/pages/likes_page.dart';
 import '../../../profile/domain/entities/profile.dart';
 import '../../../profile/data/services/profile_service.dart';
 import '../../../properties/data/services/property_service.dart';
@@ -20,6 +21,7 @@ import '../../../properties/domain/entities/property.dart' as domain;
 import '../../../properties/domain/entities/photo.dart' as domain_photo;
 import '../../../../core/services/api_service.dart';
 import '../../../../config/app_config.dart';
+import 'more_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,30 +31,51 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
+  int _currentIndex = 2; // Home is now at index 2 (center position)
   profile.UserMode _userMode = profile.UserMode.inquilino;
   final ProfileService _profileService = ProfileService();
+  bool _isInitializingProfile = false; // Flag to prevent repeated calls
+
+  // Keep track of which tab was the main home before the swap
+  int get _homeIndex => 2; // Home is now at the center
+  bool get _isOwnerOrAgent =>
+      _userMode == profile.UserMode.propietario ||
+      _userMode == profile.UserMode.agente;
+  bool get _isDirectUser =>
+      _userMode == profile.UserMode.inquilino; // Direct users (tenants)
 
   @override
   void initState() {
     super.initState();
-    _initUserModeFromProfile();
+    // Add a small delay to prevent immediate calls during navigation transitions
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _initUserModeFromProfile();
+      }
+    });
   }
 
   Future<void> _initUserModeFromProfile() async {
+    if (_isInitializingProfile) return; // Prevent repeated calls
+
+    _isInitializingProfile = true;
     try {
       final result = await _profileService.getCurrentProfile();
       if (result['success'] == true && result['data'] != null) {
         final Profile currentProfile = result['data']['profile'] as Profile;
-        final profile.UserMode mode = _mapUserTypeToMode(currentProfile.userType);
+        final profile.UserMode mode =
+            _mapUserTypeToMode(currentProfile.userType);
         if (mounted) {
           setState(() {
             _userMode = mode;
           });
         }
       }
-    } catch (_) {
+    } catch (e) {
+      print('HomePage: Error initializing user mode: $e');
       // Ignorar errores en la inicialización; se puede permanecer como inquilino por defecto
+    } finally {
+      _isInitializingProfile = false;
     }
   }
 
@@ -76,12 +99,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<Widget> get _pages => [
-        const HomeContent(),
-        const search.SearchPage(),
-        const ChatPage(),
+        const LikesPage(), // Index 0 - Likes
+        const search.SearchPage(), // Index 1 - Buscar
+        const HomeContent(), // Index 2 - Home (center position)
+        const ChatPage(), // Index 3 - Chat
         profile.ProfilePage(
           onModeChanged: _onUserModeChanged,
-        ),
+        ), // Index 4 - Perfil
       ];
 
   bool get _showAddButton =>
@@ -99,10 +123,34 @@ class _HomePageState extends State<HomePage> {
         bottomNavigationBar: CustomBottomNavigation(
           currentIndex: _currentIndex,
           showAddButton: _showAddButton,
+          isOwnerOrAgent: _isOwnerOrAgent,
           onTap: (index) {
+            // For direct users (tenants), always navigate normally
+            if (_isDirectUser) {
+              setState(() {
+                _currentIndex = index;
+              });
+            } else {
+              // For owners/agents, only navigate for non-center buttons
+              if (index != 2) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              }
+              // For index 2 (center button), let CustomBottomNavigation handle the floating menu
+            }
+          },
+          onHomeTap: () {
             setState(() {
-              _currentIndex = index;
+              _currentIndex = 2; // Home is at index 2
             });
+          },
+          onMoreTap: () {
+            // Navigate to More page for owners/agents
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MorePage()),
+            );
           },
         ),
       ),
@@ -118,7 +166,8 @@ class _HomePageState extends State<HomePage> {
         children: [
           Icon(Icons.image_not_supported, size: 56, color: Colors.black54),
           SizedBox(height: 8),
-          Text('Sin imagen', style: TextStyle(color: Colors.black54, fontSize: 16)),
+          Text('Sin imagen',
+              style: TextStyle(color: Colors.black54, fontSize: 16)),
         ],
       ),
     );
@@ -238,6 +287,7 @@ class _CircleActionButtonState extends State<_CircleActionButton>
     );
   }
 }
+
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
 
@@ -260,7 +310,8 @@ class _HomeContentState extends State<HomeContent> {
   final Map<int, int> _matchIdByPropertyId = {};
   HomePropertyCardData? _currentTopProperty;
   String _currentUserImageUrl = 'assets/images/userempty.png';
-  final GlobalKey<PropertySwipeDeckState> _deckKey = GlobalKey<PropertySwipeDeckState>();
+  final GlobalKey<PropertySwipeDeckState> _deckKey =
+      GlobalKey<PropertySwipeDeckState>();
 
   void _spawnHeartsBurst() {
     final overlay = Overlay.of(context);
@@ -308,7 +359,7 @@ class _HomeContentState extends State<HomeContent> {
         final profile = res['data']['profile'];
         final urlRaw = (profile?.profileImage ?? '') as String;
         final url = AppConfig.sanitizeUrl(urlRaw);
-        print('Home: profileImage -> ' + url);
+        print('Home: profileImage -> $url');
         if (url.isNotEmpty && mounted) {
           setState(() => _currentUserImageUrl = url);
         }
@@ -324,24 +375,29 @@ class _HomeContentState extends State<HomeContent> {
       _error = null;
     });
 
-    final propsRes = await _propertyService.getProperties(orderByMatch: true, matchScore: 0, pageSize: 50);
+    final propsRes = await _propertyService.getProperties(
+        orderByMatch: true, matchScore: 0, pageSize: 50);
     if (propsRes['success'] == true && propsRes['data'] != null) {
       final backendData = propsRes['data'] as Map<String, dynamic>;
-      final List<domain.Property> props = List<domain.Property>.from(backendData['properties'] as List);
+      final List<domain.Property> props =
+          List<domain.Property>.from(backendData['properties'] as List);
       final cards = <HomePropertyCardData>[];
       for (final p in props) {
         final initialImages = <String>[];
         if (p.mainPhoto != null && p.mainPhoto!.isNotEmpty) {
           initialImages.add(AppConfig.sanitizeUrl(p.mainPhoto!));
-          print('Home: property ' + p.id.toString() + ' mainPhoto -> ' + AppConfig.sanitizeUrl(p.mainPhoto!));
+          print(
+              'Home: property ${p.id} mainPhoto -> ${AppConfig.sanitizeUrl(p.mainPhoto!)}');
         }
         final typeLabel = p.type.isNotEmpty ? _capitalize(p.type) : 'Propiedad';
-        final addressLabel = p.address.isNotEmpty ? _capitalize(p.address) : 'Propiedad';
+        final addressLabel =
+            p.address.isNotEmpty ? _capitalize(p.address) : 'Propiedad';
         final formattedTitle = "$typeLabel · $addressLabel";
         cards.add(HomePropertyCardData(
           id: p.id,
           title: formattedTitle,
-          priceLabel: p.price > 0 ? 'Bs. ${p.price.toStringAsFixed(0)}/mes' : '—',
+          priceLabel:
+              p.price > 0 ? 'Bs. ${p.price.toStringAsFixed(0)}/mes' : '—',
           images: initialImages,
           distanceKm: 0.0,
           tags: [p.type.isNotEmpty ? _capitalize(p.type) : ''],
@@ -376,7 +432,8 @@ class _HomeContentState extends State<HomeContent> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
           boxShadow: const [
-            BoxShadow(color: Color(0x22000000), blurRadius: 12, offset: Offset(0, 6)),
+            BoxShadow(
+                color: Color(0x22000000), blurRadius: 12, offset: Offset(0, 6)),
           ],
         ),
         child: Column(
@@ -388,21 +445,27 @@ class _HomeContentState extends State<HomeContent> {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.20),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.35), width: 1.5),
+                border: Border.all(
+                    color: Colors.white.withOpacity(0.35), width: 1.5),
               ),
-              child: const Icon(Icons.favorite_border, color: Colors.white, size: 38),
+              child: const Icon(Icons.favorite_border,
+                  color: Colors.white, size: 38),
             ),
             const SizedBox(height: 24),
             const Text(
               'Por el momento no tenemos matchs',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
             Text(
               'Desliza hacia abajo para recargar',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.85), fontSize: 14),
             ),
             const SizedBox(height: 24),
             const _PullHintHand(),
@@ -422,10 +485,12 @@ class _HomeContentState extends State<HomeContent> {
           .where((u) => u.isNotEmpty)
           .toSet()
           .toList());
-      print('Home: property ' + propertyId.toString() + ' photo urls -> ' + urls.join(', '));
+      print('Home: property $propertyId photo urls -> ${urls.join(', ')}');
       setState(() {
         _photoUrlsByProperty[propertyId] = urls;
-        _cards = _cards.map((c) => c.id == propertyId ? c.copyWith(images: urls) : c).toList();
+        _cards = _cards
+            .map((c) => c.id == propertyId ? c.copyWith(images: urls) : c)
+            .toList();
       });
     }
   }
@@ -467,7 +532,8 @@ class _HomeContentState extends State<HomeContent> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const CreateSearchProfilePage(),
+                            builder: (context) =>
+                                const CreateSearchProfilePage(),
                           ),
                         );
                       },
@@ -513,73 +579,95 @@ class _HomeContentState extends State<HomeContent> {
                               const double rowSpacing = 28.0;
                               const double bottomNavApprox = 96.0;
                               const double topAreaApprox = 140.0;
-                              final double reservedBottom = actionRowHeight + rowSpacing + bottomNavApprox + pad.bottom;
-                              final double available = sz.height - topAreaApprox - reservedBottom;
-                              final double candidate = math.min(sz.height * 0.66, available);
-                              final double dynamicHeight = math.max(candidate, 320.0);
+                              final double reservedBottom = actionRowHeight +
+                                  rowSpacing +
+                                  bottomNavApprox +
+                                  pad.bottom;
+                              final double available =
+                                  sz.height - topAreaApprox - reservedBottom;
+                              final double candidate =
+                                  math.min(sz.height * 0.66, available);
+                              final double dynamicHeight =
+                                  math.max(candidate, 320.0);
                               return SizedBox(
-                              height: dynamicHeight,
-                              child: PropertySwipeDeck(
-                                key: _deckKey,
-                                properties: _cards,
-                                onLike: (p) async {
-                                int? matchId = _matchIdByPropertyId[p.id];
-                                if (matchId == null) {
-                                  final midRes = await _matchingService.getOrCreateMatchIdForProperty(p.id);
-                                  if (midRes['success'] == true && midRes['data'] != null) {
-                                    matchId = midRes['data'] as int;
-                                    _matchIdByPropertyId[p.id] = matchId;
-                                  }
-                                }
-                                if (matchId == null) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('No se pudo obtener match')),
+                                height: dynamicHeight,
+                                child: PropertySwipeDeck(
+                                  key: _deckKey,
+                                  properties: _cards,
+                                  onLike: (p) async {
+                                    int? matchId = _matchIdByPropertyId[p.id];
+                                    if (matchId == null) {
+                                      final midRes = await _matchingService
+                                          .getOrCreateMatchIdForProperty(p.id);
+                                      if (midRes['success'] == true &&
+                                          midRes['data'] != null) {
+                                        matchId = midRes['data'] as int;
+                                        _matchIdByPropertyId[p.id] = matchId;
+                                      }
+                                    }
+                                    if (matchId == null) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  'No se pudo obtener match')),
+                                        );
+                                      }
+                                      return;
+                                    }
+                                    final res = await _matchingService
+                                        .likeMatch(matchId);
+                                    if (res['success'] != true) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(res['error'] ??
+                                                  'Error al hacer like')),
+                                        );
+                                      }
+                                      return;
+                                    }
+                                    _spawnHeartsBurst();
+                                    final userImage = _currentUserImageUrl;
+                                    final propertyImage = (p.images.isNotEmpty)
+                                        ? p.images[0]
+                                        : 'assets/images/empty.jpg';
+                                    MatchModal.show(
+                                      context,
+                                      userImageUrl: userImage,
+                                      propertyImageUrl: propertyImage,
+                                      propertyTitle: p.title,
                                     );
-                                  }
-                                  return;
-                                }
-                                final res = await _matchingService.likeMatch(matchId);
-                                if (res['success'] != true) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
-                                    );
-                                  }
-                                  return;
-                                }
-                                _spawnHeartsBurst();
-                                final userImage = _currentUserImageUrl;
-                                final propertyImage = (p.images.isNotEmpty)
-                                    ? p.images[0]
-                                    : 'assets/images/empty.jpg';
-                                MatchModal.show(
-                                  context,
-                                  userImageUrl: userImage,
-                                  propertyImageUrl: propertyImage,
-                                  propertyTitle: p.title,
-                                );
-                              },
-                              onReject: (p) async {
-                                int? matchId = _matchIdByPropertyId[p.id];
-                                if (matchId == null) {
-                                  final midRes = await _matchingService.getOrCreateMatchIdForProperty(p.id);
-                                  if (midRes['success'] == true && midRes['data'] != null) {
-                                    matchId = midRes['data'] as int;
-                                    _matchIdByPropertyId[p.id] = matchId;
-                                  }
-                                }
-                                if (matchId != null) {
-                                  final res = await _matchingService.rejectMatch(matchId);
-                                  if (res['success'] != true && mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(res['error'] ?? 'Error al rechazar')),
-                                    );
-                                  }
-                                }
-                              },
-                              onTopChange: (p) => setState(() => _currentTopProperty = p),
-                            ),
+                                  },
+                                  onReject: (p) async {
+                                    int? matchId = _matchIdByPropertyId[p.id];
+                                    if (matchId == null) {
+                                      final midRes = await _matchingService
+                                          .getOrCreateMatchIdForProperty(p.id);
+                                      if (midRes['success'] == true &&
+                                          midRes['data'] != null) {
+                                        matchId = midRes['data'] as int;
+                                        _matchIdByPropertyId[p.id] = matchId;
+                                      }
+                                    }
+                                    if (matchId != null) {
+                                      final res = await _matchingService
+                                          .rejectMatch(matchId);
+                                      if (res['success'] != true && mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(res['error'] ??
+                                                  'Error al rechazar')),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  onTopChange: (p) =>
+                                      setState(() => _currentTopProperty = p),
+                                ),
                               );
                             }),
                           ],
@@ -627,7 +715,8 @@ class _HomeContentState extends State<HomeContent> {
                           _spawnHeartsBurst();
                           messenger.showSnackBar(
                             const SnackBar(
-                              content: Text('¡Like enviado! El propietario será notificado.'),
+                              content: Text(
+                                  '¡Like enviado! El propietario será notificado.'),
                               backgroundColor: AppTheme.secondaryColor,
                               duration: Duration(seconds: 2),
                             ),
@@ -635,7 +724,9 @@ class _HomeContentState extends State<HomeContent> {
                           _deckKey.currentState?.swipeRight();
                         } else {
                           messenger.showSnackBar(
-                            SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                            SnackBar(
+                                content: Text(
+                                    res['error'] ?? 'Error al hacer like')),
                           );
                         }
                       }
@@ -649,10 +740,13 @@ class _HomeContentState extends State<HomeContent> {
                     onTap: () async {
                       final p = _currentTopProperty;
                       if (p != null) {
-                        final res = await _profileService.addFavoriteViaApi(p.id);
+                        final res =
+                            await _profileService.addFavoriteViaApi(p.id);
                         if (res['success'] != true && mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(res['error'] ?? 'Error al agregar favorito')),
+                            SnackBar(
+                                content: Text(res['error'] ??
+                                    'Error al agregar favorito')),
                           );
                         }
                       }
@@ -667,7 +761,8 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  Widget _buildCategoryItem(String imagePath, String label, BuildContext context) {
+  Widget _buildCategoryItem(
+      String imagePath, String label, BuildContext context) {
     return _FloatingCategoryItem(
       imagePath: imagePath,
       label: label,
@@ -714,7 +809,8 @@ class _PullHintHand extends StatefulWidget {
   State<_PullHintHand> createState() => _PullHintHandState();
 }
 
-class _PullHintHandState extends State<_PullHintHand> with SingleTickerProviderStateMixin {
+class _PullHintHandState extends State<_PullHintHand>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<Offset> _offset;
   int _cycles = 0;
@@ -723,8 +819,10 @@ class _PullHintHandState extends State<_PullHintHand> with SingleTickerProviderS
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    _offset = Tween<Offset>(begin: Offset.zero, end: const Offset(0, 0.25)).animate(
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
+    _offset =
+        Tween<Offset>(begin: Offset.zero, end: const Offset(0, 0.25)).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
     _startSequence();
@@ -766,7 +864,8 @@ class _PullHintHandState extends State<_PullHintHand> with SingleTickerProviderS
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.08),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.25), width: 1.2),
+              border:
+                  Border.all(color: Colors.white.withOpacity(0.25), width: 1.2),
             ),
             child: const Icon(Icons.touch_app, color: Colors.white, size: 30),
           ),
@@ -969,7 +1068,8 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                   child: Transform.rotate(
                     angle: rotation,
                     child: GestureDetector(
-                      onHorizontalDragStart: (_) => setState(() => _isDragging = true),
+                      onHorizontalDragStart: (_) =>
+                          setState(() => _isDragging = true),
                       onHorizontalDragUpdate: (details) {
                         setState(() {
                           dragDx += details.delta.dx;
@@ -982,12 +1082,13 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                         final vx = details.velocity.pixelsPerSecond.dx;
                         const velocityThreshold = 700; // px/seg
 
-                        final shouldDismiss =
-                            dragDx.abs() > threshold || vx.abs() > velocityThreshold;
+                        final shouldDismiss = dragDx.abs() > threshold ||
+                            vx.abs() > velocityThreshold;
 
                         if (shouldDismiss) {
                           final directionPositive = (dragDx + vx * 0.001) > 0;
-                          final target = directionPositive ? width * 1.2 : -width * 1.2;
+                          final target =
+                              directionPositive ? width * 1.2 : -width * 1.2;
                           final current = widget.properties[topIndex];
                           if (directionPositive) {
                             widget.onLike?.call(current);
@@ -1011,26 +1112,28 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                         ),
                         isDragging: _isDragging,
                         dragDx: dragDx,
-                        onOpenImage: (index) => _openFullScreen(property.images, index),
+                        onOpenImage: (index) =>
+                            _openFullScreen(property.images, index),
                         outerTopPadding: 0.0,
                         overlayBottomSpace: 0.0,
                       ),
                     ),
                   ),
                 )
-            : SwipePropertyCard(
-                images: property.images,
-                title: property.title,
-                priceLabel: property.priceLabel,
-                tags: property.tags,
-                distanceKm: property.distanceKm,
-                likeProgress: 0.0,
-                isDragging: false,
-                dragDx: 0.0,
-                onOpenImage: (index) => _openFullScreen(property.images, index),
-                outerTopPadding: 0.0,
-                overlayBottomSpace: 0.0,
-              ),
+              : SwipePropertyCard(
+                  images: property.images,
+                  title: property.title,
+                  priceLabel: property.priceLabel,
+                  tags: property.tags,
+                  distanceKm: property.distanceKm,
+                  likeProgress: 0.0,
+                  isDragging: false,
+                  dragDx: 0.0,
+                  onOpenImage: (index) =>
+                      _openFullScreen(property.images, index),
+                  outerTopPadding: 0.0,
+                  overlayBottomSpace: 0.0,
+                ),
         ),
       );
       cards.add(card);
@@ -1126,15 +1229,16 @@ class _PropertyCardState extends State<PropertyCard> {
 
   @override
   Widget build(BuildContext context) {
-    const double bottomSpace = 16; // ligeramente por encima del bottom navigation
+    const double bottomSpace =
+        16; // ligeramente por encima del bottom navigation
     return SizedBox.expand(
-      child: AnimatedScale(
-        scale: widget.isDragging ? 0.96 : 1.0,
+        child: AnimatedScale(
+      scale: widget.isDragging ? 0.96 : 1.0,
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          decoration: BoxDecoration(
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           border: const Border.fromBorderSide(
             BorderSide(color: Colors.white, width: 1.6),
@@ -1146,8 +1250,7 @@ class _PropertyCardState extends State<PropertyCard> {
               offset: const Offset(0, 10),
             ),
             BoxShadow(
-              color:
-                  Colors.white.withOpacity(widget.isDragging ? 0.35 : 0.0),
+              color: Colors.white.withOpacity(widget.isDragging ? 0.35 : 0.0),
               blurRadius: 18,
               spreadRadius: 1,
               offset: const Offset(0, 0),
@@ -1162,7 +1265,9 @@ class _PropertyCardState extends State<PropertyCard> {
               // Carrusel
               PageView.builder(
                 controller: _pageController,
-                itemCount: widget.property.images.isNotEmpty ? widget.property.images.length : 1,
+                itemCount: widget.property.images.isNotEmpty
+                    ? widget.property.images.length
+                    : 1,
                 onPageChanged: (i) => setState(() => _page = i),
                 itemBuilder: (_, i) {
                   if (widget.property.images.isEmpty) {
@@ -1189,7 +1294,8 @@ class _PropertyCardState extends State<PropertyCard> {
                                   child: const CircularProgressIndicator(),
                                 );
                               },
-                              errorBuilder: (context, error, stack) => _noImagePlaceholder(),
+                              errorBuilder: (context, error, stack) =>
+                                  _noImagePlaceholder(),
                             ),
                           ),
                         ),
@@ -1207,7 +1313,9 @@ class _PropertyCardState extends State<PropertyCard> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
-                      widget.property.images.isNotEmpty ? widget.property.images.length : 1, (i) {
+                      widget.property.images.isNotEmpty
+                          ? widget.property.images.length
+                          : 1, (i) {
                     final active = i == _page;
                     return AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -1264,7 +1372,8 @@ class _PropertyCardState extends State<PropertyCard> {
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
                     child: Container(
-                      padding: EdgeInsets.fromLTRB(20, 16, 20, bottomSpace),
+                      padding:
+                          const EdgeInsets.fromLTRB(20, 16, 20, bottomSpace),
                       decoration: BoxDecoration(
                         // Usar el gradiente de cards para que el fondo plomito
                         // coincida con el que se percibe detrás del bottom navigation
@@ -1343,7 +1452,8 @@ class _PropertyCardState extends State<PropertyCard> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.secondaryColor.withValues(alpha: 0.35),
+                          color:
+                              AppTheme.secondaryColor.withValues(alpha: 0.35),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -1357,8 +1467,7 @@ class _PropertyCardState extends State<PropertyCard> {
           ),
         ),
       ),
-      )
-    );
+    ));
   }
 
   void _openFullScreen(int initialIndex) {
@@ -1450,7 +1559,6 @@ class _FloatingCategoryItemState extends State<_FloatingCategoryItem>
                     child: Container(
                       width: 60,
                       height: 60,
-
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(30),
@@ -1474,7 +1582,8 @@ class _FloatingCategoryItemState extends State<_FloatingCategoryItem>
                               height: 60,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
-                                print('Error cargando imagen: ${widget.imagePath}');
+                                print(
+                                    'Error cargando imagen: ${widget.imagePath}');
                                 print('Detalle del error: $error');
                                 return const Icon(
                                   Icons.error_outline,
@@ -1555,7 +1664,8 @@ class _HeartsBurstOverlayState extends State<_HeartsBurstOverlay>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final startX = size.width / 2; // alineado al centro, donde están los botones
+    final startX =
+        size.width / 2; // alineado al centro, donde están los botones
     final startY = size.height - 140; // justo encima de la fila de acciones
 
     return IgnorePointer(
@@ -1569,7 +1679,8 @@ class _HeartsBurstOverlayState extends State<_HeartsBurstOverlay>
                 final t = (tGlobal - p.startDelay).clamp(0.0, 1.0);
                 // Movimiento radial con drift lateral
                 final vx = math.cos(p.angle) * p.speed;
-                final vy = math.sin(p.angle) * p.speed + 220; // empuje superior adicional
+                final vy = math.sin(p.angle) * p.speed +
+                    220; // empuje superior adicional
                 final x = startX + (vx * t) + (p.driftX * t);
                 final y = startY - (vy * t);
                 final opacity = (1.0 - t).clamp(0.0, 1.0);
@@ -1720,4 +1831,3 @@ class _BigXOverlayState extends State<_BigXOverlay>
     );
   }
 }
-

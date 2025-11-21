@@ -70,6 +70,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   final AuthService _authService = AuthService();
   bool _isLoading = true;
   bool _isAuthenticated = false;
+  bool _isCheckingAuth = false; // Flag to prevent repeated auth checks
 
   @override
   void initState() {
@@ -78,17 +79,27 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _checkAuthStatus() async {
+    if (_isCheckingAuth) return; // Prevent repeated calls
+    
+    _isCheckingAuth = true;
     try {
       final isAuthenticated = await _authService.isAuthenticated();
-      setState(() {
-        _isAuthenticated = isAuthenticated;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isAuthenticated = isAuthenticated;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isAuthenticated = false;
-        _isLoading = false;
-      });
+      print('AuthWrapper: Error checking auth status: $e');
+      if (mounted) {
+        setState(() {
+          _isAuthenticated = false;
+          _isLoading = false;
+        });
+      }
+    } finally {
+      _isCheckingAuth = false;
     }
   }
 

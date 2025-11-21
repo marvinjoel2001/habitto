@@ -3,54 +3,203 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import '../theme/app_theme.dart';
 
-class CustomBottomNavigation extends StatelessWidget {
+import 'floating_action_menu.dart';
+
+class CustomBottomNavigation extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
   final bool showAddButton;
+  final bool isOwnerOrAgent;
+  final VoidCallback onHomeTap;
+  final VoidCallback onMoreTap;
 
   const CustomBottomNavigation({
     super.key,
     required this.currentIndex,
     required this.onTap,
     this.showAddButton = false,
+    required this.isOwnerOrAgent,
+    required this.onHomeTap,
+    required this.onMoreTap,
   });
+
+  @override
+  State<CustomBottomNavigation> createState() => _CustomBottomNavigationState();
+}
+
+class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
+  bool _isFloatingMenuVisible = false;
+
+  void _toggleFloatingMenu() {
+    setState(() {
+      _isFloatingMenuVisible = !_isFloatingMenuVisible;
+    });
+  }
+
+  void _closeFloatingMenu() {
+    if (_isFloatingMenuVisible) {
+      setState(() {
+        _isFloatingMenuVisible = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(40),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(
-            height: 84,
-            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 0),
-            decoration: BoxDecoration(
-              gradient: AppTheme.getCardGradient(opacity: 0.28),
-              borderRadius: BorderRadius.circular(40),
-              border: Border.all(
-                color: AppTheme.darkGrayBase.withValues(alpha: 0.30),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  spreadRadius: 0,
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+      child: Stack(
+        children: [
+          // Main navigation container
+          ClipRRect(
+            borderRadius: BorderRadius.circular(40),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+              child: Container(
+                height: 84,
+                margin: const EdgeInsets.only(left: 16, right: 16, bottom: 0),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.getCardGradient(opacity: 0.28),
+                  borderRadius: BorderRadius.circular(40),
+                  border: Border.all(
+                    color: AppTheme.darkGrayBase.withValues(alpha: 0.30),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      spreadRadius: 0,
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final totalWidth = constraints.maxWidth;
+                    final itemWidth =
+                        totalWidth / 5; // Divide equally among 5 items
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: itemWidth,
+                          child: Center(
+                            child: _buildNavItem(
+                                context,
+                                0,
+                                Icons.favorite_outline,
+                                Icons.favorite,
+                                'Likes'),
+                          ),
+                        ),
+                        SizedBox(
+                          width: itemWidth,
+                          child: Center(
+                            child: _buildNavItem(context, 1,
+                                Icons.search_outlined, Icons.search, 'Buscar'),
+                          ),
+                        ),
+                        SizedBox(
+                          width: itemWidth,
+                          child: Center(
+                            child: widget.isOwnerOrAgent
+                                ? _buildCenterButtonForOwners(context)
+                                : _buildNavItem(context, 2, Icons.credit_card,
+                                    Icons.credit_card, '',
+                                    color: AppTheme.primaryColor),
+                          ),
+                        ),
+                        SizedBox(
+                          width: itemWidth,
+                          child: Center(
+                            child: _buildNavItem(
+                                context,
+                                3,
+                                Icons.chat_bubble_outline,
+                                Icons.chat_bubble,
+                                'Chat'),
+                          ),
+                        ),
+                        SizedBox(
+                          width: itemWidth,
+                          child: Center(
+                            child: _buildNavItem(context, 4,
+                                Icons.person_outline, Icons.person, 'Perfil'),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildNavItem(context, 0, Icons.style_outlined, Icons.style, 'Home'),
-                _buildNavItem(context, 1, Icons.search_outlined, Icons.search, 'Buscar'),
-                if (showAddButton) _buildAddButton(context),
-                _buildNavItem(context, 2, Icons.chat_bubble_outline, Icons.chat_bubble, 'Chat'),
-                _buildNavItem(context, 3, Icons.person_outline, Icons.person, 'Perfil'),
-              ],
+          ),
+          // Full screen overlay for owners/agents when menu is visible
+          if (widget.isOwnerOrAgent && _isFloatingMenuVisible)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _closeFloatingMenu,
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  child: FloatingActionMenu(
+                    isVisible: _isFloatingMenuVisible,
+                    onHomeTap: () {
+                      _closeFloatingMenu();
+                      widget.onHomeTap();
+                    },
+                    onMoreTap: () {
+                      _closeFloatingMenu();
+                      widget.onMoreTap();
+                    },
+                    onClose: _closeFloatingMenu,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCenterButtonForOwners(BuildContext context) {
+    final textScaleFactor = MediaQuery.textScaleFactorOf(context);
+
+    return Semantics(
+      button: true,
+      label: _isFloatingMenuVisible ? 'Cerrar menú' : 'Abrir menú',
+      child: InkWell(
+        onTap: () {
+          // First call the onTap callback to let the parent know
+          widget.onTap(2);
+          // Then toggle the floating menu
+          _toggleFloatingMenu();
+        },
+        borderRadius: BorderRadius.circular(24),
+        splashColor: Colors.white.withValues(alpha: 0.3),
+        highlightColor: Colors.white.withValues(alpha: 0.2),
+        child: Container(
+          width: 48 * textScaleFactor.clamp(0.9, 1.1),
+          height: 48 * textScaleFactor.clamp(0.9, 1.1),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                spreadRadius: 0,
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              _isFloatingMenuVisible ? Icons.close : Icons.home,
+              color: Colors.white,
+              size: 24 * textScaleFactor.clamp(0.9, 1.1),
             ),
           ),
         ),
@@ -84,57 +233,85 @@ class CustomBottomNavigation extends StatelessWidget {
     int index,
     IconData inactiveIcon,
     IconData activeIcon,
-    String label,
-  ) {
-    final isSelected = currentIndex == index;
+    String label, {
+    Color? color,
+  }) {
+    final isSelected = widget.currentIndex == index;
+    final itemColor = color ?? Theme.of(context).colorScheme.primary;
+    final textScaleFactor = MediaQuery.textScaleFactorOf(context);
 
     if (isSelected) {
-      return GestureDetector(
-        onTap: () => onTap(index),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.50),
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(activeIcon, color: Colors.white, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+      return Semantics(
+        button: true,
+        label: '$label activo',
+        selected: true,
+        child: InkWell(
+          onTap: () => widget.onTap(index),
+          borderRadius: BorderRadius.circular(25),
+          splashColor: itemColor.withValues(alpha: 0.7),
+          highlightColor: itemColor.withValues(alpha: 0.6),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: itemColor.withValues(alpha: 0.50),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: itemColor.withValues(alpha: 0.5),
+                width: 1,
               ),
-            ],
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(activeIcon, color: Colors.white, size: 18),
+                  if (label.isNotEmpty) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12 * textScaleFactor.clamp(0.8, 1.2),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       );
     }
 
-    return GestureDetector(
-      onTap: () => onTap(index),
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-        ).copyWith(
-          color: Colors.white.withValues(alpha: 0.18),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.25),
-            width: 1,
+    return Semantics(
+      button: true,
+      label: label,
+      child: InkWell(
+        onTap: () => widget.onTap(index),
+        borderRadius: BorderRadius.circular(28),
+        splashColor: Colors.white.withValues(alpha: 0.2),
+        highlightColor: Colors.white.withValues(alpha: 0.1),
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withValues(alpha: 0.18),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 1,
+            ),
+          ),
+          child: Center(
+            child: Icon(inactiveIcon, color: Colors.white, size: 22),
           ),
         ),
-        child: Icon(inactiveIcon, color: Colors.white, size: 24),
       ),
     );
   }

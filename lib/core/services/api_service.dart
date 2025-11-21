@@ -20,6 +20,8 @@ class ApiService {
   final TokenStorage _tokenStorage = TokenStorage();
   bool _isRefreshing = false;
   Future<Map<String, dynamic>>? _ongoingRefresh;
+  int _refreshAttempts = 0;
+  static const int _maxRefreshAttempts = 3;
 
   void _initializeDio() {
     final resolvedBaseUrl = AppConfig.httpBaseUri().toString();
@@ -61,6 +63,20 @@ class ApiService {
         final isRefreshPath = error.requestOptions.path == AppConfig.refreshTokenEndpoint ||
             error.requestOptions.path == AppConfig.tokenRefreshEndpoint;
         if (error.response?.statusCode == 401 && !isRefreshPath) {
+          // Limit refresh attempts to prevent infinite loops
+          if (_refreshAttempts >= _maxRefreshAttempts) {
+            print('ApiService: Maximum refresh attempts reached, clearing tokens');
+            await _tokenStorage.clearTokens();
+            _refreshAttempts = 0;
+            handler.next(DioException(
+              requestOptions: error.requestOptions,
+              response: error.response,
+              type: DioExceptionType.badResponse,
+              error: 'Máximo de intentos de refresco alcanzado. Por favor, inicia sesión nuevamente.',
+            ));
+            return;
+          }
+
           if (_isRefreshing && _ongoingRefresh != null) {
             final refreshResult = await _ongoingRefresh!;
             if (refreshResult['success']) {
@@ -75,6 +91,7 @@ class ApiService {
                 return;
               }
             } else {
+              _refreshAttempts++;
               await _tokenStorage.clearTokens();
               handler.next(DioException(
                 requestOptions: error.requestOptions,
@@ -96,6 +113,7 @@ class ApiService {
             // Reintentar la petición original con el nuevo token
             final newToken = refreshResult['access_token'];
             error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+            _refreshAttempts = 0; // Reset counter on successful refresh
 
             try {
               final response = await _dio.fetch(error.requestOptions);
@@ -107,6 +125,7 @@ class ApiService {
             }
           } else {
             // No se pudo refrescar, limpiar tokens
+            _refreshAttempts++;
             await _tokenStorage.clearTokens();
             handler.next(DioException(
               requestOptions: error.requestOptions,
@@ -235,11 +254,14 @@ class ApiService {
       final refreshToken = await _tokenStorage.getRefreshToken();
 
       if (refreshToken == null || refreshToken.isEmpty) {
+        print('ApiService: No refresh token available');
         return {
           'success': false,
           'error': 'No refresh token available',
         };
       }
+
+      print('ApiService: Attempting to refresh token...');
 
       // Preparar payload compatible
       final payload = {
