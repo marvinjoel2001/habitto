@@ -6,6 +6,8 @@ class FloatingActionMenu extends StatefulWidget {
   final VoidCallback onHomeTap;
   final VoidCallback onMoreTap;
   final VoidCallback onClose;
+  final VoidCallback? onSocialAreasTap;
+  final VoidCallback? onAlertHistoryTap;
 
   const FloatingActionMenu({
     super.key,
@@ -13,6 +15,8 @@ class FloatingActionMenu extends StatefulWidget {
     required this.onHomeTap,
     required this.onMoreTap,
     required this.onClose,
+    this.onSocialAreasTap,
+    this.onAlertHistoryTap,
   });
 
   @override
@@ -70,18 +74,24 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
       type: MaterialType.transparency,
       child: Stack(
         children: [
-          // Backdrop overlay with proper z-index
+          // Fullscreen overlay with 50% opacity
           GestureDetector(
             onTap: widget.onClose,
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.3),
-              width: double.infinity,
-              height: double.infinity,
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Container(
+                  color: Colors.black
+                      .withValues(alpha: _fadeAnimation.value * 0.5),
+                  width: double.infinity,
+                  height: double.infinity,
+                );
+              },
             ),
           ),
-          // Menu container with proper positioning
+          // Main content area with centered action buttons
           Positioned(
-            bottom: 100,
+            bottom: 120,
             left: 0,
             right: 0,
             child: AnimatedBuilder(
@@ -93,43 +103,43 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
                   child: Opacity(
                     opacity: _fadeAnimation.value,
                     child: Center(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 32),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.getCardGradient(opacity: 0.95),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: AppTheme.darkGrayBase.withValues(alpha: 0.2),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              spreadRadius: 0,
-                              blurRadius: 25,
-                              offset: const Offset(0, 15),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildMenuItem(
-                              icon: Icons.home,
-                              label: 'Home',
-                              onTap: widget.onHomeTap,
-                              color: AppTheme.primaryColor,
-                            ),
-                            const SizedBox(width: 16),
-                            _buildMenuItem(
-                              icon: Icons.favorite,
-                              label: 'Match',
-                              onTap: widget.onMoreTap,
-                              color: Colors.pinkAccent,
-                            ),
-                          ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final buttonSize =
+                                constraints.maxWidth < 360 ? 80.0 : 96.0;
+                            final iconSize =
+                                constraints.maxWidth < 360 ? 32.0 : 40.0;
+                            final fontSize =
+                                constraints.maxWidth < 360 ? 12.0 : 14.0;
+
+                            return Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 32,
+                              runSpacing: 24,
+                              children: [
+                                _buildActionButton(
+                                  icon: Icons.calendar_today,
+                                  label: 'Áreas sociales',
+                                  color: Colors.green,
+                                  onTap: widget.onSocialAreasTap ?? () {},
+                                  buttonSize: buttonSize,
+                                  iconSize: iconSize,
+                                  fontSize: fontSize,
+                                ),
+                                _buildActionButton(
+                                  icon: Icons.notifications,
+                                  label: 'Historial de alertas',
+                                  color: Colors.red,
+                                  onTap: widget.onAlertHistoryTap ?? () {},
+                                  buttonSize: buttonSize,
+                                  iconSize: iconSize,
+                                  fontSize: fontSize,
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -138,53 +148,111 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
               },
             ),
           ),
+          // Close button at bottom center
+          Positioned(
+            bottom: 40,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: Opacity(
+                      opacity: _fadeAnimation.value,
+                      child: _buildCloseButton(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMenuItem({
+  Widget _buildActionButton({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
     required Color color,
+    required double buttonSize,
+    required double iconSize,
+    required double fontSize,
   }) {
     return Semantics(
       button: true,
       label: label,
-      child: InkWell(
+      child: GestureDetector(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        splashColor: color.withValues(alpha: 0.2),
-        highlightColor: color.withValues(alpha: 0.1),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: buttonSize,
+              height: buttonSize,
+              decoration: BoxDecoration(
                 color: color,
-                size: 28,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.3),
+                    spreadRadius: 0,
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: iconSize,
               ),
-            ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+                fontSize: fontSize,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCloseButton() {
+    return GestureDetector(
+      onTap: widget.onClose,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
+              spreadRadius: 0,
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Text(
+            '✕',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),

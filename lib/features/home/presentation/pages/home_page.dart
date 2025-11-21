@@ -35,6 +35,13 @@ class _HomePageState extends State<HomePage> {
   profile.UserMode _userMode = profile.UserMode.inquilino;
   final ProfileService _profileService = ProfileService();
   bool _isInitializingProfile = false; // Flag to prevent repeated calls
+  bool _showTenantFloatingMenu =
+      false; // Control tenant floating menu visibility
+
+  // Property deck and current property references for tenant actions
+  final GlobalKey<PropertySwipeDeckState> _deckKey =
+      GlobalKey<PropertySwipeDeckState>();
+  HomePropertyCardData? _currentTopProperty; // Current property being viewed
 
   // Keep track of which tab was the main home before the swap
   int get _homeIndex => 2; // Home is now at the center
@@ -98,10 +105,58 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Tenant floating menu handlers
+  void _toggleTenantFloatingMenu() {
+    setState(() {
+      _showTenantFloatingMenu = !_showTenantFloatingMenu;
+    });
+  }
+
+  void _closeTenantFloatingMenu() {
+    if (_showTenantFloatingMenu) {
+      setState(() {
+        _showTenantFloatingMenu = false;
+      });
+    }
+  }
+
+  // Tenant action handlers
+  void _handleSwipeLeft() {
+    _closeTenantFloatingMenu();
+    // This would typically trigger a reject action on the current property
+    if (_deckKey.currentState != null) {
+      _deckKey.currentState?.swipeLeft();
+    }
+  }
+
+  void _handleSwipeRight() {
+    _closeTenantFloatingMenu();
+    // This would typically trigger a like action on the current property
+    if (_deckKey.currentState != null) {
+      _deckKey.currentState?.swipeRight();
+    }
+  }
+
+  void _handleGoBack() {
+    _closeTenantFloatingMenu();
+    // This would typically go back to the previous property
+    if (_deckKey.currentState != null) {
+      _deckKey.currentState?.goBack();
+    }
+  }
+
+  void _handleAddFavorite() {
+    _closeTenantFloatingMenu();
+    // This would typically add the current property to favorites
+    if (_currentTopProperty != null) {
+      _profileService.addFavoriteViaApi(_currentTopProperty!.id);
+    }
+  }
+
   List<Widget> get _pages => [
         const LikesPage(), // Index 0 - Likes
         const search.SearchPage(), // Index 1 - Buscar
-        const HomeContent(), // Index 2 - Home (center position)
+        const SizedBox.shrink(), // Index 2 - Home (handled separately with key)
         const ChatPage(), // Index 3 - Chat
         profile.ProfilePage(
           onModeChanged: _onUserModeChanged,
@@ -119,17 +174,31 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         extendBody: false,
-        body: _pages[_currentIndex],
+        body: _currentIndex == 2
+            ? HomeContent(key: _deckKey)
+            : _pages[_currentIndex],
         bottomNavigationBar: CustomBottomNavigation(
           currentIndex: _currentIndex,
           showAddButton: _showAddButton,
           isOwnerOrAgent: _isOwnerOrAgent,
+          showTenantFloatingMenu: _showTenantFloatingMenu,
+          onTenantMenuClose: _closeTenantFloatingMenu,
+          onSwipeLeft: _handleSwipeLeft,
+          onSwipeRight: _handleSwipeRight,
+          onGoBack: _handleGoBack,
+          onAddFavorite: _handleAddFavorite,
           onTap: (index) {
-            // For direct users (tenants), always navigate normally
+            // For direct users (tenants)
             if (_isDirectUser) {
-              setState(() {
-                _currentIndex = index;
-              });
+              if (index == 2) {
+                // Center button shows floating menu for tenants
+                _toggleTenantFloatingMenu();
+              } else {
+                setState(() {
+                  _currentIndex = index;
+                  _closeTenantFloatingMenu(); // Close menu when navigating
+                });
+              }
             } else {
               // For owners/agents, only navigate for non-center buttons
               if (index != 2) {

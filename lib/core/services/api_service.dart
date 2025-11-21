@@ -40,39 +40,54 @@ class ApiService {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         print('ApiService: Preparando petición a ${options.path}');
-        // Evitar añadir Authorization en las rutas de refresh para prevenir 401 y bucles
         final isRefreshPath = options.path == AppConfig.refreshTokenEndpoint ||
             options.path == AppConfig.tokenRefreshEndpoint;
-        if (!isRefreshPath) {
+        final pathLower = options.path.toLowerCase();
+        final isAuthPath =
+            pathLower.contains('login') || pathLower.contains('register');
+        if (!isRefreshPath && !isAuthPath) {
           final token = await _tokenStorage.getAccessToken();
-          print('ApiService: Token obtenido: ${token != null ? "Token presente (${token.substring(0, 20)}...)" : "No hay token"}');
+          print(
+              'ApiService: Token obtenido: ${token != null ? "Token presente (${token.substring(0, 20)}...)" : "No hay token"}');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
             print('ApiService: Header Authorization añadido');
           } else {
             print('ApiService: ADVERTENCIA - No se encontró token de acceso');
           }
-        } else {
-          print('ApiService: Petición de refresh detectada, omitiendo Authorization');
+        } else if (isRefreshPath) {
+          print(
+              'ApiService: Petición de refresh detectada, omitiendo Authorization');
+        } else if (isAuthPath) {
+          print(
+              'ApiService: Petición de autenticación detectada, omitiendo Authorization');
         }
         handler.next(options);
       },
       onError: (error, handler) async {
         // Manejar error 401 (Unauthorized) con refresh automático
         // Evitar bucle: si la petición que falló ES el refresh, no intentar refrescar de nuevo
-        final isRefreshPath = error.requestOptions.path == AppConfig.refreshTokenEndpoint ||
-            error.requestOptions.path == AppConfig.tokenRefreshEndpoint;
-        if (error.response?.statusCode == 401 && !isRefreshPath) {
+        final isRefreshPath =
+            error.requestOptions.path == AppConfig.refreshTokenEndpoint ||
+                error.requestOptions.path == AppConfig.tokenRefreshEndpoint;
+        final pathLower = error.requestOptions.path.toLowerCase();
+        final isAuthPath =
+            pathLower.contains('login') || pathLower.contains('register');
+        if (error.response?.statusCode == 401 &&
+            !isRefreshPath &&
+            !isAuthPath) {
           // Limit refresh attempts to prevent infinite loops
           if (_refreshAttempts >= _maxRefreshAttempts) {
-            print('ApiService: Maximum refresh attempts reached, clearing tokens');
+            print(
+                'ApiService: Maximum refresh attempts reached, clearing tokens');
             await _tokenStorage.clearTokens();
             _refreshAttempts = 0;
             handler.next(DioException(
               requestOptions: error.requestOptions,
               response: error.response,
               type: DioExceptionType.badResponse,
-              error: 'Máximo de intentos de refresco alcanzado. Por favor, inicia sesión nuevamente.',
+              error:
+                  'Máximo de intentos de refresco alcanzado. Por favor, inicia sesión nuevamente.',
             ));
             return;
           }
@@ -81,7 +96,8 @@ class ApiService {
             final refreshResult = await _ongoingRefresh!;
             if (refreshResult['success']) {
               final newToken = refreshResult['access_token'];
-              error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+              error.requestOptions.headers['Authorization'] =
+                  'Bearer $newToken';
               try {
                 final response = await _dio.fetch(error.requestOptions);
                 handler.resolve(response);
@@ -97,7 +113,8 @@ class ApiService {
                 requestOptions: error.requestOptions,
                 response: error.response,
                 type: DioExceptionType.badResponse,
-                error: 'Token expirado y no se pudo refrescar. Por favor, inicia sesión nuevamente.',
+                error:
+                    'Token expirado y no se pudo refrescar. Por favor, inicia sesión nuevamente.',
               ));
               return;
             }
@@ -131,7 +148,8 @@ class ApiService {
               requestOptions: error.requestOptions,
               response: error.response,
               type: DioExceptionType.badResponse,
-              error: 'Token expirado y no se pudo refrescar. Por favor, inicia sesión nuevamente.',
+              error:
+                  'Token expirado y no se pudo refrescar. Por favor, inicia sesión nuevamente.',
             ));
             return;
           }
@@ -142,9 +160,11 @@ class ApiService {
   }
 
   /// Método GET genérico
-  Future<Map<String, dynamic>> get(String endpoint, {Map<String, dynamic>? queryParameters}) async {
+  Future<Map<String, dynamic>> get(String endpoint,
+      {Map<String, dynamic>? queryParameters}) async {
     try {
-      final response = await _dio.get(endpoint, queryParameters: queryParameters);
+      final response =
+          await _dio.get(endpoint, queryParameters: queryParameters);
       return _handleSuccessResponse(response);
     } on DioException catch (e) {
       return _handleErrorResponse(e);
@@ -154,7 +174,8 @@ class ApiService {
   }
 
   /// Método POST genérico
-  Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> post(
+      String endpoint, Map<String, dynamic> data) async {
     try {
       final response = await _dio.post(endpoint, data: data);
       return _handleSuccessResponse(response);
@@ -166,7 +187,8 @@ class ApiService {
   }
 
   /// Método PUT genérico
-  Future<Map<String, dynamic>> put(String endpoint, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> put(
+      String endpoint, Map<String, dynamic> data) async {
     try {
       final response = await _dio.put(endpoint, data: data);
       return _handleSuccessResponse(response);
@@ -178,7 +200,8 @@ class ApiService {
   }
 
   /// Método PATCH genérico
-  Future<Map<String, dynamic>> patch(String endpoint, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> patch(
+      String endpoint, Map<String, dynamic> data) async {
     try {
       final response = await _dio.patch(endpoint, data: data);
       return _handleSuccessResponse(response);
@@ -359,9 +382,9 @@ class ApiService {
     if (responseData != null) {
       if (responseData is Map<String, dynamic>) {
         errorMessage = responseData['message'] ??
-                      responseData['detail'] ??
-                      responseData['error'] ??
-                      errorMessage;
+            responseData['detail'] ??
+            responseData['error'] ??
+            errorMessage;
         errors = responseData['errors'] ?? {};
       } else if (responseData is String) {
         errorMessage = responseData;
@@ -410,5 +433,136 @@ class ApiService {
   /// Limpia el token de autenticación (para logout)
   Future<void> clearAuthToken() async {
     await _tokenStorage.clearTokens();
+  }
+
+  /// Reconfigura Dio e interceptores; útil tras hot reload
+  void reinitialize() {
+    final resolvedBaseUrl = AppConfig.httpBaseUri().toString();
+    _dio.options
+      ..baseUrl = resolvedBaseUrl
+      ..connectTimeout = const Duration(seconds: 30)
+      ..receiveTimeout = const Duration(seconds: 30)
+      ..sendTimeout = const Duration(seconds: 30);
+    _dio.options.headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    _dio.interceptors.clear();
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        print('ApiService: Preparando petición a ${options.path}');
+        final isRefreshPath = options.path == AppConfig.refreshTokenEndpoint ||
+            options.path == AppConfig.tokenRefreshEndpoint;
+        final pathLower = options.path.toLowerCase();
+        final isAuthPath =
+            pathLower.contains('login') || pathLower.contains('register');
+        if (!isRefreshPath && !isAuthPath) {
+          final token = await _tokenStorage.getAccessToken();
+          print(
+              'ApiService: Token obtenido: ${token != null ? "Token presente (${token.substring(0, 20)}...)" : "No hay token"}');
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+            print('ApiService: Header Authorization añadido');
+          } else {
+            print('ApiService: ADVERTENCIA - No se encontró token de acceso');
+          }
+        } else if (isRefreshPath) {
+          print(
+              'ApiService: Petición de refresh detectada, omitiendo Authorization');
+        } else if (isAuthPath) {
+          print(
+              'ApiService: Petición de autenticación detectada, omitiendo Authorization');
+        }
+        handler.next(options);
+      },
+      onError: (error, handler) async {
+        final isRefreshPath =
+            error.requestOptions.path == AppConfig.refreshTokenEndpoint ||
+                error.requestOptions.path == AppConfig.tokenRefreshEndpoint;
+        final pathLower = error.requestOptions.path.toLowerCase();
+        final isAuthPath =
+            pathLower.contains('login') || pathLower.contains('register');
+        if (error.response?.statusCode == 401 &&
+            !isRefreshPath &&
+            !isAuthPath) {
+          if (_refreshAttempts >= _maxRefreshAttempts) {
+            print(
+                'ApiService: Maximum refresh attempts reached, clearing tokens');
+            await _tokenStorage.clearTokens();
+            _refreshAttempts = 0;
+            handler.next(DioException(
+              requestOptions: error.requestOptions,
+              response: error.response,
+              type: DioExceptionType.badResponse,
+              error:
+                  'Máximo de intentos de refresco alcanzado. Por favor, inicia sesión nuevamente.',
+            ));
+            return;
+          }
+
+          if (_isRefreshing && _ongoingRefresh != null) {
+            final refreshResult = await _ongoingRefresh!;
+            if (refreshResult['success']) {
+              final newToken = refreshResult['access_token'];
+              error.requestOptions.headers['Authorization'] =
+                  'Bearer $newToken';
+              try {
+                final response = await _dio.fetch(error.requestOptions);
+                handler.resolve(response);
+                return;
+              } catch (e) {
+                handler.next(error);
+                return;
+              }
+            } else {
+              _refreshAttempts++;
+              await _tokenStorage.clearTokens();
+              handler.next(DioException(
+                requestOptions: error.requestOptions,
+                response: error.response,
+                type: DioExceptionType.badResponse,
+                error:
+                    'Token expirado y no se pudo refrescar. Por favor, inicia sesión nuevamente.',
+              ));
+              return;
+            }
+          }
+
+          _isRefreshing = true;
+          _ongoingRefresh = _refreshToken();
+          final refreshResult = await _ongoingRefresh!;
+          _isRefreshing = false;
+          _ongoingRefresh = null;
+
+          if (refreshResult['success']) {
+            final newToken = refreshResult['access_token'];
+            error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+            _refreshAttempts = 0;
+
+            try {
+              final response = await _dio.fetch(error.requestOptions);
+              handler.resolve(response);
+              return;
+            } catch (e) {
+              handler.next(error);
+              return;
+            }
+          } else {
+            _refreshAttempts++;
+            await _tokenStorage.clearTokens();
+            handler.next(DioException(
+              requestOptions: error.requestOptions,
+              response: error.response,
+              type: DioExceptionType.badResponse,
+              error:
+                  'Token expirado y no se pudo refrescar. Por favor, inicia sesión nuevamente.',
+            ));
+            return;
+          }
+        }
+        handler.next(error);
+      },
+    ));
   }
 }

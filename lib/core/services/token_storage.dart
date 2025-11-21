@@ -82,7 +82,7 @@ class TokenStorage {
       }
       return expSec > (nowSec + skew);
     } catch (_) {
-      return true;
+      return false;
     }
   }
 

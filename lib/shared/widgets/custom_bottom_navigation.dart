@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import '../theme/app_theme.dart';
 
 import 'floating_action_menu.dart';
+import 'tenant_floating_menu.dart';
 
 class CustomBottomNavigation extends StatefulWidget {
   final int currentIndex;
@@ -12,6 +13,12 @@ class CustomBottomNavigation extends StatefulWidget {
   final bool isOwnerOrAgent;
   final VoidCallback onHomeTap;
   final VoidCallback onMoreTap;
+  final bool showTenantFloatingMenu;
+  final VoidCallback onTenantMenuClose;
+  final VoidCallback onSwipeLeft;
+  final VoidCallback onSwipeRight;
+  final VoidCallback onGoBack;
+  final VoidCallback onAddFavorite;
 
   const CustomBottomNavigation({
     super.key,
@@ -21,6 +28,12 @@ class CustomBottomNavigation extends StatefulWidget {
     required this.isOwnerOrAgent,
     required this.onHomeTap,
     required this.onMoreTap,
+    this.showTenantFloatingMenu = false,
+    required this.onTenantMenuClose,
+    required this.onSwipeLeft,
+    required this.onSwipeRight,
+    required this.onGoBack,
+    required this.onAddFavorite,
   });
 
   @override
@@ -46,121 +59,163 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Stack(
-        children: [
-          // Main navigation container
-          ClipRRect(
-            borderRadius: BorderRadius.circular(40),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-              child: Container(
-                height: 84,
-                margin: const EdgeInsets.only(left: 16, right: 16, bottom: 0),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.getCardGradient(opacity: 0.28),
-                  borderRadius: BorderRadius.circular(40),
-                  border: Border.all(
-                    color: AppTheme.darkGrayBase.withValues(alpha: 0.30),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      spreadRadius: 0,
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final totalWidth = constraints.maxWidth;
-                    final itemWidth =
-                        totalWidth / 5; // Divide equally among 5 items
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: itemWidth,
-                          child: Center(
-                            child: _buildNavItem(
-                                context,
-                                0,
-                                Icons.favorite_outline,
-                                Icons.favorite,
-                                'Likes'),
-                          ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: Center(
-                            child: _buildNavItem(context, 1,
-                                Icons.search_outlined, Icons.search, 'Buscar'),
-                          ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: Center(
-                            child: widget.isOwnerOrAgent
-                                ? _buildCenterButtonForOwners(context)
-                                : _buildNavItem(context, 2, Icons.credit_card,
-                                    Icons.credit_card, '',
-                                    color: AppTheme.primaryColor),
-                          ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: Center(
-                            child: _buildNavItem(
-                                context,
-                                3,
-                                Icons.chat_bubble_outline,
-                                Icons.chat_bubble,
-                                'Chat'),
-                          ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: Center(
-                            child: _buildNavItem(context, 4,
-                                Icons.person_outline, Icons.person, 'Perfil'),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
+    return Stack(
+      children: [
+        // Full screen overlay for owners/agents when menu is visible - positioned outside SafeArea
+        if (widget.isOwnerOrAgent && _isFloatingMenuVisible)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: FloatingActionMenu(
+              isVisible: _isFloatingMenuVisible,
+              onHomeTap: () {
+                _closeFloatingMenu();
+                widget.onHomeTap();
+              },
+              onMoreTap: () {
+                _closeFloatingMenu();
+                widget.onMoreTap();
+              },
+              onClose: _closeFloatingMenu,
+              onSocialAreasTap: () {
+                _closeFloatingMenu();
+                // Navegar a áreas sociales
+                Navigator.pushNamed(context, '/social-areas');
+              },
+              onAlertHistoryTap: () {
+                _closeFloatingMenu();
+                // Navegar a historial de alertas
+                Navigator.pushNamed(context, '/alert-history');
+              },
             ),
           ),
-          // Full screen overlay for owners/agents when menu is visible
-          if (widget.isOwnerOrAgent && _isFloatingMenuVisible)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: _closeFloatingMenu,
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  child: FloatingActionMenu(
-                    isVisible: _isFloatingMenuVisible,
-                    onHomeTap: () {
-                      _closeFloatingMenu();
-                      widget.onHomeTap();
-                    },
-                    onMoreTap: () {
-                      _closeFloatingMenu();
-                      widget.onMoreTap();
-                    },
-                    onClose: _closeFloatingMenu,
+        // Tenant floating menu overlay - also positioned outside SafeArea
+        if (!widget.isOwnerOrAgent && widget.showTenantFloatingMenu)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: TenantFloatingMenu(
+              isVisible: widget.showTenantFloatingMenu,
+              onClose: widget.onTenantMenuClose,
+              onSwipeLeft: widget.onSwipeLeft,
+              onSwipeRight: widget.onSwipeRight,
+              onGoBack: widget.onGoBack,
+              onAddFavorite: widget.onAddFavorite,
+            ),
+          ),
+        // Main navigation container with SafeArea
+        SafeArea(
+          top: false,
+          child: Stack(
+            children: [
+              // Main navigation container
+              ClipRRect(
+                borderRadius: BorderRadius.circular(40),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                  child: Container(
+                    height: 84,
+                    margin:
+                        const EdgeInsets.only(left: 16, right: 16, bottom: 0),
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.getCardGradient(opacity: 0.28),
+                      borderRadius: BorderRadius.circular(40),
+                      border: Border.all(
+                        color: AppTheme.darkGrayBase.withValues(alpha: 0.30),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          spreadRadius: 0,
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final totalWidth = constraints.maxWidth;
+                        final itemWidth =
+                            totalWidth / 5; // Divide equally among 5 items
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: itemWidth,
+                              child: Center(
+                                child: _buildNavItem(
+                                    context,
+                                    0,
+                                    Icons.favorite_outline,
+                                    Icons.favorite,
+                                    'Likes'),
+                              ),
+                            ),
+                            SizedBox(
+                              width: itemWidth,
+                              child: Center(
+                                child: _buildNavItem(
+                                    context,
+                                    1,
+                                    Icons.search_outlined,
+                                    Icons.search,
+                                    'Buscar'),
+                              ),
+                            ),
+                            SizedBox(
+                              width: itemWidth,
+                              child: Center(
+                                child: widget.isOwnerOrAgent
+                                    ? _buildCenterButtonForOwners(context)
+                                    : _buildNavItem(
+                                        context,
+                                        2,
+                                        Icons.credit_card,
+                                        Icons.credit_card,
+                                        '',
+                                        color: AppTheme.primaryColor),
+                              ),
+                            ),
+                            SizedBox(
+                              width: itemWidth,
+                              child: Center(
+                                child: _buildNavItem(
+                                    context,
+                                    3,
+                                    Icons.chat_bubble_outline,
+                                    Icons.chat_bubble,
+                                    'Chat'),
+                              ),
+                            ),
+                            SizedBox(
+                              width: itemWidth,
+                              child: Center(
+                                child: _buildNavItem(
+                                    context,
+                                    4,
+                                    Icons.person_outline,
+                                    Icons.person,
+                                    'Perfil'),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

@@ -7,6 +7,8 @@ import 'features/auth/presentation/pages/register_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/properties/presentation/pages/add_property_page.dart';
 import 'features/properties/presentation/pages/payment_methods_page.dart';
+import 'features/social_areas/presentation/pages/social_areas_page.dart';
+import 'features/alerts/presentation/pages/alert_history_page.dart';
 import 'features/auth/data/services/auth_service.dart';
 
 void main() async {
@@ -54,6 +56,8 @@ class HabittoApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/add-property': (context) => const AddPropertyPage(),
         '/payment-methods': (context) => const PaymentMethodsPage(),
+        '/social-areas': (context) => const SocialAreasPage(),
+        '/alert-history': (context) => const AlertHistoryPage(),
       },
     );
   }

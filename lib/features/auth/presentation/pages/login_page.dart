@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/services/auth_service.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/social_login_button.dart';
@@ -30,6 +31,8 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    // Reconfigurar ApiService tras hot reload para evitar bucles con interceptores antiguos
+    ApiService().reinitialize();
     Future.microtask(_guardIfAuthenticated);
 
     // Configurar listeners para el teclado
