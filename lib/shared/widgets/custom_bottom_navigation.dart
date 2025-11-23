@@ -63,6 +63,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
       });
     }
     _hideOwnerOverlay();
+    _hideTenantOverlay();
   }
 
   void _showOwnerOverlay() {
@@ -71,20 +72,20 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
       builder: (ctx) => FloatingActionMenu(
         isVisible: true,
         onHomeTap: () {
-          _hideOwnerOverlay();
+          _closeFloatingMenu();
           widget.onHomeTap();
         },
         onMoreTap: () {
-          _hideOwnerOverlay();
+          _closeFloatingMenu();
           Navigator.pushNamed(ctx, '/add-property');
         },
-        onClose: _hideOwnerOverlay,
+        onClose: _closeFloatingMenu,
         onSocialAreasTap: () {
-          _hideOwnerOverlay();
+          _closeFloatingMenu();
           Navigator.pushNamed(ctx, '/social-areas');
         },
         onAlertHistoryTap: () {
-          _hideOwnerOverlay();
+          _closeFloatingMenu();
           Navigator.pushNamed(ctx, '/alert-history');
         },
       ),
@@ -135,6 +136,10 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   @override
   void didUpdateWidget(CustomBottomNavigation oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Cerrar cualquier overlay al cambiar de página o estado
+    if (oldWidget.currentIndex != widget.currentIndex) {
+      _closeFloatingMenu();
+    }
     if (!widget.isOwnerOrAgent) {
       if (widget.showTenantFloatingMenu && _tenantOverlayEntry == null) {
         _showTenantOverlay();
@@ -273,17 +278,21 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   }
 
   Widget _buildCenterButtonForOwners(BuildContext context) {
-    final textScaleFactor = MediaQuery.textScaleFactorOf(context);
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1.0);
 
     return Semantics(
       button: true,
       label: _isFloatingMenuVisible ? 'Cerrar menú' : 'Abrir menú',
       child: InkWell(
         onTap: () {
-          // First call the onTap callback to let the parent know
-          widget.onTap(2);
-          // Then toggle the floating menu
-          _toggleFloatingMenu();
+          if (_isFloatingMenuVisible) {
+            // Si el menú está visible, cerrarlo
+            _closeFloatingMenu();
+          } else {
+            // Si no está visible, notificar al padre y abrir
+            widget.onTap(2);
+            _toggleFloatingMenu();
+          }
         },
         borderRadius: BorderRadius.circular(24),
         splashColor: Colors.white.withValues(alpha: 0.3),
@@ -346,7 +355,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   }) {
     final isSelected = widget.currentIndex == index;
     final itemColor = color ?? Theme.of(context).colorScheme.primary;
-    final textScaleFactor = MediaQuery.textScaleFactorOf(context);
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1.0);
 
     if (isSelected) {
       return Semantics(
@@ -354,7 +363,10 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
         label: '$label activo',
         selected: true,
         child: InkWell(
-          onTap: () => widget.onTap(index),
+          onTap: () {
+            _closeFloatingMenu();
+            widget.onTap(index);
+          },
           borderRadius: BorderRadius.circular(25),
           splashColor: itemColor.withValues(alpha: 0.7),
           highlightColor: itemColor.withValues(alpha: 0.6),
@@ -401,7 +413,10 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
       button: true,
       label: label,
       child: InkWell(
-        onTap: () => widget.onTap(index),
+        onTap: () {
+          _closeFloatingMenu();
+          widget.onTap(index);
+        },
         borderRadius: BorderRadius.circular(28),
         splashColor: Colors.white.withValues(alpha: 0.2),
         highlightColor: Colors.white.withValues(alpha: 0.1),
