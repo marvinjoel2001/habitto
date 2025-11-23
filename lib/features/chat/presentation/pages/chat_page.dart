@@ -691,11 +691,12 @@ class _ChatPageState extends State<ChatPage> {
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
                           ),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(10)),
-                            child: Text('$_pendingMatchRequestsCount', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                          ),
+                          if (_pendingMatchRequestsCount > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(10)),
+                              child: Text('$_pendingMatchRequestsCount', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                            ),
                         ],
                       ),
                       const Icon(Icons.arrow_forward_ios, color: Color(0xFF9CA3AF), size: 16),

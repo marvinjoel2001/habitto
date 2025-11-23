@@ -93,10 +93,8 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    // NOTA: Para que este código funcione, debes pasar tu token de Mapbox al ejecutar la app:
-    // flutter run --dart-define ACCESS_TOKEN=TU_LLAVE_PUBLICA_AQUI
-    MapboxOptions.setAccessToken(const String.fromEnvironment("ACCESS_TOKEN"));
-
+    // Inicializar el token de Mapbox - igual que en add_property_page.dart
+    MapboxOptions.setAccessToken("pk.eyJ1IjoibWFydmluMjAwMSIsImEiOiJjbWdpaDRicTQwOTc3Mm9wcmd3OW5lNzExIn0.ISPECxmLq_6xhipoygxtFg");
     _getCurrentLocation();
     _loadMarkerImages();
   }
@@ -115,7 +113,7 @@ class _SearchPageState extends State<SearchPage> {
       _loteMarkerImage = loteBytes.buffer.asUint8List();
 
     } catch (e) {
-      print('Error cargando imágenes de marcadores: $e');
+      debugPrint('Error cargando imágenes de marcadores: $e');
       // Si falla, genera marcadores por defecto
       _houseMarkerImage = await _generateDefaultMarker();
       _edificioMarkerImage = await _generateDefaultMarker();
@@ -156,14 +154,14 @@ class _SearchPageState extends State<SearchPage> {
 
     // Círculo principal del marcador (amarillo como el tema)
     final circlePaint = Paint()
-      ..color = AppTheme.primaryColor.withOpacity(0.95)
+      ..color = AppTheme.primaryColor.withValues(alpha: 0.95)
       ..style = PaintingStyle.fill;
     const center = Offset(size / 2, size / 2);
     canvas.drawCircle(center, size * 0.36, circlePaint);
 
     // Borde sutil
     final borderPaint = Paint()
-      ..color = AppTheme.whiteColor.withOpacity(0.8)
+      ..color = AppTheme.whiteColor.withValues(alpha: 0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
     canvas.drawCircle(center, size * 0.36, borderPaint);
@@ -190,13 +188,13 @@ class _SearchPageState extends State<SearchPage> {
 
     // Círculo exterior (azul)
     final outerCirclePaint = Paint()
-      ..color = Colors.blue.withOpacity(0.3)
+      ..color = Colors.blue.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, size * 0.45, outerCirclePaint);
 
     // Círculo medio (azul más intenso)
     final middleCirclePaint = Paint()
-      ..color = Colors.blue.withOpacity(0.6)
+      ..color = Colors.blue.withValues(alpha: 0.6)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, size * 0.3, middleCirclePaint);
 
@@ -454,13 +452,12 @@ class _SearchPageState extends State<SearchPage> {
 
   // Opcional: manejo de long-press en marcador
   void _onMarkerLongPressed(PointAnnotation annotation) {
-    print("Long press en marcador: ${annotation.textField}");
+    debugPrint("Long press en marcador: ${annotation.textField}");
   }
 
   // --- Widgets de UI extraídos para mayor claridad ---
 
   Widget _buildSearchBar() {
-    final cs = Theme.of(context).colorScheme;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
@@ -469,16 +466,18 @@ class _SearchPageState extends State<SearchPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: cs.surface.withValues(alpha: 0.20),
+            color: AppTheme.whiteColor.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: cs.primary.withValues(alpha: 0.30)),
+            border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.5)),
           ),
           child: TextField(
             decoration: InputDecoration(
               hintText: 'Buscar por zona, precio o tipo',
               border: InputBorder.none,
-              icon: Icon(Icons.search, color: AppTheme.whiteColor.withValues(alpha: 0.7)),
+              icon: Icon(Icons.search, color: AppTheme.whiteColor.withValues(alpha: 0.95)),
+              hintStyle: TextStyle(color: AppTheme.whiteColor.withValues(alpha: 0.8)),
             ),
+            style: const TextStyle(color: AppTheme.whiteColor),
           ),
         ),
       ),
@@ -515,17 +514,17 @@ class _SearchPageState extends State<SearchPage> {
           label: Text(
             label,
             style: TextStyle(
-              color: AppTheme.blackColor,
+              color: isSelected ? AppTheme.blackColor : AppTheme.whiteColor,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
           backgroundColor:
-              isSelected ? primary.withValues(alpha: 0.22) : AppTheme.whiteColor.withValues(alpha: 0.18),
+              isSelected ? primary.withValues(alpha: 0.85) : AppTheme.whiteColor.withValues(alpha: 0.55),
           shape: StadiumBorder(
             side: BorderSide(
               color: isSelected
-                  ? primary.withValues(alpha: 0.45)
-                  : AppTheme.whiteColor.withValues(alpha: 0.25),
+                  ? primary.withValues(alpha: 0.9)
+                  : AppTheme.whiteColor.withValues(alpha: 0.6),
               width: 1.5,
             ),
           ),
@@ -536,7 +535,6 @@ class _SearchPageState extends State<SearchPage> {
 
   // Columna de acciones del mapa (glass) - mejorada para 3D
   Widget _buildMapActions() {
-    final cs = Theme.of(context).colorScheme;
 
     Widget glassIcon(IconData icon, VoidCallback onTap) {
       return Padding(
@@ -547,12 +545,12 @@ class _SearchPageState extends State<SearchPage> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: cs.surface.withValues(alpha: 0.25),
+                color: AppTheme.whiteColor.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: cs.primary.withValues(alpha: 0.35)),
+                border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.55)),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.blackColor.withValues(alpha: 0.15),
+                    color: AppTheme.blackColor.withValues(alpha: 0.1),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -650,15 +648,15 @@ class _SearchPageState extends State<SearchPage> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.whiteColor.withValues(alpha: 0.25), // Más opaco para mejor visibilidad
+            color: AppTheme.whiteColor.withValues(alpha: 0.45), // Más translúcido para efecto cristal
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: cs.primary.withValues(alpha: 0.4),
+              color: AppTheme.whiteColor.withValues(alpha: 0.6),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.blackColor.withValues(alpha: 0.15),
+                color: AppTheme.blackColor.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, -4),
               ),
@@ -678,7 +676,7 @@ class _SearchPageState extends State<SearchPage> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.blackColor.withOpacity(0.87), // Más visible
+                        color: AppTheme.blackColor.withValues(alpha: 0.87), // Más visible
                       ),
                     ),
                   ),
@@ -701,7 +699,7 @@ class _SearchPageState extends State<SearchPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: cs.primary.withOpacity(0.9),
+                  color: cs.primary.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -738,8 +736,9 @@ class _SearchPageState extends State<SearchPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.whiteColor.withValues(alpha: 0.3),
+                  color: AppTheme.whiteColor.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   _selectedProperty!.description,
