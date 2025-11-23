@@ -286,20 +286,26 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       body: Container(
         decoration: AppTheme.getProfileBackground(),
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildModernHeader(),
-                const SizedBox(height: 8),
-                _buildModernModeSelector(),
-                const SizedBox(height: 20),
-                _buildModernProfileSection(),
-                const SizedBox(height: 40),
-                _buildModernActionButtons(),
-                const SizedBox(height: 30),
-                _buildModeContent(),
-                _buildModernBottomButtons(),
-              ],
+          child: RefreshIndicator(
+            onRefresh: _loadCurrentProfile,
+            color: AppTheme.primaryColor,
+            backgroundColor: AppTheme.darkGrayBase,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildModernHeader(),
+                  const SizedBox(height: 8),
+                  _buildModernModeSelector(),
+                  const SizedBox(height: 20),
+                  _buildModernProfileSection(),
+                  const SizedBox(height: 40),
+                  _buildModernActionButtons(),
+                  const SizedBox(height: 30),
+                  _buildModeContent(),
+                  _buildModernBottomButtons(),
+                ],
+              ),
             ),
           ),
         ),

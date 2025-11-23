@@ -333,8 +333,18 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       backgroundColor: cs.primary,
       extendBody: true,
-      body: Stack(
-        children: [
+      body: RefreshIndicator(
+        onRefresh: _reloadMapData,
+        color: cs.primary,
+        backgroundColor: AppTheme.darkGrayBase,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height,
+              child: Stack(
+                children: [
           // Mapa ocupa TODA la pantalla sin márgenes
           Positioned.fill(
             child: _isLoading
@@ -395,9 +405,30 @@ class _SearchPageState extends State<SearchPage> {
               bottom: MediaQuery.of(context).padding.bottom + 90, // Más arriba del bottom bar
               child: _buildPropertyCard(),
             ),
-        ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _reloadMapData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      await _loadMarkerImages();
+      await _getCurrentLocation();
+      await _createMarkers();
+    } catch (_) {} finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   // Manejo de tap en marcador - CORREGIDO para ignorar el marcador del usuario
