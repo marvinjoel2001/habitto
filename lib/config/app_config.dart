@@ -4,7 +4,8 @@ class AppConfig {
 
   // API Configuration
   //static const String baseUrl = 'http://192.168.1.128:8000';
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  //static const String baseUrl = 'http://10.0.2.2:8000';
+  static const String baseUrl = 'https://habitto-bk.onrender.com';
   static const int timeoutDuration = 30000; // milliseconds
 
   // API Endpoints
@@ -40,16 +41,8 @@ class AppConfig {
   static const String wsInboxPath = '/ws/chat/inbox/';
 
   static Uri httpBaseUri() {
-    // Android emulator usa 10.0.2.2 para apuntar a localhost del host
-    // iOS/macOS/desktop usan localhost directamente
     try {
-      // dart:io Platform no está importado aquí; usamos el baseUrl como pista
-      final uri = Uri.parse(baseUrl);
-      final isAndroidEmulator = uri.host == '10.0.2.2';
-      if (isAndroidEmulator) {
-        return Uri.parse('http://10.0.2.2:8000');
-      }
-      return Uri.parse('http://localhost:8000');
+      return Uri.parse(baseUrl);
     } catch (_) {
       return Uri.parse('http://localhost:8000');
     }
@@ -66,10 +59,11 @@ class AppConfig {
   }
 
   static Uri buildWsUri(String subpath, {String? token}) {
+    final http = httpBaseUri();
     return Uri(
       scheme: wsScheme(),
       host: wsHost(),
-      port: wsPort,
+      port: http.hasPort ? http.port : null,
       path: subpath,
       queryParameters: token != null ? {wsTokenQueryName: token} : null,
     );

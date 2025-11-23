@@ -20,13 +20,25 @@ class User extends BaseModel {
   String get fullName => '$firstName $lastName';
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final dynamic rawId = json['id'];
+    final int parsedId = rawId is int
+        ? rawId
+        : int.tryParse((rawId?.toString() ?? '').trim()) ?? 0;
+    final String username = (json['username'] ?? '').toString();
+    final String email = (json['email'] ?? '').toString();
+    final String firstName = (json['first_name'] ?? '').toString();
+    final String lastName = (json['last_name'] ?? '').toString();
+    final String dj = (json['date_joined'] ?? '').toString();
+    final DateTime dateJoined = dj.isNotEmpty
+        ? (DateTime.tryParse(dj) ?? DateTime.now())
+        : DateTime.now();
     return User(
-      id: json['id'],
-      username: json['username'],
-      email: json['email'],
-      firstName: json['first_name'],
-      lastName: json['last_name'],
-      dateJoined: DateTime.parse(json['date_joined']),
+      id: parsedId,
+      username: username,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      dateJoined: dateJoined,
     );
   }
 
