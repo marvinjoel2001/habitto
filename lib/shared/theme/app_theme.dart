@@ -240,7 +240,7 @@ class AppTheme {
       ),
       boxShadow: [
         BoxShadow(
-          color: accentMint.withOpacity(0.4),
+          color: accentMint.withValues(alpha: 0.4),
           blurRadius: 24,
           spreadRadius: 2,
         ),
