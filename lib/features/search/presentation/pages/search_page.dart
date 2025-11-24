@@ -474,10 +474,10 @@ class _SearchPageState extends State<SearchPage> {
             decoration: InputDecoration(
               hintText: 'Buscar por zona, precio o tipo',
               border: InputBorder.none,
-              icon: Icon(Icons.search, color: AppTheme.whiteColor.withValues(alpha: 0.95)),
-              hintStyle: TextStyle(color: AppTheme.whiteColor.withValues(alpha: 0.8)),
+              icon: Icon(Icons.search, color: AppTheme.blackColor.withValues(alpha: 0.7)),
+              hintStyle: TextStyle(color: AppTheme.blackColor.withValues(alpha: 0.6)),
             ),
-            style: const TextStyle(color: AppTheme.whiteColor),
+            style: const TextStyle(color: AppTheme.blackColor),
           ),
         ),
       ),
@@ -514,17 +514,17 @@ class _SearchPageState extends State<SearchPage> {
           label: Text(
             label,
             style: TextStyle(
-              color: isSelected ? AppTheme.blackColor : AppTheme.whiteColor,
+              color: isSelected ? AppTheme.blackColor : AppTheme.blackColor,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
           backgroundColor:
-              isSelected ? primary.withValues(alpha: 0.85) : AppTheme.whiteColor.withValues(alpha: 0.55),
+              isSelected ? primary.withValues(alpha: 0.85) : AppTheme.whiteColor.withValues(alpha: 0.85),
           shape: StadiumBorder(
             side: BorderSide(
               color: isSelected
                   ? primary.withValues(alpha: 0.9)
-                  : AppTheme.whiteColor.withValues(alpha: 0.6),
+                  : AppTheme.whiteColor.withValues(alpha: 0.9),
               width: 1.5,
             ),
           ),
