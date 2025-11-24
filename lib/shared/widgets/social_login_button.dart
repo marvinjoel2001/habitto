@@ -30,18 +30,18 @@ class SocialLoginButton extends StatelessWidget {
           height: 50,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.whiteColor.withOpacity(0.3), width: 1),
+            border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.3), width: 1),
           ),
           child: ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.whiteColor.withOpacity(0.15),
+              backgroundColor: AppTheme.whiteColor.withValues(alpha: 0.15),
               foregroundColor: textColor ?? AppTheme.whiteColor,
               elevation: 0,
               shadowColor: Colors.transparent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: AppTheme.whiteColor.withOpacity(0.3), width: 1),
+                side: BorderSide(color: AppTheme.whiteColor.withValues(alpha: 0.3), width: 1),
               ),
             ),
             child: Row(

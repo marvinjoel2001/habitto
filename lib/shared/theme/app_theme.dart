@@ -142,13 +142,13 @@ class AppTheme {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         // Borde plomito delgado también al enfocar
-        borderSide: BorderSide(color: darkGrayBase.withOpacity(0.4), width: 1.0),
+        borderSide: BorderSide(color: darkGrayBase.withValues(alpha: 0.4), width: 1.0),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         // Borde plomito súper delgado en estado normal
         borderSide: BorderSide(
-          color: darkGrayBase.withOpacity(0.3),
+          color: darkGrayBase.withValues(alpha: 0.3),
           width: 0.8,
         ),
       ),

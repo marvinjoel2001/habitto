@@ -26,7 +26,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _isKeyboardVisible = false;
   bool _isPasswordFieldFocused = false;
   final double _originalPadding = 56;
-  double _elevatedPadding = 120; // Altura elevada para el campo de contraseña
 
   @override
   void initState() {
@@ -63,6 +62,8 @@ class _LoginPageState extends State<LoginPage> {
     if (_passwordFocusNode.hasFocus) {
       // El campo de contraseña recibió el foco - desplazar suavemente
       _scrollToPasswordField();
+      // Asegurar que el botón de login sea visible
+      _ensureLoginButtonVisible();
     } else if (wasPasswordFocused && !_passwordFocusNode.hasFocus) {
       // El campo de contraseña perdió el foco - regresar a posición original
       _returnToOriginalPosition();
@@ -71,6 +72,8 @@ class _LoginPageState extends State<LoginPage> {
     // Manejo general para cualquier campo enfocado
     if (_emailFocusNode.hasFocus || _passwordFocusNode.hasFocus) {
       _scrollToFocusedInput();
+      // Asegurar que el botón de login sea visible cuando cualquier campo está enfocado
+      _ensureLoginButtonVisible();
     }
   }
 
@@ -97,6 +100,23 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _ensureLoginButtonVisible() {
+    if (!_isKeyboardVisible) return;
+
+    Future.delayed(const Duration(milliseconds: 150), () {
+      if (!mounted) return;
+
+      // Si el scroll actual deja poco espacio, ajustar
+      if (_scrollController.offset < 60) {
+        _scrollController.animateTo(
+          20, // Desplazamiento reducido para que el botón quede visible
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
+
   void _scrollToPasswordField() {
     if (!_isKeyboardVisible) return;
 
@@ -117,10 +137,10 @@ class _LoginPageState extends State<LoginPage> {
       if (inputBottom > keyboardTop) {
         // Calcular el desplazamiento necesario con margen de seguridad adaptativo
         final safetyMargin = screenHeight < 600
-            ? 30.0
-            : 40.0; // Menor margen en pantallas pequeñas
+            ? 45.0
+            : 55.0; // Márgenes ligeramente reducidos en pantallas pequeñas
         final targetPosition =
-            keyboardTop - renderBox.size.height - safetyMargin;
+            keyboardTop - renderBox.size.height - safetyMargin - 30; // 30px extra para el botón de login
         final currentScroll = _scrollController.offset;
         final neededScroll = inputPosition.dy - targetPosition;
 
@@ -247,11 +267,6 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     // Calcular padding responsive basado en el tamaño de pantalla
-    final screenHeight = MediaQuery.of(context).size.height;
-    final responsivePadding = screenHeight < 700
-        ? 80.0
-        : 120.0; // Menor padding en pantallas pequeñas
-    _elevatedPadding = responsivePadding;
 
     return GestureDetector(
       onTap: () {
@@ -297,45 +312,47 @@ class _LoginPageState extends State<LoginPage> {
             // Contenedor glass con manejo inteligente del teclado
             SafeArea(
               child: Align(
-                alignment: Alignment.bottomCenter,
+                alignment: _isKeyboardVisible ? Alignment.center : Alignment.bottomCenter,
                 child: AnimatedPadding(
                   padding: EdgeInsets.only(
-                    bottom: _isPasswordFieldFocused
-                        ? _elevatedPadding
+                    bottom: _isKeyboardVisible
+                        ? 60.0 // Espacio original cuando el teclado está visible
                         : _originalPadding,
                   ),
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeOutCubic,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                      child: Container(
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.25),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.10),
-                              blurRadius: 20,
-                              spreadRadius: 2,
+                    child: Container(
+                      margin: _isKeyboardVisible ? const EdgeInsets.symmetric(horizontal: 20) : EdgeInsets.zero, // Márgenes originales cuando el teclado está visible
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25),
                             ),
-                          ],
-                        ),
-                        child: SingleChildScrollView(
-                          controller: _scrollController,
-                          physics: const BouncingScrollPhysics(),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.10),
+                                blurRadius: 20,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: SingleChildScrollView(
+                            controller: _scrollController,
+                            physics: const BouncingScrollPhysics(),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
                                 const SizedBox(height: 8),
                                 Center(
                                   child: Text(
@@ -515,6 +532,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
+          ),
           ],
         ),
       ),
