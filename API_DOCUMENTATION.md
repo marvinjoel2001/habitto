@@ -1,3 +1,152 @@
+# Documentación Técnica Habitto
+
+## 1. Esquema de Datos de Propiedades
+
+- Objeto `Property`:
+  - `id` (int)
+  - `owner` (int|null)
+  - `agent` (int|null)
+  - `type` (string; enum: `casa|departamento|habitacion|anticretico`)
+  - `address` (string; formato libre normalizado)
+  - `latitude` (string; decimal entre -90 y 90; máx 10 decimales)
+  - `longitude` (string; decimal entre -180 y 180; máx 10 decimales)
+  - `price` (string; número con 2 decimales, moneda implícita Bs.)
+  - `guarantee` (string; opcional, 2 decimales)
+  - `description` (string)
+  - `size` (number; m²)
+  - `bedrooms` (int)
+  - `bathrooms` (int)
+  - `amenities` (array<int>)
+  - `availability_date` (string; ISO-8601 `YYYY-MM-DD`)
+  - `is_active` (bool)
+  - `is_available` (bool)
+  - `created_at` (string; ISO-8601)
+  - `updated_at` (string; ISO-8601)
+  - `accepted_payment_methods` (array<int>)
+  - `allows_roommates` (bool)
+  - `max_occupancy` (int)
+  - `min_price_per_person` (string; 2 decimales)
+  - `is_furnished` (bool)
+  - `tenant_requirements` (object)
+  - `tags` (array<string>)
+  - `main_photo` (string|null; URL absoluta)
+
+### Validación de formatos
+- `latitude`/`longitude`: Rango y decimales según sección 3 `Formato de coordenadas`.
+- `price`/`guarantee`/`min_price_per_person`: número con dos decimales y separador de punto.
+- `availability_date`: `YYYY-MM-DD`.
+
+## 2. Interactividad en Mapa (Tooltips)
+
+- Al tocar un marcador de propiedad en el mapa, se muestra un tooltip responsivo y accesible con:
+  - Título y precio formateado (Bs. 1,500/mes)
+  - Dirección normalizada
+  - Resumen: dormitorios, baños, tamaño, amenidades populares
+  - Imagen principal (`main_photo`) si existe
+  - Acciones: "Ver más detalles"
+
+- Requisitos de accesibilidad:
+  - `Semantics` rol `button` y labels descriptivos
+  - Contraste mínimo 4.5:1 en textos
+  - Navegación por teclado accesible en plataformas compatibles
+
+- Coherencia de datos:
+  - Los campos mostrados en tooltip deben provenir de la misma estructura descrita en esta documentación.
+  - No se presentan campos con formato inválido; el frontend valida antes de renderizar.
+
+## 3. Inventario Completo y Ejemplos JSON
+
+### Lista de propiedades (inventario)
+```json
+{
+  "success": true,
+  "message": "Propiedades obtenidas exitosamente",
+  "data": {
+    "count": 50,
+    "results": [
+      {
+        "id": 1,
+        "type": "casa",
+        "address": "Calle Falsa 123, La Paz",
+        "latitude": "-16.500000",
+        "longitude": "-68.150000",
+        "price": "1500.00",
+        "bedrooms": 3,
+        "bathrooms": 2,
+        "size": 120.5,
+        "tags": ["céntrico"],
+        "is_active": true,
+        "is_available": true,
+        "main_photo": "http://localhost:8000/media/properties/foto1.jpg",
+        "created_at": "2025-10-22T10:00:00Z",
+        "updated_at": "2025-10-22T10:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+### Detalle de propiedad
+```json
+{
+  "success": true,
+  "message": "Propiedad obtenida exitosamente",
+  "data": {
+    "id": 1,
+    "type": "casa",
+    "address": "Calle Falsa 123, La Paz",
+    "description": "Casa amplia en zona residencial con jardín y piscina",
+    "price": "1500.00",
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "size": 150.5,
+    "latitude": "-16.500000",
+    "longitude": "-68.150000",
+    "is_available": true,
+    "main_photo": "http://localhost:8000/media/properties/foto1.jpg",
+    "created_at": "2025-10-22T10:00:00Z",
+    "updated_at": "2025-10-22T10:00:00Z"
+  }
+}
+```
+
+## 4. Búsqueda Avanzada
+
+- Funcionalidad similar a Google Maps:
+  - Búsqueda por calles, avenidas, puntos de referencia y coordenadas
+  - Autocompletado con sugerencias
+  - Filtros por tipo de propiedad y características
+
+- Integración de geocodificación:
+  - Se utiliza Mapbox Places API (`GET https://api.mapbox.com/geocoding/v5/mapbox.places/{query}.json?access_token=...&language=es&autocomplete=true&limit=5`)
+  - Resumen de respuesta relevante:
+    - `features[].place_name` (string)
+    - `features[].center` ([lon, lat])
+  - Normalización de direcciones: se persiste `place_name` y se valida coordenadas en el rango permitido
+
+- Ejemplo de sugerencias
+```json
+{
+  "query": "Calle Junín",
+  "suggestions": [
+    {"label": "Calle Junín, Santa Cruz", "center": [-63.182, -17.783]},
+    {"label": "Junín, La Paz", "center": [-68.15, -16.5]}
+  ]
+}
+```
+
+## 5. Diagramas de Relación (Mermaid)
+
+```mermaid
+erDiagram
+  USER ||--o{ PROPERTY : owns
+  PROPERTY ||--o{ PHOTO : has
+  PROPERTY }o--o{ AMENITY : features
+  PROPERTY ||--o{ GUARANTEE : secures
+  ZONE ||--o{ PROPERTY : contains
+```
+
+---
 # Registro con imagen usando curl
 curl -X POST http://localhost:8000/api/users/ \
   -H "Content-Type: multipart/form-data" \
@@ -3294,5 +3443,4 @@ Notas de actualización en tiempo real:
 - Notas:
   - `is_available` en `Property` refleja disponibilidad actual.
   - Las calificaciones almacenan evaluación del inquilino y del propietario.
-
 

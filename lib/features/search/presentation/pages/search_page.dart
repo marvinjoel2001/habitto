@@ -1,11 +1,17 @@
 // Clase: SearchPage
 
 import 'dart:ui';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../../../shared/theme/app_theme.dart';
+import 'package:habitto/core/services/api_service.dart';
+import 'package:habitto/features/properties/data/services/property_service.dart';
+import 'package:habitto/features/properties/domain/entities/property.dart'
+    as domain;
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -32,86 +38,26 @@ class _SearchPageState extends State<SearchPage> {
   geo.Position? _currentPosition;
   PropertyInfo? _selectedProperty;
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+  List<_Suggestion> _suggestions = [];
+  bool _showSuggestions = false;
 
   // Datos hardcodeados de propiedades en Santa Cruz - COORDENADAS CORREGIDAS Y SEPARADAS
-  final List<PropertyData> _properties = [
-    PropertyData(
-      id: '1',
-      title: 'Apartamento en Equipetrol',
-      price: 'Bs. 3,500 / mes',
-      description:
-          'Moderno apartamento de 3 habitaciones con vista panorámica en el corazón de Equipetrol. Incluye gimnasio y piscina.',
-      location:
-          Point(coordinates: Position(-63.1821, -17.7833)), // Centro Equipetrol
-      type: PropertyType.house,
-      imageUrl: 'assets/images/casa1.jpg',
-    ),
-    PropertyData(
-      id: '2',
-      title: 'Casa en Las Palmas',
-      price: 'Bs. 4,200 / mes',
-      description:
-          'Hermosa casa de 4 habitaciones con jardín privado y garaje para 2 vehículos en zona residencial exclusiva.',
-      location: Point(
-          coordinates:
-              Position(-63.1500, -17.7700)), // Las Palmas (más al este)
-      type: PropertyType.house,
-      imageUrl: 'assets/images/casa2.jpg',
-    ),
-    PropertyData(
-      id: '3',
-      title: 'Departamento en Plan 3000',
-      price: 'Bs. 2,800 / mes',
-      description:
-          'Acogedor departamento de 2 habitaciones en zona norte de la ciudad.',
-      location:
-          Point(coordinates: Position(-63.1650, -17.7500)), // Plan 3000 (norte)
-      type: PropertyType.apartment,
-      imageUrl: 'assets/images/casa3.jpg',
-    ),
-    PropertyData(
-      id: '4',
-      title: 'Casa en Urubó',
-      price: 'Bs. 5,800 / mes',
-      description:
-          'Lujosa casa de 5 habitaciones con piscina, quincho y amplio jardín en condominio cerrado.',
-      location:
-          Point(coordinates: Position(-63.1200, -17.7400)), // Urubó (noreste)
-      type: PropertyType.house,
-      imageUrl: 'assets/images/casa4.jpg',
-    ),
-    PropertyData(
-      id: '5',
-      title: 'Apartamento en Manzana 40',
-      price: 'Bs. 2,200 / mes',
-      description:
-          'Departamento económico de 2 habitaciones en zona popular, ideal para estudiantes.',
-      location: Point(
-          coordinates: Position(-63.2000, -17.8000)), // Manzana 40 (suroeste)
-      type: PropertyType.apartment,
-      imageUrl: 'assets/images/casa1.jpg',
-    ),
-    PropertyData(
-      id: '6',
-      title: 'Casa en Cristo Redentor',
-      price: 'Bs. 3,800 / mes',
-      description:
-          'Casa familiar de 3 habitaciones cerca del Cristo Redentor con vista panorámica.',
-      location: Point(
-          coordinates: Position(-63.1900, -17.7600)), // Cristo Redentor (oeste)
-      type: PropertyType.house,
-      imageUrl: 'assets/images/casa2.jpg',
-    ),
-  ];
+  final List<PropertyData> _properties = [];
+  late final ApiService _apiService;
+  late final PropertyService _propertyService;
 
   @override
   void initState() {
     super.initState();
+    _apiService = ApiService();
+    _propertyService = PropertyService(apiService: _apiService);
     // Inicializar el token de Mapbox - igual que en add_property_page.dart
     MapboxOptions.setAccessToken(
         "pk.eyJ1IjoibWFydmluMjAwMSIsImEiOiJjbWdpaDRicTQwOTc3Mm9wcmd3OW5lNzExIn0.ISPECxmLq_6xhipoygxtFg");
     _getCurrentLocation();
     _loadMarkerImages();
+    _loadPropertiesFromApi();
   }
 
   // CAMBIO: Carga las imágenes específicas de marcadores desde assets
@@ -238,6 +184,7 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -409,6 +356,46 @@ class _SearchPageState extends State<SearchPage> {
                     _buildSearchBar(),
                     const SizedBox(height: 10),
                     _buildFilters(),
+                    if (_showSuggestions)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: _suggestions.map((s) {
+                            return ListTile(
+                              dense: true,
+                              title: Text(s.label,
+                                  style: const TextStyle(color: Colors.black)),
+                              onTap: () {
+                                setState(() {
+                                  _showSuggestions = false;
+                                  _searchController.text = s.label;
+                                });
+                                _mapboxMap?.flyTo(
+                                  CameraOptions(
+                                    center: Point(
+                                        coordinates: Position(s.lon, s.lat)),
+                                    zoom: 16,
+                                    pitch: 45,
+                                  ),
+                                  MapAnimationOptions(
+                                      duration: 800, startDelay: 0),
+                                );
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -463,8 +450,47 @@ class _SearchPageState extends State<SearchPage> {
         price: property.price,
         description: property.description,
         imageUrl: property.imageUrl,
+        address: property.address,
+        features: property.features,
       );
     });
+  }
+
+  Future<void> _loadPropertiesFromApi() async {
+    try {
+      final res = await _propertyService.getProperties(pageSize: 50);
+      if (res['success'] == true && res['data'] != null) {
+        final List<domain.Property> props =
+            List<domain.Property>.from(res['data']['properties'] as List);
+        final mapped = props
+            .where((p) => p.latitude != null && p.longitude != null)
+            .map((p) => PropertyData(
+                  id: p.id.toString(),
+                  title: p.address.isNotEmpty ? p.address : 'Propiedad',
+                  price: p.price > 0
+                      ? 'Bs. ${p.price.toStringAsFixed(0)} / mes'
+                      : '—',
+                  description: p.description,
+                  location:
+                      Point(coordinates: Position(p.longitude!, p.latitude!)),
+                  type: PropertyType.house,
+                  imageUrl: p.mainPhoto ?? 'assets/images/casa1.jpg',
+                  address: p.address,
+                  features: [
+                    '${p.bedrooms} hab',
+                    '${p.bathrooms} baños',
+                    '${p.size.toStringAsFixed(0)} m²'
+                  ],
+                ))
+            .toList();
+        setState(() {
+          _properties
+            ..clear()
+            ..addAll(mapped);
+        });
+        await _createMarkers();
+      }
+    } catch (_) {}
   }
 
   // Opcional: manejo de long-press en marcador
@@ -497,6 +523,8 @@ class _SearchPageState extends State<SearchPage> {
                   TextStyle(color: AppTheme.blackColor.withValues(alpha: 0.6)),
             ),
             style: const TextStyle(color: AppTheme.blackColor),
+            controller: _searchController,
+            onChanged: (v) => _onSearchChanged(v),
           ),
         ),
       ),
@@ -688,6 +716,50 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  Future<void> _onSearchChanged(String q) async {
+    if (q.trim().isEmpty) {
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+      });
+      return;
+    }
+    final results = await _fetchSuggestions(q.trim());
+    setState(() {
+      _suggestions = results;
+      _showSuggestions = results.isNotEmpty;
+    });
+  }
+
+  Future<List<_Suggestion>> _fetchSuggestions(String query) async {
+    try {
+      const token =
+          'pk.eyJ1IjoibWFydmluMjAwMSIsImEiOiJjbWdpaDRicTQwOTc3Mm9wcmd3OW5lNzExIn0.ISPECxmLq_6xhipoygxtFg';
+      final uri = Uri.parse(
+              'https://api.mapbox.com/geocoding/v5/mapbox.places/${Uri.encodeComponent(query)}.json')
+          .replace(queryParameters: {
+        'access_token': token,
+        'language': 'es',
+        'autocomplete': 'true',
+        'limit': '5',
+      });
+      final resp = await http.get(uri);
+      if (resp.statusCode != 200) return [];
+      final body = resp.body;
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      final features = (data['features'] as List?) ?? [];
+      return features.map<_Suggestion>((f) {
+        final label = f['place_name'] as String? ?? '';
+        final center = (f['center'] as List?) ?? [];
+        final lon = (center.isNotEmpty ? (center[0] as num).toDouble() : 0.0);
+        final lat = (center.length > 1 ? (center[1] as num).toDouble() : 0.0);
+        return _Suggestion(label: label, lon: lon, lat: lat);
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   // Card inferior MEJORADO con mejor glassmorphism y colores más visibles
   Widget _buildPropertyCard() {
     final cs = Theme.of(context).colorScheme;
@@ -769,6 +841,27 @@ class _SearchPageState extends State<SearchPage> {
               ),
               const SizedBox(height: 16),
 
+              if (_selectedProperty!.address != null)
+                Row(
+                  children: [
+                    const Icon(Icons.place_outlined,
+                        size: 16, color: AppTheme.blackColor),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _selectedProperty!.address!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.blackColor.withValues(alpha: 0.8),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 12),
+
               // Imagen de la propiedad
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -808,6 +901,19 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              if (_selectedProperty!.features.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _selectedProperty!.features
+                      .map((f) => Chip(
+                            label: Text(f),
+                            backgroundColor: Colors.white.withOpacity(0.85),
+                          ))
+                      .toList(),
+                ),
               const SizedBox(height: 16),
 
               // Botón Ver Más mejorado
@@ -851,6 +957,8 @@ class PropertyData {
   final Point location;
   final PropertyType type;
   final String imageUrl;
+  final String address;
+  final List<String> features;
 
   const PropertyData({
     required this.id,
@@ -860,6 +968,8 @@ class PropertyData {
     required this.location,
     required this.type,
     required this.imageUrl,
+    required this.address,
+    this.features = const [],
   });
 }
 
@@ -868,12 +978,23 @@ class PropertyInfo {
   final String price;
   final String description;
   final String imageUrl;
+  final String? address;
+  final List<String> features;
   const PropertyInfo({
     required this.title,
     required this.price,
     required this.description,
     required this.imageUrl,
+    this.address,
+    this.features = const [],
   });
 }
 
 enum PropertyType { house, apartment }
+
+class _Suggestion {
+  final String label;
+  final double lon;
+  final double lat;
+  _Suggestion({required this.label, required this.lon, required this.lat});
+}
