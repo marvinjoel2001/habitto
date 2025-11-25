@@ -7,8 +7,6 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../../../shared/theme/app_theme.dart';
 
-
-
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -20,6 +18,9 @@ class _SearchPageState extends State<SearchPage> {
   // Nuevas variables para mapbox_maps_flutter
   MapboxMap? _mapboxMap;
   PointAnnotationManager? _pointAnnotationManager;
+  bool _is3D = true;
+  final Map<String, PropertyData> _annotationToProperty = {};
+  final Set<String> _userAnnotationIds = {};
 
   // CAMBIO: Múltiples imágenes de marcadores
   Uint8List? _houseMarkerImage;
@@ -38,8 +39,10 @@ class _SearchPageState extends State<SearchPage> {
       id: '1',
       title: 'Apartamento en Equipetrol',
       price: 'Bs. 3,500 / mes',
-      description: 'Moderno apartamento de 3 habitaciones con vista panorámica en el corazón de Equipetrol. Incluye gimnasio y piscina.',
-      location: Point(coordinates: Position(-63.1821, -17.7833)), // Centro Equipetrol
+      description:
+          'Moderno apartamento de 3 habitaciones con vista panorámica en el corazón de Equipetrol. Incluye gimnasio y piscina.',
+      location:
+          Point(coordinates: Position(-63.1821, -17.7833)), // Centro Equipetrol
       type: PropertyType.house,
       imageUrl: 'assets/images/casa1.jpg',
     ),
@@ -47,8 +50,11 @@ class _SearchPageState extends State<SearchPage> {
       id: '2',
       title: 'Casa en Las Palmas',
       price: 'Bs. 4,200 / mes',
-      description: 'Hermosa casa de 4 habitaciones con jardín privado y garaje para 2 vehículos en zona residencial exclusiva.',
-      location: Point(coordinates: Position(-63.1500, -17.7700)), // Las Palmas (más al este)
+      description:
+          'Hermosa casa de 4 habitaciones con jardín privado y garaje para 2 vehículos en zona residencial exclusiva.',
+      location: Point(
+          coordinates:
+              Position(-63.1500, -17.7700)), // Las Palmas (más al este)
       type: PropertyType.house,
       imageUrl: 'assets/images/casa2.jpg',
     ),
@@ -56,8 +62,10 @@ class _SearchPageState extends State<SearchPage> {
       id: '3',
       title: 'Departamento en Plan 3000',
       price: 'Bs. 2,800 / mes',
-      description: 'Acogedor departamento de 2 habitaciones en zona norte de la ciudad.',
-      location: Point(coordinates: Position(-63.1650, -17.7500)), // Plan 3000 (norte)
+      description:
+          'Acogedor departamento de 2 habitaciones en zona norte de la ciudad.',
+      location:
+          Point(coordinates: Position(-63.1650, -17.7500)), // Plan 3000 (norte)
       type: PropertyType.apartment,
       imageUrl: 'assets/images/casa3.jpg',
     ),
@@ -65,8 +73,10 @@ class _SearchPageState extends State<SearchPage> {
       id: '4',
       title: 'Casa en Urubó',
       price: 'Bs. 5,800 / mes',
-      description: 'Lujosa casa de 5 habitaciones con piscina, quincho y amplio jardín en condominio cerrado.',
-      location: Point(coordinates: Position(-63.1200, -17.7400)), // Urubó (noreste)
+      description:
+          'Lujosa casa de 5 habitaciones con piscina, quincho y amplio jardín en condominio cerrado.',
+      location:
+          Point(coordinates: Position(-63.1200, -17.7400)), // Urubó (noreste)
       type: PropertyType.house,
       imageUrl: 'assets/images/casa4.jpg',
     ),
@@ -74,8 +84,10 @@ class _SearchPageState extends State<SearchPage> {
       id: '5',
       title: 'Apartamento en Manzana 40',
       price: 'Bs. 2,200 / mes',
-      description: 'Departamento económico de 2 habitaciones en zona popular, ideal para estudiantes.',
-      location: Point(coordinates: Position(-63.2000, -17.8000)), // Manzana 40 (suroeste)
+      description:
+          'Departamento económico de 2 habitaciones en zona popular, ideal para estudiantes.',
+      location: Point(
+          coordinates: Position(-63.2000, -17.8000)), // Manzana 40 (suroeste)
       type: PropertyType.apartment,
       imageUrl: 'assets/images/casa1.jpg',
     ),
@@ -83,8 +95,10 @@ class _SearchPageState extends State<SearchPage> {
       id: '6',
       title: 'Casa en Cristo Redentor',
       price: 'Bs. 3,800 / mes',
-      description: 'Casa familiar de 3 habitaciones cerca del Cristo Redentor con vista panorámica.',
-      location: Point(coordinates: Position(-63.1900, -17.7600)), // Cristo Redentor (oeste)
+      description:
+          'Casa familiar de 3 habitaciones cerca del Cristo Redentor con vista panorámica.',
+      location: Point(
+          coordinates: Position(-63.1900, -17.7600)), // Cristo Redentor (oeste)
       type: PropertyType.house,
       imageUrl: 'assets/images/casa2.jpg',
     ),
@@ -94,7 +108,8 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     // Inicializar el token de Mapbox - igual que en add_property_page.dart
-    MapboxOptions.setAccessToken("pk.eyJ1IjoibWFydmluMjAwMSIsImEiOiJjbWdpaDRicTQwOTc3Mm9wcmd3OW5lNzExIn0.ISPECxmLq_6xhipoygxtFg");
+    MapboxOptions.setAccessToken(
+        "pk.eyJ1IjoibWFydmluMjAwMSIsImEiOiJjbWdpaDRicTQwOTc3Mm9wcmd3OW5lNzExIn0.ISPECxmLq_6xhipoygxtFg");
     _getCurrentLocation();
     _loadMarkerImages();
   }
@@ -103,15 +118,17 @@ class _SearchPageState extends State<SearchPage> {
   Future<void> _loadMarkerImages() async {
     try {
       // Cargar las tres imágenes de pointers desde assets
-      final ByteData houseBytes = await rootBundle.load('assets/images/house_pointer.png');
+      final ByteData houseBytes =
+          await rootBundle.load('assets/images/house_pointer.png');
       _houseMarkerImage = houseBytes.buffer.asUint8List();
 
-      final ByteData edificioBytes = await rootBundle.load('assets/images/edificio_pointer.png');
+      final ByteData edificioBytes =
+          await rootBundle.load('assets/images/edificio_pointer.png');
       _edificioMarkerImage = edificioBytes.buffer.asUint8List();
 
-      final ByteData loteBytes = await rootBundle.load('assets/images/lote_pointer.png');
+      final ByteData loteBytes =
+          await rootBundle.load('assets/images/lote_pointer.png');
       _loteMarkerImage = loteBytes.buffer.asUint8List();
-
     } catch (e) {
       debugPrint('Error cargando imágenes de marcadores: $e');
       // Si falla, genera marcadores por defecto
@@ -137,7 +154,8 @@ class _SearchPageState extends State<SearchPage> {
     if (availableImages.isEmpty) return null;
 
     // Selecciona una imagen aleatoria
-    final randomIndex = DateTime.now().millisecondsSinceEpoch % availableImages.length;
+    final randomIndex =
+        DateTime.now().millisecondsSinceEpoch % availableImages.length;
     return availableImages[randomIndex];
   }
 
@@ -263,6 +281,14 @@ class _SearchPageState extends State<SearchPage> {
     _mapboxMap!.location
         .updateSettings(LocationComponentSettings(enabled: true));
 
+    await _mapboxMap!.gestures.updateSettings(GesturesSettings(
+      pinchToZoomEnabled: true,
+      rotateEnabled: true,
+      pitchEnabled: true,
+      scrollEnabled: true,
+      quickZoomEnabled: true,
+    ));
+
     // Crea el gestor de marcadores (annotations)
     _pointAnnotationManager =
         await mapboxMap.annotations.createPointAnnotationManager();
@@ -286,42 +312,57 @@ class _SearchPageState extends State<SearchPage> {
     if (_pointAnnotationManager == null || _userLocationImage == null) return;
 
     // Verifica que al menos una imagen de marcador esté disponible
-    if (_houseMarkerImage == null && _edificioMarkerImage == null && _loteMarkerImage == null) return;
+    if (_houseMarkerImage == null &&
+        _edificioMarkerImage == null &&
+        _loteMarkerImage == null) {
+      return;
+    }
 
     // Limpia marcadores anteriores
     await _pointAnnotationManager!.deleteAll();
 
-    // Crea una lista de opciones para todos los marcadores de propiedades
-    final options = <PointAnnotationOptions>[];
+    _annotationToProperty.clear();
+    _userAnnotationIds.clear();
 
-    // CAMBIO: Marcadores de propiedades con imágenes aleatorias
+    // Opciones de propiedades
+    final propertyOptions = <PointAnnotationOptions>[];
     for (final property in _properties) {
       final markerImage = _getRandomMarkerImage();
       if (markerImage != null) {
-        options.add(PointAnnotationOptions(
+        propertyOptions.add(PointAnnotationOptions(
           geometry: property.location,
           image: markerImage,
-          iconSize: 0.4, // Tamaño más pequeño
-          // textField removido - sin números
+          iconSize: 0.4,
         ));
       }
     }
 
-    // Marcador de ubicación del usuario (sin cambios)
+    // Crear marcadores de propiedades y mapear ids
+    final createdProps =
+        await _pointAnnotationManager!.createMulti(propertyOptions);
+    for (int i = 0; i < createdProps.length && i < _properties.length; i++) {
+      final ann = createdProps[i];
+      final id = ann?.id;
+      if (id != null) {
+        _annotationToProperty[id] = _properties[i];
+      }
+    }
+
+    // Crear marcador de ubicación del usuario aparte
     if (_currentPosition != null) {
-      options.add(PointAnnotationOptions(
-        geometry: Point(coordinates: Position(
+      final userAnn =
+          await _pointAnnotationManager!.create(PointAnnotationOptions(
+        geometry: Point(
+            coordinates: Position(
           _currentPosition!.longitude,
           _currentPosition!.latitude,
         )),
         image: _userLocationImage,
-        iconSize: 0.8, // También más pequeño
-        // textField removido
+        iconSize: 0.8,
       ));
+      final uid = userAnn.id;
+      _userAnnotationIds.add(uid);
     }
-
-    // Crea todos los marcadores en una sola operación (más eficiente)
-    await _pointAnnotationManager!.createMulti(options);
   }
 
   @override
@@ -331,19 +372,8 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       backgroundColor: cs.primary,
       extendBody: true,
-      body: RefreshIndicator(
-        onRefresh: _reloadMapData,
-        color: cs.primary,
-        backgroundColor: AppTheme.darkGrayBase,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          children: [
-            SizedBox(
-              height: MediaQuery.of(context).size.height,
-              child: Stack(
-                children: [
-          // Mapa ocupa TODA la pantalla sin márgenes
+      body: Stack(
+        children: [
           Positioned.fill(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -357,7 +387,7 @@ class _SearchPageState extends State<SearchPage> {
                           _currentPosition!.latitude,
                         ),
                       ),
-                      zoom: 13, // Zoom más alejado para ver todos los marcadores
+                      zoom: 13,
                       pitch: 45,
                       bearing: 0,
                     ),
@@ -365,8 +395,6 @@ class _SearchPageState extends State<SearchPage> {
                         setState(() => _selectedProperty = null),
                   ),
           ),
-
-          // TOP overlays: barra de búsqueda y chips con SafeArea
           Positioned(
             top: 0,
             left: 0,
@@ -386,28 +414,20 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
           ),
-
-          // Columna de acciones a la derecha - ajustada para bottom bar
           Positioned(
             right: 24,
             bottom: MediaQuery.of(context).padding.bottom +
-                    (_selectedProperty != null ? 240 : 100),
+                (_selectedProperty != null ? 240 : 100),
             child: _buildMapActions(),
           ),
-
-          // Card inferior cuando hay selección - MEJORADO
           if (_selectedProperty != null)
             Positioned(
               left: 16,
               right: 16,
-              bottom: MediaQuery.of(context).padding.bottom + 90, // Más arriba del bottom bar
+              bottom: MediaQuery.of(context).padding.bottom + 90,
               child: _buildPropertyCard(),
             ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -420,7 +440,8 @@ class _SearchPageState extends State<SearchPage> {
       await _loadMarkerImages();
       await _getCurrentLocation();
       await _createMarkers();
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -429,17 +450,13 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  // Manejo de tap en marcador - CORREGIDO para ignorar el marcador del usuario
+  // Manejo de tap en marcador con mapeo por id
   void _onMarkerTapped(PointAnnotation annotation) {
-    // Ignorar si es el marcador de ubicación del usuario
-    if (annotation.textField == 'user_location') return;
-
-    // Buscar la propiedad correspondiente al marcador tocado
-    final property = _properties.firstWhere(
-      (prop) => prop.id == annotation.textField,
-      orElse: () => _properties.first,
-    );
-
+    final id = annotation.id;
+    if (_userAnnotationIds.contains(id)) return;
+    final property = _annotationToProperty[id] ??
+        (_properties.isNotEmpty ? _properties.first : null);
+    if (property == null) return;
     setState(() {
       _selectedProperty = PropertyInfo(
         title: property.title,
@@ -452,13 +469,12 @@ class _SearchPageState extends State<SearchPage> {
 
   // Opcional: manejo de long-press en marcador
   void _onMarkerLongPressed(PointAnnotation annotation) {
-    debugPrint("Long press en marcador: ${annotation.textField}");
+    debugPrint("Long press en marcador: ${annotation.id}");
   }
 
   // --- Widgets de UI extraídos para mayor claridad ---
 
   Widget _buildSearchBar() {
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
       child: BackdropFilter(
@@ -468,14 +484,17 @@ class _SearchPageState extends State<SearchPage> {
           decoration: BoxDecoration(
             color: AppTheme.whiteColor.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.5)),
+            border:
+                Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.5)),
           ),
           child: TextField(
             decoration: InputDecoration(
               hintText: 'Buscar por zona, precio o tipo',
               border: InputBorder.none,
-              icon: Icon(Icons.search, color: AppTheme.blackColor.withValues(alpha: 0.7)),
-              hintStyle: TextStyle(color: AppTheme.blackColor.withValues(alpha: 0.6)),
+              icon: Icon(Icons.search,
+                  color: AppTheme.blackColor.withValues(alpha: 0.7)),
+              hintStyle:
+                  TextStyle(color: AppTheme.blackColor.withValues(alpha: 0.6)),
             ),
             style: const TextStyle(color: AppTheme.blackColor),
           ),
@@ -518,8 +537,9 @@ class _SearchPageState extends State<SearchPage> {
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
-          backgroundColor:
-              isSelected ? primary.withValues(alpha: 0.85) : AppTheme.whiteColor.withValues(alpha: 0.85),
+          backgroundColor: isSelected
+              ? primary.withValues(alpha: 0.85)
+              : AppTheme.whiteColor.withValues(alpha: 0.85),
           shape: StadiumBorder(
             side: BorderSide(
               color: isSelected
@@ -535,7 +555,6 @@ class _SearchPageState extends State<SearchPage> {
 
   // Columna de acciones del mapa (glass) - mejorada para 3D
   Widget _buildMapActions() {
-
     Widget glassIcon(IconData icon, VoidCallback onTap) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
@@ -547,7 +566,8 @@ class _SearchPageState extends State<SearchPage> {
               decoration: BoxDecoration(
                 color: AppTheme.whiteColor.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.55)),
+                border: Border.all(
+                    color: AppTheme.whiteColor.withValues(alpha: 0.55)),
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.blackColor.withValues(alpha: 0.1),
@@ -604,33 +624,64 @@ class _SearchPageState extends State<SearchPage> {
           }
         }),
         // Vista 3D/2D toggle
-        glassIcon(Icons.threed_rotation, () {
+        glassIcon(Icons.threed_rotation, () async {
           if (_mapboxMap != null) {
+            final current = await _mapboxMap!.getCameraState();
+            final targetPitch = _is3D ? 0.0 : 60.0;
+            final targetBearing = _is3D ? 0.0 : 45.0;
             _mapboxMap!.flyTo(
               CameraOptions(
-                pitch: 0,
-                bearing: 0,
+                center: current.center,
+                zoom: current.zoom,
+                pitch: targetPitch,
+                bearing: targetBearing,
               ),
-              MapAnimationOptions(duration: 1000, startDelay: 0),
+              MapAnimationOptions(duration: 800, startDelay: 0),
+            );
+            setState(() {
+              _is3D = !_is3D;
+            });
+          }
+        }),
+        glassIcon(Icons.rotate_left, () async {
+          if (_mapboxMap != null) {
+            final cam = await _mapboxMap!.getCameraState();
+            _mapboxMap!.flyTo(
+              CameraOptions(bearing: cam.bearing - 30),
+              MapAnimationOptions(duration: 600, startDelay: 0),
+            );
+          }
+        }),
+        glassIcon(Icons.rotate_right, () async {
+          if (_mapboxMap != null) {
+            final cam = await _mapboxMap!.getCameraState();
+            _mapboxMap!.flyTo(
+              CameraOptions(bearing: cam.bearing + 30),
+              MapAnimationOptions(duration: 600, startDelay: 0),
             );
           }
         }),
         // Centrar en ubicación actual
-        glassIcon(Icons.my_location, () {
-          if (_currentPosition != null && _mapboxMap != null) {
-            _mapboxMap!.flyTo(
-              CameraOptions(
-                center: Point(
-                  coordinates: Position(
-                    _currentPosition!.longitude,
-                    _currentPosition!.latitude,
+        glassIcon(Icons.my_location, () async {
+          if (_mapboxMap != null) {
+            if (_currentPosition == null) {
+              await _getCurrentLocation();
+            }
+            if (_currentPosition != null) {
+              _mapboxMap!.flyTo(
+                CameraOptions(
+                  center: Point(
+                    coordinates: Position(
+                      _currentPosition!.longitude,
+                      _currentPosition!.latitude,
+                    ),
                   ),
+                  zoom: 16,
+                  pitch: 45,
                 ),
-                zoom: 16,
-                pitch: 45,
-              ),
-              MapAnimationOptions(duration: 1500, startDelay: 0),
-            );
+                MapAnimationOptions(duration: 1200, startDelay: 0),
+              );
+            }
           }
         }),
       ],
@@ -648,7 +699,8 @@ class _SearchPageState extends State<SearchPage> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.whiteColor.withValues(alpha: 0.45), // Más translúcido para efecto cristal
+            color: AppTheme.whiteColor
+                .withValues(alpha: 0.45), // Más translúcido para efecto cristal
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: AppTheme.whiteColor.withValues(alpha: 0.6),
@@ -676,7 +728,8 @@ class _SearchPageState extends State<SearchPage> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.blackColor.withValues(alpha: 0.87), // Más visible
+                        color: AppTheme.blackColor
+                            .withValues(alpha: 0.87), // Más visible
                       ),
                     ),
                   ),
@@ -688,7 +741,9 @@ class _SearchPageState extends State<SearchPage> {
                         color: AppTheme.blackColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Icon(Icons.close, color: AppTheme.blackColor.withValues(alpha: 0.87), size: 20),
+                      child: Icon(Icons.close,
+                          color: AppTheme.blackColor.withValues(alpha: 0.87),
+                          size: 20),
                     ),
                   ),
                 ],
@@ -697,7 +752,8 @@ class _SearchPageState extends State<SearchPage> {
 
               // Precio destacado
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: cs.primary.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(12),
@@ -721,13 +777,13 @@ class _SearchPageState extends State<SearchPage> {
                   width: double.infinity,
                   height: 120,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Container(
-                        width: double.infinity,
-                        height: 120,
-                        color: AppTheme.grayColor.withValues(alpha: 0.3),
-                        child: const Icon(Icons.home, size: 40, color: AppTheme.grayColor),
-                      ),
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: double.infinity,
+                    height: 120,
+                    color: AppTheme.grayColor.withValues(alpha: 0.3),
+                    child: const Icon(Icons.home,
+                        size: 40, color: AppTheme.grayColor),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -738,13 +794,15 @@ class _SearchPageState extends State<SearchPage> {
                 decoration: BoxDecoration(
                   color: AppTheme.whiteColor.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: AppTheme.whiteColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   _selectedProperty!.description,
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppTheme.blackColor.withValues(alpha: 0.87), // Más visible
+                    color: AppTheme.blackColor
+                        .withValues(alpha: 0.87), // Más visible
                     height: 1.4,
                     fontWeight: FontWeight.w500,
                   ),
