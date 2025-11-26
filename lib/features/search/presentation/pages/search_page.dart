@@ -12,6 +12,8 @@ import 'package:habitto/core/services/api_service.dart';
 import 'package:habitto/features/properties/data/services/property_service.dart';
 import 'package:habitto/features/properties/domain/entities/property.dart'
     as domain;
+import 'package:habitto/features/properties/presentation/pages/property_detail_page.dart';
+import 'package:habitto/config/app_config.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -452,6 +454,7 @@ class _SearchPageState extends State<SearchPage> {
         imageUrl: property.imageUrl,
         address: property.address,
         features: property.features,
+        propertyId: int.tryParse(property.id),
       );
     });
   }
@@ -474,7 +477,9 @@ class _SearchPageState extends State<SearchPage> {
                   location:
                       Point(coordinates: Position(p.longitude!, p.latitude!)),
                   type: PropertyType.house,
-                  imageUrl: p.mainPhoto ?? 'assets/images/casa1.jpg',
+                  imageUrl: (p.mainPhoto != null && p.mainPhoto!.isNotEmpty)
+                      ? AppConfig.sanitizeUrl(p.mainPhoto!)
+                      : 'assets/images/casa1.jpg',
                   address: p.address,
                   features: [
                     '${p.bedrooms} hab',
@@ -865,18 +870,10 @@ class _SearchPageState extends State<SearchPage> {
               // Imagen de la propiedad
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  _selectedProperty!.imageUrl,
+                child: SizedBox(
                   width: double.infinity,
                   height: 120,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: double.infinity,
-                    height: 120,
-                    color: AppTheme.grayColor.withValues(alpha: 0.3),
-                    child: const Icon(Icons.home,
-                        size: 40, color: AppTheme.grayColor),
-                  ),
+                  child: _buildPropertyImage(_selectedProperty!.imageUrl),
                 ),
               ),
               const SizedBox(height: 16),
@@ -920,7 +917,17 @@ class _SearchPageState extends State<SearchPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {/* Navegar a detalles de la propiedad */},
+                  onPressed: () {
+                    final pid = _selectedProperty?.propertyId;
+                    if (pid != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PropertyDetailPage(propertyId: pid),
+                        ),
+                      );
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,
                     foregroundColor: AppTheme.blackColor,
@@ -943,6 +950,34 @@ class _SearchPageState extends State<SearchPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPropertyImage(String urlRaw) {
+    final url = AppConfig.sanitizeUrl(urlRaw);
+    final placeholder = Container(
+      color: AppTheme.grayColor.withValues(alpha: 0.3),
+      alignment: Alignment.center,
+      child: const Icon(Icons.home, size: 40, color: AppTheme.grayColor),
+    );
+
+    if (url.isEmpty) return placeholder;
+    final isNetwork = url.startsWith('http://') || url.startsWith('https://');
+    if (isNetwork) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (context, error, stack) => placeholder,
+      );
+    }
+    return Image.asset(
+      url,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stack) => placeholder,
     );
   }
 }
@@ -980,6 +1015,7 @@ class PropertyInfo {
   final String imageUrl;
   final String? address;
   final List<String> features;
+  final int? propertyId;
   const PropertyInfo({
     required this.title,
     required this.price,
@@ -987,6 +1023,7 @@ class PropertyInfo {
     required this.imageUrl,
     this.address,
     this.features = const [],
+    this.propertyId,
   });
 }
 
