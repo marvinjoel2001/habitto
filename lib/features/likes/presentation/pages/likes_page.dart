@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../profile/data/services/profile_service.dart';
+import '../../../properties/presentation/pages/property_detail_page.dart';
+import '../../../../config/app_config.dart';
 import '../../../properties/data/services/property_service.dart';
 import '../../../properties/domain/entities/property.dart';
 import '../../../profile/domain/entities/profile.dart' as profile_entity;
@@ -254,7 +256,17 @@ class _LikesPageState extends State<LikesPage> {
                         
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16.0),
-                          child: _buildPropertyCard(property, ownerProfile),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PropertyDetailPage(propertyId: property.id),
+                                ),
+                              );
+                            },
+                            child: _buildPropertyCard(property, ownerProfile),
+                          ),
                         );
                       },
                       childCount: _favoriteProperties.length,
@@ -279,7 +291,7 @@ class _LikesPageState extends State<LikesPage> {
             Positioned.fill(
               child: property.mainPhoto != null
                   ? Image.network(
-                      property.mainPhoto!,
+                      AppConfig.sanitizeUrl(property.mainPhoto!),
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(

@@ -250,8 +250,18 @@ class PropertyService {
       final response = await _apiService.get('${AppConfig.propertiesEndpoint}$propertyId/');
 
       if (response['success'] && response['data'] != null) {
+        // Desenvolver posibles envolturas { success, message, data: {...} }
+        final envelope = response['data'];
+        Map<String, dynamic> data;
+        if (envelope is Map && envelope['data'] is Map) {
+          data = Map<String, dynamic>.from(envelope['data'] as Map);
+        } else if (envelope is Map) {
+          data = Map<String, dynamic>.from(envelope);
+        } else {
+          data = {};
+        }
         // Convertir respuesta JSON a entidad de dominio
-        final property = Property.fromJson(response['data']);
+        final property = Property.fromJson(data);
 
         return {
           'success': true,

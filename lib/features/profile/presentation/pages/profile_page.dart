@@ -13,6 +13,7 @@ import '../../../properties/data/services/photo_service.dart';
 import '../../../properties/domain/entities/property.dart';
 import '../../../properties/domain/entities/photo.dart';
 import '../../../properties/presentation/pages/property_photos_page.dart';
+import '../../../properties/presentation/pages/property_detail_page.dart';
 import '../../../../core/services/api_service.dart';
 import 'edit_profile_page.dart';
 
@@ -866,7 +867,18 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     return _userProperties.map((property) {
       final isActive = property.isActive;
 
-      return Container(
+      return GestureDetector(
+        onTap: () {
+          if (property.id != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PropertyDetailPage(propertyId: property.id!),
+              ),
+            );
+          }
+        },
+        child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
@@ -942,6 +954,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               ),
             ),
           ),
+        ),
         ),
       );
     }).toList();
@@ -987,7 +1000,18 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     return _userProperties.map((property) {
       final isActive = property.isActive;
 
-      return Container(
+      return GestureDetector(
+        onTap: () {
+          if (property.id != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PropertyDetailPage(propertyId: property.id!),
+              ),
+            );
+          }
+        },
+        child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
@@ -1063,6 +1087,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               ),
             ),
           ),
+        ),
         ),
       );
     }).toList();
