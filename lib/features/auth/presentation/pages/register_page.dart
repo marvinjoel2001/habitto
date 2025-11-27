@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:habitto/shared/theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:camera/camera.dart';
 import 'dart:io';
 import '../../data/services/auth_service.dart';
 import '../../domain/entities/user.dart';
 import '../../../profile/domain/entities/profile.dart';
+import '../../../profile/presentation/pages/create_search_profile_page.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 
@@ -32,6 +35,11 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   String _selectedUserType = 'inquilino';
   File? _selectedImage;
+  int _step = 0;
+  CameraController? _cameraController;
+  bool _cameraReady = false;
+  List<CameraDescription> _cameras = const [];
+  bool _autoCapture = false;
 
   Future<void> _pickImage() async {
     try {
@@ -52,6 +60,195 @@ class _RegisterPageState extends State<RegisterPage> {
         SnackBar(content: Text('Error al seleccionar imagen: $e')),
       );
     }
+  }
+
+  Widget _buildCameraFull() {
+    return Stack(children: [
+      Positioned.fill(
+        child: _selectedImage != null
+            ? Image.file(_selectedImage!, fit: BoxFit.cover)
+            : (_cameraReady && _cameraController != null
+                ? CameraPreview(_cameraController!)
+                : Container(color: Colors.black.withValues(alpha: 0.1))),
+      ),
+      Positioned.fill(child: CustomPaint(painter: _FaceMaskPainter())),
+      if (_selectedImage != null)
+        Positioned(
+          top: 12,
+          left: 12,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(14),
+                  border:
+                      Border.all(color: Colors.black.withValues(alpha: 0.1)),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.black),
+                  onPressed: () {
+                    setState(() {
+                      _selectedImage = null;
+                    });
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      Positioned(
+        top: 12,
+        right: 12,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.1)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                IconButton(
+                  icon: const Icon(Icons.cameraswitch, color: Colors.black),
+                  onPressed: () async {
+                    final cams = _cameras;
+                    if (cams.isNotEmpty) {
+                      final current = _cameraController?.description;
+                      CameraLensDirection nextDir = CameraLensDirection.back;
+                      if (current != null &&
+                          current.lensDirection == CameraLensDirection.back) {
+                        nextDir = CameraLensDirection.front;
+                      }
+                      await _cameraController?.dispose();
+                      final idx =
+                          cams.indexWhere((c) => c.lensDirection == nextDir);
+                      final useIdx = idx >= 0 ? idx : 0;
+                      _cameraController = CameraController(
+                          cams[useIdx], ResolutionPreset.medium,
+                          enableAudio: false);
+                      await _cameraController!.initialize();
+                      setState(() {
+                        _cameraReady = true;
+                      });
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: Icon(_autoCapture ? Icons.pause_circle : Icons.timer,
+                      color: Colors.black),
+                  onPressed: () async {
+                    setState(() {
+                      _autoCapture = !_autoCapture;
+                    });
+                    if (_autoCapture) {
+                      await Future.delayed(const Duration(seconds: 2));
+                      if (mounted && _autoCapture) {
+                        _captureSelfie();
+                        setState(() {
+                          _autoCapture = false;
+                        });
+                      }
+                    }
+                  },
+                ),
+                if (_selectedImage != null)
+                  IconButton(
+                    icon: const Icon(Icons.check_circle, color: Colors.black),
+                    onPressed: () {
+                      setState(() {
+                        _step = 2;
+                      });
+                    },
+                  ),
+              ]),
+            ),
+          ),
+        ),
+      ),
+      Positioned(
+        bottom: 96,
+        left: 12,
+        right: 12,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            CustomButton(
+              text: 'Tomar foto',
+              onPressed: _captureSelfie,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            CustomButton(
+              text: 'Galería',
+              onPressed: _pickImage,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() => _step = 2);
+              },
+              child:
+                  const Text('Omitir', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    ]);
+  }
+
+  Future<void> _initCamera() async {
+    final status = await Permission.camera.request();
+    if (!status.isGranted) {
+      setState(() {
+        _cameraReady = false;
+      });
+      return;
+    }
+    try {
+      _cameras = await availableCameras();
+      if (_cameras.isNotEmpty) {
+        final frontIndex = _cameras
+            .indexWhere((c) => c.lensDirection == CameraLensDirection.front);
+        final index = frontIndex >= 0 ? frontIndex : 0;
+        _cameraController = CameraController(
+            _cameras[index], ResolutionPreset.medium,
+            enableAudio: false);
+        await _cameraController!.initialize();
+        setState(() {
+          _cameraReady = true;
+        });
+      }
+    } catch (_) {
+      setState(() {
+        _cameraReady = false;
+      });
+    }
+  }
+
+  Future<void> _captureSelfie() async {
+    try {
+      if (_cameraController != null && _cameraReady) {
+        final xfile = await _cameraController!.takePicture();
+        setState(() {
+          _selectedImage = File(xfile.path);
+        });
+      } else {
+        final XFile? image = await _imagePicker.pickImage(
+            source: ImageSource.camera,
+            maxWidth: 800,
+            maxHeight: 800,
+            imageQuality: 85);
+        if (image != null) {
+          setState(() {
+            _selectedImage = File(image.path);
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _register() async {
@@ -89,7 +286,9 @@ class _RegisterPageState extends State<RegisterPage> {
         favorites: [],
       );
 
-      final response = await _authService.register(user, profile, _passwordController.text, profileImage: _selectedImage);
+      final response = await _authService.register(
+          user, profile, _passwordController.text,
+          profileImage: _selectedImage);
 
       if (response['success']) {
         // Después del registro exitoso, hacer login automático
@@ -99,14 +298,69 @@ class _RegisterPageState extends State<RegisterPage> {
         );
 
         if (loginResponse['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registro exitoso')),
-          );
-          Navigator.pushReplacementNamed(context, '/home');
+          if (_selectedUserType == 'inquilino') {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.black.withValues(alpha: 0.85),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              builder: (ctx) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Crea tu perfil de búsqueda',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 8),
+                      Text(
+                          'Esto nos ayuda a encontrar opciones que se ajusten a tu presupuesto, ubicación y preferencias.',
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85))),
+                      const SizedBox(height: 16),
+                      Row(children: [
+                        Expanded(
+                            child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.primary,
+                                    foregroundColor: Colors.black),
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) =>
+                                              const CreateSearchProfilePage()));
+                                },
+                                child: const Text('Crear ahora'))),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: OutlinedButton(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  Navigator.pushReplacementNamed(
+                                      context, '/home');
+                                },
+                                child: const Text('Omitir'))),
+                      ])
+                    ],
+                  ),
+                );
+              },
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Registro exitoso')));
+            Navigator.pushReplacementNamed(context, '/home');
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registro exitoso. Por favor, inicia sesión.')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Registro exitoso. Por favor, inicia sesión.')));
           Navigator.pushReplacementNamed(context, '/login');
         }
       } else {
@@ -134,328 +388,253 @@ class _RegisterPageState extends State<RegisterPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
         ),
       ),
-      body: Stack(
-        children: [
-          // Fondo
-          Image.asset(
-            'assets/images/loginboys2.jpg',
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-          ),
-          // Overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.10),
-                    Colors.black.withOpacity(0.85),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ),
-          // Contenido
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 40),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                      child: Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Colors.white.withOpacity(0.25)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.10),
-                              blurRadius: 20,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              Text(
-                                'Crear Cuenta',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  shadows: [
-                                    Shadow(
-                                      blurRadius: 8,
-                                      color: Colors.black.withOpacity(0.4),
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+      body: Container(
+        color: Colors.white,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              if (_step == 1)
+                Positioned.fill(child: _buildCameraFull())
+              else
+                Center(child: _buildCardContainer(child: _buildStepBody())),
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: 24,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: Colors.black.withValues(alpha: 0.08)),
+                      ),
+                      child: Row(
+                        children: [
+                          if (_step > 0)
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    if (_step > 0) _step--;
+                                  });
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.2)),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16)),
                                 ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Foto de perfil
-                              _buildProfileImageSection(),
-                              const SizedBox(height: 24),
-
-                              // Nombre de usuario
-                              CustomTextField(
-                                controller: _usernameController,
-                                hintText: 'Nombre de usuario',
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Por favor ingresa un nombre de usuario';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Email
-                              CustomTextField(
-                                controller: _emailController,
-                                hintText: 'Email',
-                                keyboardType: TextInputType.emailAddress,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Por favor ingresa tu email';
-                                  }
-                                  if (!value.contains('@')) {
-                                    return 'Por favor ingresa un email válido';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Nombre y Apellido
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: CustomTextField(
-                                      controller: _firstNameController,
-                                      hintText: 'Nombre',
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Requerido';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: CustomTextField(
-                                      controller: _lastNameController,
-                                      hintText: 'Apellido',
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Requerido';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Teléfono
-                              CustomTextField(
-                                controller: _phoneController,
-                                hintText: 'Teléfono',
-                                keyboardType: TextInputType.phone,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Por favor ingresa tu teléfono';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Tipo de usuario
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.3),
-                                  ),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _selectedUserType,
-                                    isExpanded: true,
-                                    dropdownColor: Colors.grey[800],
-                                    style: const TextStyle(color: Colors.white),
-                                    hint: const Text(
-                                      'Tipo de usuario',
-                                      style: TextStyle(color: Colors.white70),
-                                    ),
-                                    items: const [
-                                      DropdownMenuItem(
-                                        value: 'inquilino',
-                                        child: Text('Inquilino'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'propietario',
-                                        child: Text('Propietario'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'agente',
-                                        child: Text('Agente'),
-                                      ),
-                                    ],
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedUserType = value!;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Contraseña
-                              CustomTextField(
-                                controller: _passwordController,
-                                hintText: 'Contraseña',
-                                isPassword: true,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Por favor ingresa una contraseña';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'La contraseña debe tener al menos 6 caracteres';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Confirmar contraseña
-                              CustomTextField(
-                                controller: _confirmPasswordController,
-                                hintText: 'Confirmar contraseña',
-                                isPassword: true,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Por favor confirma tu contraseña';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Botón de registro
-                              CustomButton(
-                                text: 'Registrarse',
-                                onPressed: _register,
-                                isLoading: _isLoading,
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Link a login
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    '¿Ya tienes una cuenta? ',
+                                child: const Text('Atrás',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pushReplacementNamed(context, '/login');
-                                    },
-                                    child: Text(
-                                      'Inicia sesión',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.secondary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w600)),
                               ),
-                            ],
+                            ),
+                          if (_step > 0) const SizedBox(width: 12),
+                          Expanded(
+                            child: CustomButton(
+                              text: _step < 3 ? 'Continuar' : 'Registrarse',
+                              onPressed: _step < 3
+                                  ? () {
+                                      setState(() => _step++);
+                                      if (_step == 1) _initCamera();
+                                    }
+                                  : _register,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildProfileImageSection() {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: _pickImage,
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildCardContainer({required Widget child}) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            width: 100,
-            height: 100,
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppTheme.primaryColor, width: 2),
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 20,
+                  spreadRadius: 2,
                 ),
               ],
             ),
-            child: ClipOval(
-              child: _selectedImage != null
-                  ? Image.file(
-                      _selectedImage!,
-                      fit: BoxFit.cover,
-                    )
-                  : Image.asset(
-                      'assets/images/userempty.png',
-                      fit: BoxFit.cover,
-                    ),
-            ),
+            child: child,
           ),
         ),
-        const SizedBox(height: 8),
-        TextButton.icon(
-          onPressed: _pickImage,
-          icon: const Icon(Icons.camera_alt, color: AppTheme.primaryColor, size: 18),
-          label: const Text(
-            'Agregar foto',
-            style: TextStyle(color: AppTheme.primaryColor, fontSize: 14),
-          ),
-        ),
-      ],
+      ),
     );
+  }
+
+  Widget _buildStepBody() {
+    switch (_step) {
+      case 0:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Tu nombre',
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black)),
+            const SizedBox(height: 24),
+            Row(children: [
+              Expanded(
+                  child: CustomTextField(
+                      controller: _firstNameController,
+                      hintText: 'Nombre',
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Requerido' : null)),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: CustomTextField(
+                      controller: _lastNameController,
+                      hintText: 'Apellido',
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Requerido' : null)),
+            ]),
+            const SizedBox(height: 12),
+          ],
+        );
+        return const SizedBox.shrink();
+      case 2:
+        return Form(
+          key: _formKey,
+          child: Column(children: [
+            const Text('Contacto',
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black)),
+            const SizedBox(height: 24),
+            CustomTextField(
+                controller: _emailController,
+                hintText: 'Email',
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) {
+                  if (v == null || v.isEmpty)
+                    return 'Por favor ingresa tu email';
+                  if (!v.contains('@'))
+                    return 'Por favor ingresa un email válido';
+                  return null;
+                }),
+            const SizedBox(height: 16),
+            CustomTextField(
+                controller: _phoneController,
+                hintText: 'Teléfono',
+                keyboardType: TextInputType.phone,
+                validator: (v) {
+                  if (v == null || v.isEmpty)
+                    return 'Por favor ingresa tu teléfono';
+                  return null;
+                }),
+            const SizedBox(height: 16),
+            Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: Colors.black.withValues(alpha: 0.1))),
+                child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                  value: _selectedUserType,
+                  isExpanded: true,
+                  dropdownColor: Colors.white,
+                  style: const TextStyle(color: Colors.black),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'inquilino', child: Text('Inquilino')),
+                    DropdownMenuItem(
+                        value: 'propietario', child: Text('Propietario')),
+                    DropdownMenuItem(value: 'agente', child: Text('Agente'))
+                  ],
+                  onChanged: (v) {
+                    setState(() => _selectedUserType = v!);
+                  },
+                ))),
+            const SizedBox(height: 8),
+          ]),
+        );
+      default:
+        return Form(
+            key: _formKey,
+            child: Column(children: [
+              const Text('Cuenta',
+                  style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black)),
+              const SizedBox(height: 24),
+              CustomTextField(
+                  controller: _usernameController,
+                  hintText: 'Nombre de usuario',
+                  validator: (v) {
+                    if (v == null || v.isEmpty)
+                      return 'Por favor ingresa un nombre de usuario';
+                    return null;
+                  }),
+              const SizedBox(height: 16),
+              CustomTextField(
+                  controller: _passwordController,
+                  hintText: 'Contraseña',
+                  isPassword: true,
+                  validator: (v) {
+                    if (v == null || v.isEmpty)
+                      return 'Por favor ingresa una contraseña';
+                    if (v.length < 6)
+                      return 'La contraseña debe tener al menos 6 caracteres';
+                    return null;
+                  }),
+              const SizedBox(height: 16),
+              CustomTextField(
+                  controller: _confirmPasswordController,
+                  hintText: 'Confirmar contraseña',
+                  isPassword: true,
+                  validator: (v) {
+                    if (v == null || v.isEmpty)
+                      return 'Por favor confirma tu contraseña';
+                    return null;
+                  }),
+              const SizedBox(height: 24),
+            ]));
+    }
   }
 
   @override
@@ -467,6 +646,42 @@ class _RegisterPageState extends State<RegisterPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
+    _cameraController?.dispose();
     super.dispose();
   }
+}
+
+class _FaceMaskPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final overlay = Paint()..color = Colors.black.withValues(alpha: 0.55);
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    canvas.drawRect(rect, overlay);
+
+    // Marco ovalado tipo rostro
+    final faceWidth = size.width * 0.65;
+    final faceHeight = faceWidth * 1.2;
+    final faceRect = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2 - 10),
+      width: faceWidth,
+      height: faceHeight,
+    );
+
+    final clearPaint = Paint()
+      ..blendMode = BlendMode.clear
+      ..style = PaintingStyle.fill;
+    canvas.saveLayer(rect, Paint());
+    final path = Path()..addOval(faceRect);
+    canvas.drawPath(path, clearPaint);
+    canvas.restore();
+
+    final border = Paint()
+      ..color = AppTheme.primaryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+    canvas.drawOval(faceRect, border);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -39,25 +39,33 @@ class SocialLoginButton extends StatelessWidget {
               foregroundColor: textColor ?? AppTheme.whiteColor,
               elevation: 0,
               shadowColor: Colors.transparent,
+              minimumSize: const Size(0, 50),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
                 side: BorderSide(color: AppTheme.whiteColor.withValues(alpha: 0.3), width: 1),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: iconColor ?? AppTheme.whiteColor, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: textColor ?? AppTheme.whiteColor,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: iconColor ?? AppTheme.whiteColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: textColor ?? AppTheme.whiteColor,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
