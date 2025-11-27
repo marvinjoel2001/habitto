@@ -1,12 +1,9 @@
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import '../../../../config/app_config.dart';
-import '../../domain/entities/property.dart';
 import '../../domain/entities/amenity.dart';
 import '../../domain/entities/payment_method.dart';
 import '../../data/services/property_service.dart';
@@ -60,6 +57,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   final List<String> _selectedAmenityNames = [];
   final List<int> _selectedPaymentMethodIds = [];
 
+  // Valores numéricos para sliders de precio y garantía
+  double _priceValue = 0;
+  double _guaranteeValue = 0;
+
   List<Amenity> _availableAmenities = [];
   List<PaymentMethod> _availablePaymentMethods = [];
   int? _currentUserId;
@@ -84,7 +85,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     if (key.contains('wifi')) return Icons.wifi;
     if (key.contains('estacion')) return Icons.local_parking;
     if (key.contains('lavander')) return Icons.local_laundry_service;
-    if (key.contains('gym') || key.contains('gimnas')) return Icons.fitness_center;
+    if (key.contains('gym') || key.contains('gimnas'))
+      return Icons.fitness_center;
     if (key.contains('piscina') || key.contains('pool')) return Icons.pool;
     if (key.contains('jard') || key.contains('garden')) return Icons.park;
     return Icons.check_circle_outline;
@@ -94,7 +96,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   final List<Map<String, dynamic>> _canonicalAmenities = const [
     {'id': 'wifi', 'name': 'WiFi', 'icon': Icons.wifi},
     {'id': 'parking', 'name': 'Estacionamiento', 'icon': Icons.local_parking},
-    {'id': 'laundry', 'name': 'Lavandería', 'icon': Icons.local_laundry_service},
+    {
+      'id': 'laundry',
+      'name': 'Lavandería',
+      'icon': Icons.local_laundry_service
+    },
     {'id': 'gym', 'name': 'Gimnasio', 'icon': Icons.fitness_center},
     {'id': 'pool', 'name': 'Piscina', 'icon': Icons.pool},
     {'id': 'garden', 'name': 'Jardín', 'icon': Icons.park},
@@ -104,10 +110,13 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   void initState() {
     super.initState();
     // Inicializar el token de Mapbox - usar el token directamente como en search_page.dart
-    MapboxOptions.setAccessToken("pk.eyJ1IjoibWFydmluMjAwMSIsImEiOiJjbWdpaDRicTQwOTc3Mm9wcmd3OW5lNzExIn0.ISPECxmLq_6xhipoygxtFg");
+    MapboxOptions.setAccessToken(
+        "pk.eyJ1IjoibWFydmluMjAwMSIsImEiOiJjbWdpaDRicTQwOTc3Mm9wcmd3OW5lNzExIn0.ISPECxmLq_6xhipoygxtFg");
     _loadInitialData();
     _getCurrentLocation();
     _loadMarkerImage();
+    _priceController.text = '0';
+    _guaranteeController.text = '0';
   }
 
   @override
@@ -127,11 +136,12 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     _pageController.dispose();
     super.dispose();
   }
-  
+
   // Obtener la ubicación actual del usuario
   Future<void> _getCurrentLocation() async {
     try {
-      geo.LocationPermission permission = await geo.Geolocator.checkPermission();
+      geo.LocationPermission permission =
+          await geo.Geolocator.checkPermission();
       if (permission == geo.LocationPermission.denied) {
         permission = await geo.Geolocator.requestPermission();
       }
@@ -139,12 +149,14 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           permission == geo.LocationPermission.always) {
         _currentPosition = await geo.Geolocator.getCurrentPosition(
             desiredAccuracy: geo.LocationAccuracy.high);
-            
+
         // Actualizar los controladores con la ubicación actual
         if (_currentPosition != null) {
           setState(() {
-            _latitudeController.text = _currentPosition!.latitude.toStringAsFixed(6);
-            _longitudeController.text = _currentPosition!.longitude.toStringAsFixed(6);
+            _latitudeController.text =
+                _currentPosition!.latitude.toStringAsFixed(6);
+            _longitudeController.text =
+                _currentPosition!.longitude.toStringAsFixed(6);
           });
         }
       }
@@ -153,12 +165,13 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       print('Error al obtener la ubicación: $e');
     }
   }
-  
+
   // Cargar la imagen del marcador
   Future<void> _loadMarkerImage() async {
     try {
       // Intentar cargar la imagen desde assets
-      final ByteData markerBytes = await rootBundle.load('assets/images/house_pointer.png');
+      final ByteData markerBytes =
+          await rootBundle.load('assets/images/house_pointer.png');
       _markerImage = markerBytes.buffer.asUint8List();
     } catch (e) {
       print('Error cargando imagen de marcador: $e');
@@ -166,7 +179,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       _markerImage = await _generateDefaultMarker();
     }
   }
-  
+
   // Generar una imagen PNG simple para el marcador
   Future<Uint8List> _generateDefaultMarker() async {
     const double size = 64.0;
@@ -206,30 +219,38 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
     try {
       print('AddPropertyPage: Iniciando carga de datos iniciales');
-      
+
       // Load amenities, payment methods, and current user profile
       final amenitiesResponse = await _propertyService.getAmenities();
       final paymentMethodsResponse = await _propertyService.getPaymentMethods();
       final profileResponse = await _profileService.getCurrentProfile();
 
-      print('AddPropertyPage: Respuesta de amenities: ${amenitiesResponse['success']}');
-      print('AddPropertyPage: Respuesta de payment methods: ${paymentMethodsResponse['success']}');
-      print('AddPropertyPage: Respuesta de profile: ${profileResponse['success']}');
+      print(
+          'AddPropertyPage: Respuesta de amenities: ${amenitiesResponse['success']}');
+      print(
+          'AddPropertyPage: Respuesta de payment methods: ${paymentMethodsResponse['success']}');
+      print(
+          'AddPropertyPage: Respuesta de profile: ${profileResponse['success']}');
 
       if (amenitiesResponse['success']) {
         _availableAmenities = amenitiesResponse['data'];
-        print('AddPropertyPage: ${_availableAmenities.length} amenities cargadas');
+        print(
+            'AddPropertyPage: ${_availableAmenities.length} amenities cargadas');
       }
 
       if (paymentMethodsResponse['success']) {
-        print('AddPropertyPage: Datos de payment methods: ${paymentMethodsResponse['payment_methods']}');
-        _availablePaymentMethods = (paymentMethodsResponse['payment_methods'] as List)
-            .map<PaymentMethod>((pm) => PaymentMethod.fromJson(pm))
-            .toList();
-        print('AddPropertyPage: ${_availablePaymentMethods.length} payment methods cargados');
+        print(
+            'AddPropertyPage: Datos de payment methods: ${paymentMethodsResponse['payment_methods']}');
+        _availablePaymentMethods =
+            (paymentMethodsResponse['payment_methods'] as List)
+                .map<PaymentMethod>((pm) => PaymentMethod.fromJson(pm))
+                .toList();
+        print(
+            'AddPropertyPage: ${_availablePaymentMethods.length} payment methods cargados');
       }
 
-      if (profileResponse['success'] == true && profileResponse['data'] != null) {
+      if (profileResponse['success'] == true &&
+          profileResponse['data'] != null) {
         final user = profileResponse['data']['user'];
         if (user != null) {
           _currentUserId = user.id;
@@ -279,7 +300,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
     if (_currentUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: No se pudo obtener la información del usuario')),
+        const SnackBar(
+            content:
+                Text('Error: No se pudo obtener la información del usuario')),
       );
       return;
     }
@@ -302,13 +325,18 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         'price': _priceController.text,
         'guarantee': _guaranteeController.text,
         'description': _descriptionController.text.trim(),
-        'size': double.parse(_areaController.text.isNotEmpty ? _areaController.text : _sizeController.text),
+        'size': double.parse(_areaController.text.isNotEmpty
+            ? _areaController.text
+            : _sizeController.text),
         'bedrooms': _bedrooms,
         'bathrooms': _bathrooms,
         'amenities': _selectedAmenityNames,
         'availability_date': _availabilityDateController.text.isNotEmpty
             ? _availabilityDateController.text
-            : DateTime.now().add(const Duration(days: 1)).toIso8601String().split('T')[0],
+            : DateTime.now()
+                .add(const Duration(days: 1))
+                .toIso8601String()
+                .split('T')[0],
       };
 
       // Métodos de pago son opcionales: si no hay selección, no enviar la llave
@@ -324,7 +352,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             title: const Text('¡Propiedad creada!'),
-            content: const Text('Tu propiedad ha sido creada exitosamente. ¿Quieres agregar fotos ahora?'),
+            content: const Text(
+                'Tu propiedad ha sido creada exitosamente. ¿Quieres agregar fotos ahora?'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -340,10 +369,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                       builder: (context) => PropertyPhotosPage(
-                         property: response['data'],
-                       ),
-                     ),
+                      builder: (context) => PropertyPhotosPage(
+                        property: response['data'],
+                      ),
+                    ),
                   );
                 },
                 child: const Text('Agregar fotos'),
@@ -368,35 +397,40 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   bool _validateForm() {
     if (_addressController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa la dirección de la propiedad')),
+        const SnackBar(
+            content: Text('Por favor ingresa la dirección de la propiedad')),
       );
       return false;
     }
 
     if (_priceController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa el precio de alquiler')),
+        const SnackBar(
+            content: Text('Por favor ingresa el precio de alquiler')),
       );
       return false;
     }
 
     if (_guaranteeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa el monto de la garantía')),
+        const SnackBar(
+            content: Text('Por favor ingresa el monto de la garantía')),
       );
       return false;
     }
 
     if (_descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa una descripción de la propiedad')),
+        const SnackBar(
+            content: Text('Por favor ingresa una descripción de la propiedad')),
       );
       return false;
     }
 
     if (_areaController.text.isEmpty && _sizeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa el área de la propiedad')),
+        const SnackBar(
+            content: Text('Por favor ingresa el área de la propiedad')),
       );
       return false;
     }
@@ -416,7 +450,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       return false;
     }
 
-    final areaText = _areaController.text.isNotEmpty ? _areaController.text : _sizeController.text;
+    final areaText = _areaController.text.isNotEmpty
+        ? _areaController.text
+        : _sizeController.text;
     if (double.tryParse(areaText) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('El área debe ser un número válido')),
@@ -427,8 +463,6 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     return true;
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -437,7 +471,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         child: _isLoadingData
             ? const Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                 ),
               )
             : Column(
@@ -524,11 +559,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         children: [
           const Text(
             'Comencemos con lo básico. Proporcione los detalles esenciales de su propiedad.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-              height: 1.5
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
           _buildPropertyTypeDropdown(),
@@ -536,10 +567,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           const Text(
             'Habitaciones',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           Row(
@@ -555,7 +583,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       });
                     }
                   },
-                  icon: const Icon(Icons.remove_circle_outline, color: Colors.black54),
+                  icon: const Icon(Icons.remove_circle_outline,
+                      color: Colors.black54),
                 ),
               ),
               Expanded(
@@ -563,7 +592,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppTheme.darkGrayBase.withOpacity(0.3), width: 1),
+                    border: Border.all(
+                        color: AppTheme.darkGrayBase.withOpacity(0.3),
+                        width: 1),
                     gradient: AppTheme.getCardGradient(),
                   ),
                   child: ClipRRect(
@@ -595,7 +626,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       _bedroomsController.text = _bedrooms.toString();
                     });
                   },
-                  icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+                  icon: const Icon(Icons.add_circle_outline,
+                      color: AppTheme.primaryColor),
                 ),
               ),
             ],
@@ -604,10 +636,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           const Text(
             'Baños',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           Row(
@@ -623,7 +652,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       });
                     }
                   },
-                  icon: const Icon(Icons.remove_circle_outline, color: Colors.black54),
+                  icon: const Icon(Icons.remove_circle_outline,
+                      color: Colors.black54),
                 ),
               ),
               Expanded(
@@ -631,7 +661,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppTheme.darkGrayBase.withOpacity(0.3), width: 1),
+                    border: Border.all(
+                        color: AppTheme.darkGrayBase.withOpacity(0.3),
+                        width: 1),
                     gradient: AppTheme.getCardGradient(),
                   ),
                   child: ClipRRect(
@@ -663,7 +695,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       _bathroomsController.text = _bathrooms.toString();
                     });
                   },
-                  icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+                  icon: const Icon(Icons.add_circle_outline,
+                      color: AppTheme.primaryColor),
                 ),
               ),
             ],
@@ -697,52 +730,108 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         children: [
           const Text(
             'Ahora agreguemos los detalles financieros y características especiales.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-              height: 1.5
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
           const Text(
             'Precio de Alquiler (COP) *',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
-          _buildProfileStyledField(
-            controller: _priceController,
-            hintText: 'Ej: 2500000',
-            icon: Icons.attach_money,
-            keyboardType: TextInputType.number,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            decoration: AppTheme.getGlassCard(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.attach_money, color: AppTheme.primaryColor),
+                        SizedBox(width: 8),
+                        Text('Ajusta el precio',
+                            style: TextStyle(color: Colors.black87)),
+                      ],
+                    ),
+                    Text('COP ${_priceValue.round()}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, color: Colors.black)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Slider(
+                  value: _priceValue,
+                  min: 0,
+                  max: 500,
+                  divisions: 500,
+                  label: _priceValue.round().toString(),
+                  activeColor: AppTheme.primaryColor,
+                  onChanged: (v) {
+                    setState(() {
+                      _priceValue = v;
+                      _priceController.text = _priceValue.round().toString();
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           const Text(
             'Garantía (COP)',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
-          _buildProfileStyledField(
-            controller: _guaranteeController,
-            hintText: 'Ej: 3000000',
-            icon: Icons.lock_outline,
-            keyboardType: TextInputType.number,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            decoration: AppTheme.getGlassCard(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                        SizedBox(width: 8),
+                        Text('Ajusta la garantía',
+                            style: TextStyle(color: Colors.black87)),
+                      ],
+                    ),
+                    Text('COP ${_guaranteeValue.round()}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, color: Colors.black)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Slider(
+                  value: _guaranteeValue,
+                  min: 0,
+                  max: 500,
+                  divisions: 500,
+                  label: _guaranteeValue.round().toString(),
+                  activeColor: AppTheme.secondaryColor,
+                  onChanged: (v) {
+                    setState(() {
+                      _guaranteeValue = v;
+                      _guaranteeController.text =
+                          _guaranteeValue.round().toString();
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           const Text(
             'Descripción',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           _buildProfileStyledField(
@@ -755,10 +844,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           const Text(
             'Comodidades',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -775,7 +861,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(amenity['icon'] as IconData, size: 16, color: AppTheme.darkGrayBase),
+                      Icon(amenity['icon'] as IconData,
+                          size: 16, color: AppTheme.darkGrayBase),
                       const SizedBox(width: 6),
                       Text(
                         name,
@@ -783,8 +870,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       ),
                       const SizedBox(width: 8),
                       Icon(
-                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                        color: isSelected ? AppTheme.secondaryColor : Colors.grey,
+                        isSelected
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        color:
+                            isSelected ? AppTheme.secondaryColor : Colors.grey,
                         size: 18,
                       ),
                     ],
@@ -810,10 +900,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           const Text(
             'Métodos de Pago Aceptados',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -823,14 +910,15 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
               final isSelected = _selectedPaymentMethodIds.contains(method.id);
               return Container(
                 decoration: isSelected
-                  ? AppTheme.getMintButtonDecoration()
-                  : AppTheme.getGlassCard(),
+                    ? AppTheme.getMintButtonDecoration()
+                    : AppTheme.getGlassCard(),
                 child: FilterChip(
                   label: Text(
                     method.name,
                     style: TextStyle(
                       color: isSelected ? AppTheme.darkGrayBase : Colors.black,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
                   selected: isSelected,
@@ -858,32 +946,34 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   // Método para manejar la creación del mapa
   void _onMapCreated(MapboxMap mapboxMap) async {
     _mapboxMap = mapboxMap;
-    
+
     // Habilitar el punto azul de la ubicación del usuario
-    _mapboxMap!.location.updateSettings(LocationComponentSettings(enabled: true));
+    _mapboxMap!.location
+        .updateSettings(LocationComponentSettings(enabled: true));
 
     // Crear el gestor de marcadores
-    _pointAnnotationManager = await mapboxMap.annotations.createPointAnnotationManager();
-    
+    _pointAnnotationManager =
+        await mapboxMap.annotations.createPointAnnotationManager();
+
     setState(() {
       _isMapReady = true;
     });
-    
+
     // Crear el marcador en la ubicación seleccionada o actual
     _updatePropertyMarker();
   }
-  
+
   // Actualizar o crear el marcador de la propiedad
   void _updatePropertyMarker() async {
     if (_pointAnnotationManager == null || _markerImage == null) return;
-    
+
     // Limpiar marcadores anteriores
     await _pointAnnotationManager!.deleteAll();
-    
+
     // Obtener las coordenadas (usar las del formulario o la ubicación actual)
     double lat = 0.0;
     double lng = 0.0;
-    
+
     try {
       lat = double.parse(_latitudeController.text);
       lng = double.parse(_longitudeController.text);
@@ -892,7 +982,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       if (_currentPosition != null) {
         lat = _currentPosition!.latitude;
         lng = _currentPosition!.longitude;
-        
+
         // Actualizar los campos del formulario
         _latitudeController.text = lat.toStringAsFixed(6);
         _longitudeController.text = lng.toStringAsFixed(6);
@@ -902,7 +992,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         lng = -68.1500;
       }
     }
-    
+
     // Crear el marcador usando una lista de opciones y createMulti como en search_page.dart
     final options = <PointAnnotationOptions>[
       PointAnnotationOptions(
@@ -911,9 +1001,143 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         iconSize: 0.5,
       )
     ];
-    
+
     // Crear todos los marcadores en una sola operación (más eficiente)
     await _pointAnnotationManager!.createMulti(options);
+  }
+
+  void _openFullScreenMap() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      builder: (ctx) {
+        double tempLat;
+        double tempLng;
+        try {
+          tempLat = double.parse(_latitudeController.text);
+          tempLng = double.parse(_longitudeController.text);
+        } catch (_) {
+          tempLat = _currentPosition?.latitude ?? -16.5000;
+          tempLng = _currentPosition?.longitude ?? -68.1500;
+        }
+
+        PointAnnotationManager? sheetAnnotationManager;
+        MapboxMap? sheetMap;
+
+        Future<void> drawMarker(double lat, double lng) async {
+          if (sheetAnnotationManager == null || _markerImage == null) return;
+          await sheetAnnotationManager!.deleteAll();
+          await sheetAnnotationManager!.create(PointAnnotationOptions(
+            geometry: Point(coordinates: Position(lng, lat)),
+            image: _markerImage!,
+            iconSize: 0.6,
+          ));
+        }
+
+        return SafeArea(
+          child: StatefulBuilder(
+            builder: (context, setSheetState) {
+              return SizedBox(
+                height: MediaQuery.of(context).size.height,
+                child: Stack(
+                  children: [
+                    MapWidget(
+                      onMapCreated: (m) async {
+                        sheetMap = m;
+                        await m.location.updateSettings(
+                            LocationComponentSettings(enabled: true));
+                        sheetAnnotationManager =
+                            await m.annotations.createPointAnnotationManager();
+                        await m.flyTo(
+                          CameraOptions(
+                            center:
+                                Point(coordinates: Position(tempLng, tempLat)),
+                            zoom: 15,
+                          ),
+                          MapAnimationOptions(duration: 800),
+                        );
+                        await drawMarker(tempLat, tempLng);
+                      },
+                      styleUri: MapboxStyles.OUTDOORS,
+                      cameraOptions: CameraOptions(
+                        center: Point(
+                          coordinates: Position(
+                            tempLng,
+                            tempLat,
+                          ),
+                        ),
+                        zoom: 15,
+                      ),
+                      onTapListener: (gestureContext) async {
+                        final c = gestureContext.point.coordinates;
+                        tempLat = c.lat.toDouble();
+                        tempLng = c.lng.toDouble();
+                        await drawMarker(tempLat, tempLng);
+                        setSheetState(() {});
+                      },
+                    ),
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      child: Container(
+                        decoration: AppTheme.getGlassCard(),
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.black),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 24,
+                      left: 16,
+                      right: 16,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: AppTheme.getMintButtonDecoration(),
+                              child: CustomButton(
+                                text: 'Confirmar ubicación',
+                                backgroundColor: Colors.transparent,
+                                textColor: AppTheme.darkGrayBase,
+                                onPressed: () {
+                                  _latitudeController.text =
+                                      tempLat.toStringAsFixed(6);
+                                  _longitudeController.text =
+                                      tempLng.toStringAsFixed(6);
+                                  _updatePropertyMarker();
+                                  Navigator.pop(ctx);
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 80,
+                      left: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: AppTheme.getGlassCard(),
+                        child: Text(
+                          'Lat: ${tempLat.toStringAsFixed(6)}   Lng: ${tempLng.toStringAsFixed(6)}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.black),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildStep3() {
@@ -924,20 +1148,13 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         children: [
           const Text(
             'Ubicación y disponibilidad de la propiedad',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-              height: 1.5
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
           const Text(
             'Dirección *',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           _buildProfileStyledField(
@@ -946,161 +1163,84 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             icon: Icons.location_on,
           ),
           const SizedBox(height: 24),
-          
+
           // Mapa para seleccionar ubicación
           const Text(
             'Ubicación en el mapa',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
-          Container(
-            height: 300,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.black12),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                children: [
-                  // Mapa
-                  MapWidget(
-                    onMapCreated: _onMapCreated,
-                    styleUri: MapboxStyles.OUTDOORS,
-                    cameraOptions: CameraOptions(
-                      center: Point(
-                        coordinates: Position(
-                          _currentPosition?.longitude ?? -68.1500,
-                          _currentPosition?.latitude ?? -16.5000,
+          GestureDetector(
+            onTap: _openFullScreenMap,
+            child: Container(
+              height: 300,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.black12),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  children: [
+                    MapWidget(
+                      onMapCreated: _onMapCreated,
+                      styleUri: MapboxStyles.OUTDOORS,
+                      cameraOptions: CameraOptions(
+                        center: Point(
+                          coordinates: Position(
+                            _currentPosition?.longitude ?? -68.1500,
+                            _currentPosition?.latitude ?? -16.5000,
+                          ),
+                        ),
+                        zoom: 14,
+                        pitch: 45,
+                        bearing: 0,
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withOpacity(0.05),
+                        alignment: Alignment.center,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.85),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 8),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.open_in_full,
+                                  color: AppTheme.primaryColor),
+                              SizedBox(width: 8),
+                              Text(
+                                  'Toca para seleccionar ubicación en pantalla completa'),
+                            ],
+                          ),
                         ),
                       ),
-                      zoom: 14,
-                      pitch: 45,
-                      bearing: 0,
                     ),
-                    onTapListener: (gestureContext) {
-                      // Actualizar las coordenadas al tocar el mapa
-                      // El gestureContext ya contiene las coordenadas geográficas proyectadas
-                      final coordinates = gestureContext.point.coordinates;
-                      setState(() {
-                        // Acceder a las coordenadas correctamente desde Position
-                        // coordinates.latitude es la latitud, coordinates.longitude es la longitud
-                         _longitudeController.text = coordinates.lng.toStringAsFixed(6);
-                        _latitudeController.text = coordinates.lat.toStringAsFixed(6);
-                      });
-                      _updatePropertyMarker();
-                    },
-                  ),
-                  
-                  // Botón para centrar en la ubicación actual
-                  Positioned(
-                    right: 10,
-                    bottom: 10,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.my_location, color: Colors.white),
-                        onPressed: () {
-                          if (_currentPosition != null && _mapboxMap != null) {
-                            // Centrar el mapa en la ubicación actual
-                            _mapboxMap!.flyTo(
-                              CameraOptions(
-                                center: Point(
-                                  coordinates: Position(
-                                    _currentPosition!.longitude,
-                                    _currentPosition!.latitude,
-                                  ),
-                                ),
-                                zoom: 15,
-                              ),
-                              MapAnimationOptions(duration: 1000),
-                            );
-                            
-                            // Actualizar los campos del formulario
-                            setState(() {
-                              _latitudeController.text = _currentPosition!.latitude.toStringAsFixed(6);
-                              _longitudeController.text = _currentPosition!.longitude.toStringAsFixed(6);
-                            });
-                            
-                            // Actualizar el marcador
-                            _updatePropertyMarker();
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
           const SizedBox(height: 24),
-          
-          // Campos de latitud y longitud (ahora se actualizan automáticamente)
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Latitud',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildProfileStyledField(
-                      controller: _latitudeController,
-                      hintText: 'Ej: -16.5000',
-                      icon: Icons.explore,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Longitud',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildProfileStyledField(
-                      controller: _longitudeController,
-                      hintText: 'Ej: -68.1500',
-                      icon: Icons.explore,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          
+
+          // Las coordenadas se manejan internamente; no se muestran los campos de lat/long
+
           const SizedBox(height: 24),
           const Text(
             'Fecha de Disponibilidad',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black
-            ),
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           _buildProfileStyledField(
@@ -1129,7 +1269,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 },
               );
               if (date != null) {
-                _availabilityDateController.text = date.toIso8601String().split('T')[0];
+                _availabilityDateController.text =
+                    date.toIso8601String().split('T')[0];
               }
             },
           ),
@@ -1182,7 +1323,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           fillColor: Colors.white,
           isDense: true,
           hintStyle: TextStyle(color: Colors.black.withOpacity(0.5)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
@@ -1216,14 +1358,16 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           fillColor: Colors.white,
           isDense: true,
           hintStyle: TextStyle(color: Colors.black.withOpacity(0.5)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
         dropdownColor: Colors.white,
         style: const TextStyle(color: AppTheme.darkGrayBase),
         items: _propertyTypeMapping.entries.map((entry) {
           return DropdownMenuItem<String>(
             value: entry.value,
-            child: Text(entry.key, style: const TextStyle(color: AppTheme.darkGrayBase)),
+            child: Text(entry.key,
+                style: const TextStyle(color: AppTheme.darkGrayBase)),
           );
         }).toList(),
         onChanged: (value) {
@@ -1260,7 +1404,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   onPressed: _previousStep,
                   style: OutlinedButton.styleFrom(
                     backgroundColor: Colors.transparent,
-                    side: BorderSide(color: AppTheme.whiteColor.withOpacity(0.3)),
+                    side:
+                        BorderSide(color: AppTheme.whiteColor.withOpacity(0.3)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
