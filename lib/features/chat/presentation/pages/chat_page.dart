@@ -3,6 +3,7 @@ import 'package:habitto/features/chat/presentation/pages/conversation_page.dart'
 import 'package:habitto/features/chat/presentation/pages/user_list_page.dart';
 import 'package:habitto/core/services/token_storage.dart';
 import 'package:habitto/core/services/api_service.dart';
+import 'package:habitto/features/notifications/data/services/notification_service.dart';
 import '../../data/services/message_service.dart';
 import '../../data/models/message_model.dart';
 import 'dart:convert';
@@ -22,6 +23,7 @@ class _ChatPageState extends State<ChatPage> {
   final MessageService _messageService = MessageService();
   final TokenStorage _tokenStorage = TokenStorage();
   final ApiService _apiService = ApiService();
+  final NotificationService _notificationService = NotificationService();
   List<ChatMessage> _messages = [];
   bool _isLoading = true;
   String _error = '';
@@ -59,23 +61,8 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _loadUnreadNotificationsCount() async {
-    try {
-      final resp = await _apiService.get('/api/notifications/', queryParameters: {'is_read': false});
-      if (resp['success'] == true) {
-        final data = resp['data'];
-        int count = 0;
-        if (data is Map && data['count'] is int) {
-          count = data['count'] as int;
-        } else if (data is Map && data['results'] is List) {
-          count = (data['results'] as List).length;
-        } else if (data is List) {
-          count = data.length;
-        }
-        setState(() {
-          _unreadNotificationsCount = count;
-        });
-      }
-    } catch (_) {}
+    final count = await _notificationService.unreadCount();
+    setState(() { _unreadNotificationsCount = count; });
   }
 
   Future<void> _loadMessages() async {
@@ -798,7 +785,7 @@ class _NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<_NotificationsPage> {
-  final ApiService _api = ApiService();
+  final NotificationService _notifications = NotificationService();
   List<Map<String, dynamic>> _items = [];
   bool _isLoading = true;
   String _error = '';
@@ -810,39 +797,27 @@ class _NotificationsPageState extends State<_NotificationsPage> {
   }
 
   Future<void> _load() async {
-    try {
-      setState(() { _isLoading = true; _error = ''; });
-      final resp = await _api.get('/api/notifications/', queryParameters: {'page_size': 50});
-      if (resp['success'] == true) {
-        final data = resp['data'];
-        List<Map<String, dynamic>> results = [];
-        if (data is Map && data['results'] is List) {
-          results = List<Map<String, dynamic>>.from((data['results'] as List).map((e) => Map<String, dynamic>.from(e as Map)));
-        } else if (data is List) {
-          results = List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e as Map)));
-        }
-        setState(() { _items = results; _isLoading = false; });
-      } else {
-        setState(() { _error = 'Error: ${resp['error']}'; _isLoading = false; });
-      }
-    } catch (e) {
-      setState(() { _error = 'Error al cargar notificaciones: $e'; _isLoading = false; });
+    setState(() { _isLoading = true; _error = ''; });
+    final resp = await _notifications.list(pageSize: 50);
+    if (resp['success'] == true && resp['data'] != null) {
+      final results = List<Map<String, dynamic>>.from((resp['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)));
+      setState(() { _items = results; _isLoading = false; });
+    } else {
+      setState(() { _error = resp['error'] ?? 'Error obteniendo notificaciones'; _isLoading = false; });
     }
   }
 
   Future<void> _markRead(int id) async {
-    try {
-      final resp = await _api.post('/api/notifications/$id/mark_as_read/', {});
-      if (resp['success'] == true) {
-        setState(() {
-          final idx = _items.indexWhere((n) => (n['id'] as int?) == id);
-          if (idx != -1) {
-            _items[idx]['is_read'] = true;
-          }
-        });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notificación marcada como leída'), duration: Duration(seconds: 2)));
-      }
-    } catch (_) {}
+    final result = await _notifications.markAsRead(id);
+    if (result['success'] == true) {
+      setState(() {
+        final idx = _items.indexWhere((n) => (n['id'] as int?) == id);
+        if (idx != -1) {
+          _items[idx]['is_read'] = true;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notificación marcada como leída'), duration: Duration(seconds: 2)));
+    }
   }
 
   @override
