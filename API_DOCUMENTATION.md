@@ -1,152 +1,3 @@
-# Documentación Técnica Habitto
-
-## 1. Esquema de Datos de Propiedades
-
-- Objeto `Property`:
-  - `id` (int)
-  - `owner` (int|null)
-  - `agent` (int|null)
-  - `type` (string; enum: `casa|departamento|habitacion|anticretico`)
-  - `address` (string; formato libre normalizado)
-  - `latitude` (string; decimal entre -90 y 90; máx 10 decimales)
-  - `longitude` (string; decimal entre -180 y 180; máx 10 decimales)
-  - `price` (string; número con 2 decimales, moneda implícita Bs.)
-  - `guarantee` (string; opcional, 2 decimales)
-  - `description` (string)
-  - `size` (number; m²)
-  - `bedrooms` (int)
-  - `bathrooms` (int)
-  - `amenities` (array<int>)
-  - `availability_date` (string; ISO-8601 `YYYY-MM-DD`)
-  - `is_active` (bool)
-  - `is_available` (bool)
-  - `created_at` (string; ISO-8601)
-  - `updated_at` (string; ISO-8601)
-  - `accepted_payment_methods` (array<int>)
-  - `allows_roommates` (bool)
-  - `max_occupancy` (int)
-  - `min_price_per_person` (string; 2 decimales)
-  - `is_furnished` (bool)
-  - `tenant_requirements` (object)
-  - `tags` (array<string>)
-  - `main_photo` (string|null; URL absoluta)
-
-### Validación de formatos
-- `latitude`/`longitude`: Rango y decimales según sección 3 `Formato de coordenadas`.
-- `price`/`guarantee`/`min_price_per_person`: número con dos decimales y separador de punto.
-- `availability_date`: `YYYY-MM-DD`.
-
-## 2. Interactividad en Mapa (Tooltips)
-
-- Al tocar un marcador de propiedad en el mapa, se muestra un tooltip responsivo y accesible con:
-  - Título y precio formateado (Bs. 1,500/mes)
-  - Dirección normalizada
-  - Resumen: dormitorios, baños, tamaño, amenidades populares
-  - Imagen principal (`main_photo`) si existe
-  - Acciones: "Ver más detalles"
-
-- Requisitos de accesibilidad:
-  - `Semantics` rol `button` y labels descriptivos
-  - Contraste mínimo 4.5:1 en textos
-  - Navegación por teclado accesible en plataformas compatibles
-
-- Coherencia de datos:
-  - Los campos mostrados en tooltip deben provenir de la misma estructura descrita en esta documentación.
-  - No se presentan campos con formato inválido; el frontend valida antes de renderizar.
-
-## 3. Inventario Completo y Ejemplos JSON
-
-### Lista de propiedades (inventario)
-```json
-{
-  "success": true,
-  "message": "Propiedades obtenidas exitosamente",
-  "data": {
-    "count": 50,
-    "results": [
-      {
-        "id": 1,
-        "type": "casa",
-        "address": "Calle Falsa 123, La Paz",
-        "latitude": "-16.500000",
-        "longitude": "-68.150000",
-        "price": "1500.00",
-        "bedrooms": 3,
-        "bathrooms": 2,
-        "size": 120.5,
-        "tags": ["céntrico"],
-        "is_active": true,
-        "is_available": true,
-        "main_photo": "http://localhost:8000/media/properties/foto1.jpg",
-        "created_at": "2025-10-22T10:00:00Z",
-        "updated_at": "2025-10-22T10:00:00Z"
-      }
-    ]
-  }
-}
-```
-
-### Detalle de propiedad
-```json
-{
-  "success": true,
-  "message": "Propiedad obtenida exitosamente",
-  "data": {
-    "id": 1,
-    "type": "casa",
-    "address": "Calle Falsa 123, La Paz",
-    "description": "Casa amplia en zona residencial con jardín y piscina",
-    "price": "1500.00",
-    "bedrooms": 3,
-    "bathrooms": 2,
-    "size": 150.5,
-    "latitude": "-16.500000",
-    "longitude": "-68.150000",
-    "is_available": true,
-    "main_photo": "http://localhost:8000/media/properties/foto1.jpg",
-    "created_at": "2025-10-22T10:00:00Z",
-    "updated_at": "2025-10-22T10:00:00Z"
-  }
-}
-```
-
-## 4. Búsqueda Avanzada
-
-- Funcionalidad similar a Google Maps:
-  - Búsqueda por calles, avenidas, puntos de referencia y coordenadas
-  - Autocompletado con sugerencias
-  - Filtros por tipo de propiedad y características
-
-- Integración de geocodificación:
-  - Se utiliza Mapbox Places API (`GET https://api.mapbox.com/geocoding/v5/mapbox.places/{query}.json?access_token=...&language=es&autocomplete=true&limit=5`)
-  - Resumen de respuesta relevante:
-    - `features[].place_name` (string)
-    - `features[].center` ([lon, lat])
-  - Normalización de direcciones: se persiste `place_name` y se valida coordenadas en el rango permitido
-
-- Ejemplo de sugerencias
-```json
-{
-  "query": "Calle Junín",
-  "suggestions": [
-    {"label": "Calle Junín, Santa Cruz", "center": [-63.182, -17.783]},
-    {"label": "Junín, La Paz", "center": [-68.15, -16.5]}
-  ]
-}
-```
-
-## 5. Diagramas de Relación (Mermaid)
-
-```mermaid
-erDiagram
-  USER ||--o{ PROPERTY : owns
-  PROPERTY ||--o{ PHOTO : has
-  PROPERTY }o--o{ AMENITY : features
-  PROPERTY ||--o{ GUARANTEE : secures
-  ZONE ||--o{ PROPERTY : contains
-```
-
----
 # Registro con imagen usando curl
 curl -X POST http://localhost:8000/api/users/ \
   -H "Content-Type: multipart/form-data" \
@@ -522,7 +373,7 @@ Gestiona las propiedades inmobiliarias del sistema.
       "data": null
     }
     ```
- 
+
  - **Siguiente paso recomendado**:
    - Usa el `id` retornado para subir fotos de la propiedad:
      ```bash
@@ -918,15 +769,6 @@ Además, las respuestas de propiedades incluyen el campo `main_photo` con la URL
   }
   ```
   - Si la propiedad no tiene fotos, `main_photo` será `null`.
-
-## 4.2. Campo `is_available` en Propiedades
-
-- **Descripción**: Indica si la propiedad está disponible para alquilar (`true`) o ocupada (`false`).
-- **Origen**: Campo gestionado por los endpoints de ocupación.
-- **Dónde aparece**: En las respuestas de propiedades, incluido `GET /api/properties/geojson/`.
-- **Cómo se modifica**:
-  - `POST /api/properties/{id}/occupy/` establece `is_available=false`.
-  - `POST /api/properties/{id}/vacate/` establece `is_available=true`.
 
 
 ## 5. Endpoints de Amenidades (`/api/amenities/`)
@@ -1756,12 +1598,11 @@ Gestiona las zonas geográficas con funcionalidades GIS y estadísticas de merca
 - **Descripción**: Crea una nueva zona (solo administradores).
 - **Autenticación**: Requerida (solo administradores).
 - **Request Body**:
-  - Opción A (GeoJSON):
   ```json
   {
     "name": "Zona Norte",
     "description": "Zona residencial al norte de la ciudad",
-    "bounds_geojson": {
+    "bounds": {
       "type": "Polygon",
       "coordinates": [[
         [-63.1821, -17.7834],
@@ -1771,19 +1612,6 @@ Gestiona las zonas geográficas con funcionalidades GIS y estadísticas de merca
         [-63.1821, -17.7834]
       ]]
     }
-  }
-  ```
-  - Opción B (array de coordenadas `[lng, lat]`; el backend auto-cierra el polígono):
-  ```json
-  {
-    "name": "Zona Norte",
-    "coordinates": [
-      [-63.1821, -17.7834],
-      [-63.1800, -17.7834],
-      [-63.1800, -17.7800],
-      [-63.1821, -17.7800],
-      [-63.1821, -17.7834]
-    ]
   }
   ```
 - **Response (201 Created)**:
@@ -1820,7 +1648,8 @@ Gestiona las zonas geográficas con funcionalidades GIS y estadísticas de merca
       "success": false,
       "message": "Datos inválidos",
       "data": {
-        "bounds_geojson": ["Debe ser GeoJSON tipo Polygon"]
+        "name": ["Este campo es requerido."],
+        "bounds": ["Formato de coordenadas inválido."]
       }
     }
     ```
@@ -1836,7 +1665,6 @@ Gestiona las zonas geográficas con funcionalidades GIS y estadísticas de merca
 ### `GET /api/zones/{id}/`
 - **Descripción**: Obtiene detalles de una zona específica.
 - **Autenticación**: No requerida.
-- **Nota**: El polígono `bounds` se expone en `GET /api/zones/geojson/`.
 - **Response (200 OK)**:
   ```json
   {
@@ -1846,6 +1674,10 @@ Gestiona las zonas geográficas con funcionalidades GIS y estadísticas de merca
       "id": 1,
       "name": "Centro",
       "description": "Zona céntrica de la ciudad",
+      "bounds": {
+        "type": "Polygon",
+        "coordinates": [...]
+      },
       "offer_count": 15,
       "demand_count": 25,
       "avg_price": "1200.00",
@@ -2640,10 +2472,9 @@ Gestiona las reseñas y calificaciones de propiedades.
 Gestiona las notificaciones del sistema para los usuarios.
 
 ### `GET /api/notifications/`
-- **Descripción**: Obtiene una lista paginada de notificaciones.
+- **Descripción**: Devuelve SOLO las notificaciones del usuario autenticado, ordenadas por `created_at` descendente.
 - **Autenticación**: Requerida.
 - **Parámetros de consulta**:
-  - `user`: Filtra por ID de usuario
   - `is_read`: Filtra por estado de lectura (`true`/`false`)
 - **Response (200 OK)**:
   ```json
@@ -2657,14 +2488,14 @@ Gestiona las notificaciones del sistema para los usuarios.
       "results": [
         {
           "id": 1,
-          "user": 1,
+          "user": 7,
           "message": "Has recibido un nuevo mensaje de Juan sobre la propiedad en Calle Falsa 123",
           "is_read": false,
           "created_at": "2025-10-22T10:00:00Z"
         },
         {
           "id": 2,
-          "user": 1,
+          "user": 7,
           "message": "Tu pago de alquiler vence en 3 días",
           "is_read": true,
           "created_at": "2025-10-22T09:00:00Z"
@@ -2965,7 +2796,7 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
   - `preferred_zones` (opcional): Array de IDs de zonas preferidas
   - Campos adicionales para mejorar el matching:
     - `age` (opcional): Edad
-  - `children_count` (opcional): Número de hijos
+    - `children_count` (opcional): Número de hijos
     - `family_size` (opcional): Tamaño del grupo familiar
     - `smoker` (opcional): Si fuma
     - `gender` (opcional): `male` | `female` | `other`
@@ -3002,6 +2833,22 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
 - **Acciones relacionadas**:
   - `POST /api/matches/{id}/accept/`: Acepta un match y crea notificación/mensaje.
   - `POST /api/matches/{id}/reject/`: Rechaza un match y almacena feedback opcional.
+
+### `GET /api/matches/my/?type=property|roommate|agent&status=pending|accepted|rejected`
+- **Descripción**: Lista los matches del usuario autenticado directamente por token (sin necesidad de `search_profile_id`).
+- **Autenticación**: Requerida.
+- **Parámetros de consulta**:
+  - `type` (opcional): `property` (por defecto), `roommate`, `agent`
+  - `status` (opcional): `pending`, `accepted`, `rejected`
+- **Response (200 OK)**: Respuesta paginada estándar si aplica (`count`, `next`, `previous`, `results`).
+
+### `POST /api/properties/{id}/like/`
+- **Descripción**: Un inquilino indica interés (“me gusta”) sobre una propiedad; crea/actualiza el `Match` correspondiente (`match_type=property`, `subject_id=<id>`, `target_user=<tenant>`), registra `MatchFeedback` con `feedback_type=like`, envía `Message` y `Notification` al propietario, y emite notificación WebSocket.
+- **Autenticación**: Requerida (inquilino).
+- **Response (200 OK)**:
+```json
+{ "status": "pending", "match_id": 123, "score": 82.0 }
+```
 
 ### `POST /api/match_feedback/`
 - **Descripción**: Envía feedback sobre un match (`like`, `dislike`, `neutral`) con razón opcional.
@@ -3070,7 +2917,7 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
   ```
 
 ### Flujo de "Like" y almacenamiento
-- Para registrar interés sin aceptar todavía, usa `POST /api/matches/{id}/like/`.
+- Para registrar interés sin aceptar todavía, puedes usar `POST /api/properties/{id}/like/` (recomendado desde la vista de propiedad) o `POST /api/matches/{id}/like/` si ya existe el match.
 - Al hacer "like":
   - Se guarda `MatchFeedback` con `feedback_type=like`.
   - Si el match es de tipo `property`, se crea un `Message` automático al propietario y una `Notification` para el propietario.
@@ -3354,93 +3201,40 @@ Notas de actualización en tiempo real:
 }
 ```
 
-## 11. Endpoints de Ocupación de Propiedades (`/api/properties/{id}/occupy/`, `/api/properties/{id}/vacate/`, `/api/properties/{id}/occupancy_history/`)
-
-### `POST /api/properties/{id}/occupy/`
-- Descripción: Marca una propiedad como ocupada por un inquilino y crea un registro de ocupación.
-- Autenticación: Requerida. Permisos: solo propietario de la propiedad o su agente asignado.
-- Request Body:
-```json
-{
-  "tenant_id": 42
-}
-```
-- Response (200 OK):
-```json
-{
-  "success": true,
-  "message": "Propiedad marcada como ocupada",
-  "data": {
-    "occupancy": {
-      "id": 1,
-      "property": 10,
-      "tenant": 42,
-      "owner": 7,
-      "agent": null,
-      "status": "occupied",
-      "start_date": "2025-11-23T10:00:00Z"
-    },
-    "property_id": 10
+### `GET /api/notifications/my/`
+- **Descripción**: Agregado que identifica al usuario autenticado y devuelve:
+  - `notifications`: lista de sus notificaciones.
+  - `messages`: últimos mensajes recibidos y conteo de no leídos.
+  - `likes`: likes realizados por otros usuarios en sus propiedades.
+- **Autenticación**: Requerida.
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Notificaciones del usuario obtenidas exitosamente",
+    "data": {
+      "notifications": [
+        { "id": 10, "message": "Interés en tu propiedad", "is_read": false, "created_at": "2025-11-26T10:00:00Z" }
+      ],
+      "messages": {
+        "count": 3,
+        "unread_count": 2,
+        "latest": [
+          { "id": 101, "sender": 5, "receiver": 7, "content": "Hola", "created_at": "2025-11-26T09:59:00Z", "is_read": false }
+        ]
+      },
+      "likes": {
+        "count": 1,
+        "results": [
+          {
+            "property_id": 45,
+            "property_title": "departamento en Calle Falsa 123",
+            "liker": { "id": 5, "username": "juan" },
+            "score": 82.5,
+            "created_at": "2025-11-26T09:58:00Z"
+          }
+        ]
+      }
+    }
   }
-}
-```
-- Errores comunes:
-  - 403 Forbidden: usuario no es propietario ni agente de la propiedad
-  - 400 Bad Request: propiedad ya ocupada o falta `tenant_id`
-  - 404 Not Found: `tenant_id` inexistente
-
-### `POST /api/properties/{id}/vacate/`
-- Descripción: Marca la propiedad como desocupada, cierra la ocupación activa y registra calificaciones.
-- Autenticación: Requerida. Permisos: solo propietario de la propiedad o su agente asignado.
-- Request Body (opcional):
-```json
-{
-  "rating_tenant_by_owner": 5,
-  "rating_owner_by_tenant": 4,
-  "comment_tenant_by_owner": "Excelente inquilino",
-  "comment_owner_by_tenant": "Buena experiencia"
-}
-```
-- Response (200 OK):
-```json
-{
-  "success": true,
-  "message": "Propiedad desocupada exitosamente",
-  "data": {
-    "occupancy": {
-      "id": 1,
-      "status": "vacated",
-      "end_date": "2025-11-23T11:00:00Z",
-      "rating_tenant_by_owner": 5,
-      "rating_owner_by_tenant": 4
-    },
-    "property_id": 10
-  }
-}
-```
-- Efectos colaterales: la propiedad queda `is_available=true`.
-- Errores comunes:
-  - 400 Bad Request: no existe ocupación activa
-  - 403 Forbidden: usuario sin permisos
-
-### `GET /api/properties/{id}/occupancy_history/`
-- Descripción: Lista el historial de ocupaciones de la propiedad.
-- Autenticación: Requerida. Permisos: propietario o agente asignado.
-- Response (200 OK):
-```json
-{
-  "success": true,
-  "message": "Historial de ocupación obtenido",
-  "data": {
-    "count": 2,
-    "results": [
-      { "id": 1, "status": "vacated", "tenant": 42, "start_date": "...", "end_date": "..." },
-      { "id": 2, "status": "occupied", "tenant": 55, "start_date": "...", "end_date": null }
-    ]
-  }
-}
-```
-- Notas:
-  - `is_available` en `Property` refleja disponibilidad actual.
-  - Las calificaciones almacenan evaluación del inquilino y del propietario.
-
+  ```

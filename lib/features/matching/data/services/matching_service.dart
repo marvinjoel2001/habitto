@@ -1,5 +1,6 @@
 import '../../../../core/services/api_service.dart';
 import '../../../../core/services/token_storage.dart';
+import '../../../properties/data/services/property_service.dart';
 
 class MatchingService {
   final ApiService _apiService = ApiService();
@@ -110,18 +111,46 @@ class MatchingService {
 
   Future<Map<String, dynamic>> getPendingMatchRequests() async {
     try {
-      final response = await _apiService.get('/api/matches/pending_requests/');
-      if (response['success'] == true) {
-        final data = response['data'];
-        List<dynamic> requests = [];
-        if (data is Map && data['results'] is List) {
-          requests = List<dynamic>.from(data['results'] as List);
-        } else if (data is List) {
-          requests = List<dynamic>.from(data);
+      final resp = await _apiService.get('/api/matches/my/', queryParameters: {
+        'type': 'property',
+        'status': 'pending',
+      });
+      if (resp['success'] == true) {
+        final envelope = resp['data'];
+        List<dynamic> results = [];
+        if (envelope is Map && envelope['data'] is Map && (envelope['data'] as Map)['results'] is List) {
+          results = List<dynamic>.from((envelope['data'] as Map)['results'] as List);
+        } else if (envelope is Map && envelope['results'] is List) {
+          results = List<dynamic>.from(envelope['results'] as List);
+        } else if (envelope is List) {
+          results = List<dynamic>.from(envelope);
         }
-        return {'success': true, 'data': requests};
+
+        // Enriquecer con datos de propiedad cuando sea posible
+        final propertyService = PropertyService();
+        final List<Map<String, dynamic>> enriched = [];
+        for (final item in results) {
+          final match = (item is Map && item.containsKey('match')) ? item['match'] : item;
+          Map<String, dynamic> propertyJson = {};
+          if (match is Map && match['subject_id'] is int) {
+            final pr = await propertyService.getPropertyById(match['subject_id'] as int);
+            if (pr['success'] == true && pr['data'] != null) {
+              final p = pr['data'];
+              propertyJson = {
+                'title': (p.title ?? '').toString(),
+                'address': (p.address ?? '').toString(),
+                'id': p.id,
+              };
+            }
+          }
+          enriched.add({
+            'match': match,
+            'property': propertyJson,
+          });
+        }
+        return {'success': true, 'data': enriched};
       }
-      return {'success': false, 'error': response['error'] ?? 'Error obteniendo solicitudes de match', 'data': null};
+      return {'success': false, 'error': resp['error'] ?? 'Error obteniendo solicitudes de match', 'data': null};
     } catch (e) {
       return {'success': false, 'error': 'Error obteniendo solicitudes de match: $e', 'data': null};
     }
@@ -129,7 +158,7 @@ class MatchingService {
 
   Future<Map<String, dynamic>> acceptMatchRequest(int matchId) async {
     try {
-      final response = await _apiService.post('/api/matches/$matchId/owner_accept/', {});
+      final response = await _apiService.post('/api/matches/$matchId/accept/', {});
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
           : {'success': false, 'error': response['error'] ?? 'Error al aceptar solicitud', 'data': null};
@@ -140,7 +169,7 @@ class MatchingService {
 
   Future<Map<String, dynamic>> rejectMatchRequest(int matchId) async {
     try {
-      final response = await _apiService.post('/api/matches/$matchId/owner_reject/', {});
+      final response = await _apiService.post('/api/matches/$matchId/reject/', {});
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
           : {'success': false, 'error': response['error'] ?? 'Error al rechazar solicitud', 'data': null};
