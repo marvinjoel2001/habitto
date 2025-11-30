@@ -287,8 +287,10 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       final response = await _authService.register(
-          user, profile, _passwordController.text,
-          profileImage: _selectedImage);
+        user,
+        profile,
+        _passwordController.text,
+      );
 
       if (response['success']) {
         // Después del registro exitoso, hacer login automático
@@ -331,11 +333,12 @@ class _RegisterPageState extends State<RegisterPage> {
                                     foregroundColor: Colors.black),
                                 onPressed: () {
                                   Navigator.pop(ctx);
-                                  Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) =>
-                                              const CreateSearchProfilePage()));
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const CreateSearchProfilePage(),
+                                    ),
+                                  );
                                 },
                                 child: const Text('Crear ahora'))),
                         const SizedBox(width: 12),
@@ -454,6 +457,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   : _register,
                               backgroundColor:
                                   Theme.of(context).colorScheme.primary,
+                              isLoading: _isLoading,
                             ),
                           ),
                         ],

@@ -310,7 +310,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  Navigator.of(context).pop();
+                  Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
                 },
                 child: const Text('Continuar'),
               ),
@@ -1314,6 +1314,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                 onPressed: _isLoading ? null : _nextStep,
                 backgroundColor: Colors.transparent,
                 textColor: AppTheme.darkGrayBase,
+                isLoading: _isLoading,
               ),
             ),
           ),

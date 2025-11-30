@@ -176,7 +176,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.transparent,
         extendBody: false,
         body: _currentIndex == 2
-            ? HomeContent(key: _deckKey)
+            ? HomeContent(deckKey: _deckKey)
             : _pages[_currentIndex],
         bottomNavigationBar: CustomBottomNavigation(
           currentIndex: _currentIndex,
@@ -192,8 +192,14 @@ class _HomePageState extends State<HomePage> {
             // For direct users (tenants)
             if (_isDirectUser) {
               if (index == 2) {
-                // Center button shows floating menu for tenants
-                _toggleTenantFloatingMenu();
+                if (_currentIndex != 2) {
+                  setState(() {
+                    _currentIndex = 2;
+                    _showTenantFloatingMenu = false;
+                  });
+                } else {
+                  _toggleTenantFloatingMenu();
+                }
               } else {
                 setState(() {
                   _currentIndex = index;
@@ -359,7 +365,8 @@ class _CircleActionButtonState extends State<_CircleActionButton>
 }
 
 class HomeContent extends StatefulWidget {
-  const HomeContent({super.key});
+  final GlobalKey<PropertySwipeDeckState> deckKey;
+  const HomeContent({super.key, required this.deckKey});
 
   @override
   State<HomeContent> createState() => _HomeContentState();
@@ -380,8 +387,7 @@ class _HomeContentState extends State<HomeContent> {
   final Map<int, int> _matchIdByPropertyId = {};
   HomePropertyCardData? _currentTopProperty;
   String _currentUserImageUrl = 'assets/images/userempty.png';
-  final GlobalKey<PropertySwipeDeckState> _deckKey =
-      GlobalKey<PropertySwipeDeckState>();
+  // El deck se controla desde HomePage a través de widget.deckKey
 
   void _spawnHeartsBurst() {
     final overlay = Overlay.of(context);
@@ -403,7 +409,7 @@ class _HomeContentState extends State<HomeContent> {
     );
     overlay.insert(entry);
     Future.delayed(const Duration(milliseconds: 600), () {
-      _deckKey.currentState?.swipeLeft();
+      widget.deckKey.currentState?.swipeLeft();
     });
     Future.delayed(const Duration(milliseconds: 800), () {
       entry.remove();
@@ -662,39 +668,14 @@ class _HomeContentState extends State<HomeContent> {
                               return SizedBox(
                                 height: dynamicHeight,
                                 child: PropertySwipeDeck(
-                                  key: _deckKey,
+                                  key: widget.deckKey,
                                   properties: _cards,
                                   onLike: (p) async {
-                                    int? matchId = _matchIdByPropertyId[p.id];
-                                    if (matchId == null) {
-                                      final midRes = await _matchingService
-                                          .getOrCreateMatchIdForProperty(p.id);
-                                      if (midRes['success'] == true &&
-                                          midRes['data'] != null) {
-                                        matchId = midRes['data'] as int;
-                                        _matchIdByPropertyId[p.id] = matchId;
-                                      }
-                                    }
-                                    if (matchId == null) {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                              content: Text(
-                                                  'No se pudo obtener match')),
-                                        );
-                                      }
-                                      return;
-                                    }
-                                    final res = await _matchingService
-                                        .likeMatch(matchId);
+                                    final res = await _matchingService.likeProperty(p.id);
                                     if (res['success'] != true) {
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(res['error'] ??
-                                                  'Error al hacer like')),
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
                                         );
                                       }
                                       return;
@@ -712,27 +693,11 @@ class _HomeContentState extends State<HomeContent> {
                                     );
                                   },
                                   onReject: (p) async {
-                                    int? matchId = _matchIdByPropertyId[p.id];
-                                    if (matchId == null) {
-                                      final midRes = await _matchingService
-                                          .getOrCreateMatchIdForProperty(p.id);
-                                      if (midRes['success'] == true &&
-                                          midRes['data'] != null) {
-                                        matchId = midRes['data'] as int;
-                                        _matchIdByPropertyId[p.id] = matchId;
-                                      }
-                                    }
-                                    if (matchId != null) {
-                                      final res = await _matchingService
-                                          .rejectMatch(matchId);
-                                      if (res['success'] != true && mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(res['error'] ??
-                                                  'Error al rechazar')),
-                                        );
-                                      }
+                                    final res = await _matchingService.rejectProperty(p.id);
+                                    if (res['success'] != true && mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(res['error'] ?? 'Error al rechazar')),
+                                      );
                                     }
                                   },
                                   onTopChange: (p) =>
@@ -756,7 +721,7 @@ class _HomeContentState extends State<HomeContent> {
                     icon: Icons.rotate_left,
                     bgColor: Colors.transparent,
                     iconColor: Colors.amber,
-                    onTap: () => _deckKey.currentState?.goBack(),
+                    onTap: () => widget.deckKey.currentState?.goBack(),
                   ),
                   const SizedBox(width: 18),
                   _CircleActionButton(
@@ -791,7 +756,7 @@ class _HomeContentState extends State<HomeContent> {
                               duration: Duration(seconds: 2),
                             ),
                           );
-                          _deckKey.currentState?.swipeRight();
+                          widget.deckKey.currentState?.swipeRight();
                         } else {
                           messenger.showSnackBar(
                             SnackBar(

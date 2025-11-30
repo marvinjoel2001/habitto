@@ -113,7 +113,29 @@ curl -X GET http://localhost:8000/api/profiles/picture_history/ \
 - Formatos soportados: JPG, PNG, GIF, WEBP
 - Tamaño máximo recomendado: 5MB
 - Las URLs de las imágenes incluyen el dominio completo en las respuestas
-- Si no envías el token JWT, la API responde `401 Unauthorized`. Asegúrate de incluir `Authorization: Bearer <token>`.
+- **Si no envías el token JWT, la API responde `401 Unauthorized`. Asegúrate de incluir `Authorization: Bearer <token>`.
+
+### Envío de verificación automática
+- **Endpoint**: `POST /api/profiles/submit_verification/`
+- **Autenticación**: Requerida (JWT)
+- **Content-Type**: `multipart/form-data`
+- **Campos**:
+  - `id_front` (archivo): Foto frontal del documento de identidad (CI/Pasaporte)
+  - `id_back` (archivo): Foto trasera del documento de identidad
+  - `selfie` (archivo): Foto frontal del usuario
+  - `document_number` (string): Número de documento (CI/Pasaporte)
+- **Comportamiento actual**: Al recibir estos datos, el sistema marca el perfil como verificado (`is_verified: true`) automáticamente. En futuras versiones se agregará validación documental real.
+- **Ejemplo (curl)**:
+```bash
+curl -X POST http://localhost:8000/api/profiles/submit_verification/ \
+  -H "Authorization: Bearer TU_TOKEN_JWT" \
+  -H "Content-Type: multipart/form-data" \
+  -F "id_front=@/ruta/a/ci_frontal.jpg" \
+  -F "id_back=@/ruta/a/ci_trasera.jpg" \
+  -F "selfie=@/ruta/a/selfie.jpg" \
+  -F "document_number=CI-1234567"
+```
+- **Respuesta (200 OK)**: Devuelve el `UserProfile` actualizado con `is_verified: true`.
 
 ## 3. Endpoints de Propiedades (`/api/properties/`)
 
@@ -131,6 +153,8 @@ Gestiona las propiedades inmobiliarias del sistema.
   - `page`: Número de página
   - `page_size`: Elementos por página
   - `match_score`: Umbral de score de matching (0–100). Si el usuario autenticado tiene `SearchProfile`, se devuelven solo propiedades con score >= `match_score` respecto a su perfil.
+  - `order_by_match`: Si está en `true`, ordena por mejor compatibilidad respecto al `SearchProfile` del usuario
+  - `include_own`: Cuando se usa `match_score` y/o `order_by_match`, por defecto se excluyen las propiedades del propio usuario; establece `include_own=true` para incluirlas en los resultados
 - **Response (200 OK)**:
   ```json
   {
@@ -2921,6 +2945,9 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
 - Al hacer "like":
   - Se guarda `MatchFeedback` con `feedback_type=like`.
   - Si el match es de tipo `property`, se crea un `Message` automático al propietario y una `Notification` para el propietario.
+  - Se emiten eventos WebSocket en `ws/property-notifications/{owner_id}/`:
+    - `property_like` con datos de la propiedad y del usuario interesado.
+    - `pending_requests_count` (enviado como `general_notification`) con `data.count` y la lista de solicitudes recientes.
   - Si la compatibilidad es muy alta (`score ≥ 95`) y cumple preferencias del propietario (`owner_prefs_score ≥ 90`), el sistema acepta automáticamente el match.
 - Para aceptar explícitamente un match, usa `POST /api/matches/{id}/accept/`.
 - Al aceptar:
@@ -2931,6 +2958,33 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
   - `401 Unauthorized` si la solicitud no incluye token JWT (todas las rutas de matching requieren autenticación).
   - `403 Forbidden` si el match no pertenece al usuario autenticado (`target_user`).
   - `404 Not Found` si el recurso no existe.
+
+#### Listar mis matches
+- `GET /api/matches/my/?type=property|roommate|agent&status=pending|accepted|rejected` devuelve los matches del usuario autenticado, paginados.
+
+#### Solicitudes pendientes para propietarios/agentes
+- `GET /api/matches/pending_requests/` devuelve las solicitudes de match pendientes para las propiedades del propietario o agente autenticado.
+  - Cada elemento incluye:
+    - `match`: datos básicos del match (incluye `created_at`)
+    - `property`: datos básicos de la propiedad
+    - `interested_user`: `{ id, username, profile_picture }`
+    - `created_ago`: texto relativo (por ej. `"hace 3 minutos"`)
+
+  - Ejemplo:
+  ```json
+  {
+    "success": true,
+    "message": "Solicitudes de match pendientes obtenidas exitosamente",
+    "data": [
+      {
+        "match": { "id": 4, "subject_id": 3, "status": "pending", "score": 86.9, "created_at": "2025-11-30T19:12:20Z" },
+        "property": { "id": 3, "address": "Av. Test 123", "type": "departamento", "price": 700.0 },
+        "interested_user": { "id": 6, "username": "tenant_test", "profile_picture": "https://.../media/profile_pictures/user_6_....jpg" },
+        "created_ago": "hace 3 minutos"
+      }
+    ]
+  }
+  ```
 
 ### Cómo se eligen las propiedades mostradas
 - El sistema genera matches con `score` calculado por reglas: ubicación, precio vs presupuesto, amenities, preferencias de roomie, reputación y frescura, y un factor familiar (p.ej., hijos vs dormitorios).
@@ -2944,6 +2998,18 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
 - El listado de propiedades soporta `match_score` para filtrar y `order_by_match=true` para ordenar por mejor compatibilidad según el `SearchProfile` del usuario autenticado.
 - Favoritos: `POST /api/profiles/add_favorite/` y `POST /api/profiles/remove_favorite/`; las propiedades favoritas reciben un pequeño boost de `+3` en el score.
 - Propiedades vistas/interactuadas: `GET /api/properties/seen/` devuelve IDs con los que el usuario ya interactuó.
+
+### Control de Interacciones del Usuario
+- `POST /api/properties/{id}/view/` — registra una vista y aumenta contador personal.
+- `POST /api/properties/{id}/back/` — registra acción de “volver atrás” sobre una propiedad.
+- `GET /api/properties/interaction_stats/?date=YYYY-MM-DD` — devuelve estadísticas diarias del usuario:
+  - `counts`: `{ views, back, dislikes }`
+  - `by_property`: arreglo con `{ property_id, views, back, dislikes }`
+  - `date`: fecha consultada (por defecto, hoy)
+- Notas:
+  - `dislikes` se contabiliza desde `MatchFeedback` con `feedback_type=dislike` (acción `reject`).
+  - `views` se contabiliza desde `PropertyViewEvent`.
+  - `back` se contabiliza desde `PropertyInteractionEvent` con `event_type=back`.
 - `Zone` expone métricas nuevas en `zone_stats`: `match_ratio` y `roomie_demand`.
 
 ## 8. Endpoints de Zonas (`/api/zones/`) – Métricas de Matching
@@ -3238,3 +3304,91 @@ Notas de actualización en tiempo real:
     }
   }
   ```
+**Nota sobre listados por compatibilidad**
+- Cuando el usuario autenticado solicita listados basados en compatibilidad (`match_score` y/o `order_by_match=true`), el sistema excluye por defecto las propiedades cuyo `owner` coincide con el usuario actual.
+- Para incluir estas propiedades propias en el mismo listado, añade `include_own=true` en la consulta.
+## 16. Endpoints de Reportes (`/api/reports/`, `/api/report-categories/`)
+
+Sistema para reportar perfiles de usuarios (propietarios, agentes, inquilinos) y propiedades (casas, departamentos, terrenos, otros).
+
+### `GET /api/report-categories/`
+- Descripción: Lista categorías activas de reportes.
+- Autenticación: Requerida.
+- Response (200 OK): arreglo con `{ id, name, scope, is_active }`.
+
+### `POST /api/reports/`
+- Descripción: Crea un reporte.
+- Autenticación: Requerida.
+- Body (JSON):
+```json
+{
+  "target_type": "property", // "user" o "property"
+  "target_property": 123,      // requerido si target_type = "property"
+  "target_user": 45,           // requerido si target_type = "user"
+  "category": 1,               // opcional
+  "title": "Dirección incorrecta",
+  "description": "La dirección no coincide con la realidad.",
+  "severity": "medium"         // opcional
+}
+```
+- Response (201 Created): reporte creado. Se envía una notificación al usuario confirmando recepción.
+- Validaciones:
+  - `title` obligatorio, `description` ≥ 10 caracteres.
+  - Uno y solo uno de `target_user` / `target_property` según `target_type`.
+  - Límite anti-abuso: máx. 10 reportes por hora por usuario.
+
+### `GET /api/reports/`
+- Descripción: Lista de reportes.
+- Autenticación: Requerida.
+- Permisos:
+  - Usuario normal: ve solo sus propios reportes.
+  - Admin (`is_staff`): ve todos los reportes.
+
+### `GET /api/reports/my/`
+- Descripción: Lista paginada de reportes enviados por el usuario autenticado.
+- Autenticación: Requerida.
+
+### `POST /api/reports/{id}/add_attachment/`
+- Descripción: Agrega un adjunto (archivo) al reporte.
+- Autenticación: Requerida.
+- Content-Type: `multipart/form-data`
+- Campos: `file` (requerido).
+
+### `POST /api/reports/{id}/update_status/`
+- Descripción: Actualiza el estado de un reporte (solo admin/staff).
+- Autenticación: Requerida.
+- Body:
+```json
+{ "status": "in_review", "admin_notes": "Se está revisando" }
+```
+- Estados permitidos: `submitted`, `in_review`, `resolved`, `rejected`.
+- Efectos: Se notifica al reportante el cambio de estado.
+
+### Consideraciones de seguridad
+- Validación estricta de entradas (tipos, obligatoriedad, longitud mínima).
+- Límite básico anti-abuso: máximo 10 reportes por hora.
+- Reportes y adjuntos asociados solo al reportante y personal autorizado.
+
+### Bloqueo de usuarios
+- `POST /api/profiles/block/`
+  - Body o query: `{ "other_user_id": <id> }`
+  - Efecto: el usuario autenticado bloquea a `<id>`. Se evita en ambos sentidos: no se podrán ver perfiles, propiedades del bloqueado, ni enviar/recibir mensajes.
+  - Respuesta: `{ "status": "blocked", "other_user_id": <id> }`
+- `POST /api/profiles/unblock/`
+  - Body o query: `{ "other_user_id": <id> }`
+  - Respuesta: `{ "status": "unblocked", "other_user_id": <id> }`
+- `GET /api/profiles/blocked/`
+  - Lista de usuarios bloqueados por el usuario autenticado.
+  - Respuesta: `{ "count": <n>, "results": [{ "id": <id>, "username": "..." }] }`
+
+### Efectos del bloqueo
+- Mensajería (`/api/messages/`):
+  - Enviar mensaje a un usuario bloqueado o que te bloqueó retorna `403`.
+  - Conversaciones y hilos excluyen usuarios bloqueados.
+- Propiedades (`/api/properties/`):
+  - Listados excluyen propiedades cuyo `owner` está bloqueado o te bloqueó.
+  - `POST /api/properties/{id}/like/` retorna `403` si el propietario está bloqueado.
+- Perfiles (`/api/profiles/by_user/<id>/`):
+  - Retorna `403` si existe bloqueo en cualquiera de los dos sentidos.
+- Matching/Recomendaciones:
+  - Matches y recomendaciones excluyen usuarios bloqueados y propiedades de dueños bloqueados.

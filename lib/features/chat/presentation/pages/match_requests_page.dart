@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import '../../../../features/matching/data/services/matching_service.dart';
 import 'package:habitto/core/services/token_storage.dart';
+import 'package:habitto/config/app_config.dart';
 
 class MatchRequestsPage extends StatefulWidget {
   const MatchRequestsPage({super.key});
@@ -240,7 +241,16 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
     final userName = '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'.trim();
     final userUsername = interestedUser['username'] as String? ?? 'Usuario';
     final displayName = userName.isNotEmpty ? userName : userUsername;
-    final score = match['score'] as int? ?? 0;
+    String _resolveAvatar(String? url) {
+      final u = (url ?? '').trim().replaceAll('`', '').replaceAll('"', '');
+      if (u.isEmpty) return '';
+      if (u.startsWith('http://') || u.startsWith('https://')) return u;
+      final base = Uri.parse(AppConfig.baseUrl);
+      final abs = Uri(scheme: base.scheme, host: base.host, port: base.port == 0 ? null : base.port, path: u.startsWith('/') ? u : '/$u');
+      return abs.toString();
+    }
+    final avatarUrl = _resolveAvatar(interestedUser['profile_picture'] as String?);
+    final score = match['score'] is num ? (match['score'] as num).round() : 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -274,14 +284,17 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-                      child: Text(
-                        displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
+                      backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                      child: avatarUrl.isEmpty
+                          ? Text(
+                              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            )
+                          : null,
                     ),
                     const SizedBox(width: 12),
                     // Información del usuario

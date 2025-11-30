@@ -1,6 +1,7 @@
 import '../../../../core/services/api_service.dart';
 import '../../../../core/services/token_storage.dart';
 import '../../../properties/data/services/property_service.dart';
+import '../../../properties/domain/entities/property.dart';
 
 class MatchingService {
   final ApiService _apiService = ApiService();
@@ -111,9 +112,8 @@ class MatchingService {
 
   Future<Map<String, dynamic>> getPendingMatchRequests() async {
     try {
-      final resp = await _apiService.get('/api/matches/my/', queryParameters: {
+      final resp = await _apiService.get('/api/matches/pending_requests/', queryParameters: {
         'type': 'property',
-        'status': 'pending',
       });
       if (resp['success'] == true) {
         final envelope = resp['data'];
@@ -126,26 +126,46 @@ class MatchingService {
           results = List<dynamic>.from(envelope);
         }
 
-        // Enriquecer con datos de propiedad cuando sea posible
+        // Usar datos provistos por el backend; evitar llamadas adicionales
         final propertyService = PropertyService();
         final List<Map<String, dynamic>> enriched = [];
         for (final item in results) {
           final match = (item is Map && item.containsKey('match')) ? item['match'] : item;
           Map<String, dynamic> propertyJson = {};
-          if (match is Map && match['subject_id'] is int) {
-            final pr = await propertyService.getPropertyById(match['subject_id'] as int);
-            if (pr['success'] == true && pr['data'] != null) {
-              final p = pr['data'];
-              propertyJson = {
-                'title': (p.title ?? '').toString(),
-                'address': (p.address ?? '').toString(),
-                'id': p.id,
-              };
+          Map<String, dynamic> interestedUserJson = {};
+          // Preferir la propiedad incluida en la respuesta si está disponible
+          if (item is Map && item['property'] is Map) {
+            final prop = Map<String, dynamic>.from(item['property'] as Map);
+            propertyJson = {
+              'title': (prop['address'] ?? '').toString(),
+              'address': (prop['address'] ?? '').toString(),
+              'id': int.tryParse((prop['id'] ?? '0').toString()) ?? 0,
+            };
+          } else if (match is Map && match['subject_id'] != null) {
+            final sid = (match['subject_id'] is num) ? (match['subject_id'] as num).toInt() : int.tryParse(match['subject_id'].toString());
+            if (sid != null) {
+              // Fallback mínimo si el backend no incluyera property
+              final pr = await propertyService.getPropertyById(sid);
+              if (pr['success'] == true && pr['data'] != null) {
+                final p = pr['data'];
+                propertyJson = {
+                  'title': (p is Property ? p.address : (p['address'] ?? '')).toString(),
+                  'address': (p is Property ? p.address : (p['address'] ?? '')).toString(),
+                  'id': p is Property ? p.id : (int.tryParse((p['id'] ?? '0').toString()) ?? 0),
+                };
+              }
             }
+          }
+
+          // Usuario interesado incluido por el backend (si existe)
+          if (item is Map && item['interested_user'] is Map) {
+            interestedUserJson = Map<String, dynamic>.from(item['interested_user'] as Map);
+            // Evitar enriquecimiento adicional: el backend ya retorna nombre y foto
           }
           enriched.add({
             'match': match,
             'property': propertyJson,
+            'interested_user': interestedUserJson,
           });
         }
         return {'success': true, 'data': enriched};

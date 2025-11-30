@@ -32,6 +32,7 @@ class _ChatPageState extends State<ChatPage> {
   final Map<int, int> _unreadByUserId = {};
   final Map<int, String> _avatarByUserId = {};
   WebSocketChannel? _inboxChannel;
+  WebSocketChannel? _propertyNotifChannel;
   final Set<String> _processedMessageIds = <String>{};
   int _inboxReconnectDelayMs = 1000;
   int _pendingMatchRequestsCount = 0;
@@ -83,6 +84,7 @@ class _ChatPageState extends State<ChatPage> {
           _currentUserId = currentUserId;
         });
         _openInboxWebSocket();
+        _openPropertyNotificationsSocket();
       }
 
       // Fallback robusto: intentar obtener el usuario actual desde /api/profiles/me/
@@ -296,6 +298,56 @@ class _ChatPageState extends State<ChatPage> {
       _inboxChannel = null;
       _scheduleInboxReconnect();
     }, cancelOnError: false);
+  }
+
+  Future<void> _openPropertyNotificationsSocket() async {
+    if (_currentUserId == null) return;
+    if (_propertyNotifChannel != null) return;
+    final accessToken = await _tokenStorage.getAccessToken();
+    final userId = _currentUserId!;
+    WebSocketChannel? ch;
+    try {
+      final uri1 = AppConfig.buildWsUri('/ws/property-notifications/$userId/', token: accessToken);
+      ch = WebSocketChannel.connect(uri1);
+    } catch (_) {}
+    if (ch == null) {
+      try {
+        final uri2 = AppConfig.buildWsUri('/ws/property-notifications/$userId', token: accessToken);
+        ch = WebSocketChannel.connect(uri2);
+      } catch (_) {}
+    }
+    if (ch == null) return;
+    _propertyNotifChannel = ch;
+    ch.stream.listen((raw) async {
+      try {
+        final data = raw is String ? _tryParseJson(raw) : raw;
+        if (data is Map<String, dynamic>) {
+          final event = (data['event'] ?? data['type'] ?? '').toString();
+          if (event.isNotEmpty && (event.contains('property_like') || event.contains('match_request'))) {
+            await _loadPendingMatchRequests();
+            setState(() {});
+          }
+          if (data.containsKey('pending_requests_count')) {
+            final c = int.tryParse(data['pending_requests_count'].toString());
+            if (c != null) setState(() { _pendingMatchRequestsCount = c; });
+          }
+        }
+      } catch (_) {}
+    }, onError: (err) {
+      _propertyNotifChannel = null;
+      _schedulePropertyNotifReconnect();
+    }, onDone: () {
+      _propertyNotifChannel = null;
+      _schedulePropertyNotifReconnect();
+    }, cancelOnError: false);
+  }
+
+  void _schedulePropertyNotifReconnect() {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && _propertyNotifChannel == null) {
+        _openPropertyNotificationsSocket();
+      }
+    });
   }
 
   String _formatTime(DateTime dateTime) {
@@ -766,6 +818,9 @@ class _ChatPageState extends State<ChatPage> {
     try {
       _inboxChannel?.sink.close();
     } catch (_) {}
+    try {
+      _propertyNotifChannel?.sink.close();
+    } catch (_) {}
     super.dispose();
   }
 }
@@ -961,6 +1016,20 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
     }
   }
 
+  String _resolveAvatar(String? url) {
+    final u = (url ?? '').trim().replaceAll('`', '').replaceAll('"', '');
+    if (u.isEmpty) return '';
+    if (u.startsWith('http://') || u.startsWith('https://')) return u;
+    final base = Uri.parse(AppConfig.baseUrl);
+    final abs = Uri(
+      scheme: base.scheme,
+      host: base.host,
+      port: base.port == 0 ? null : base.port,
+      path: u.startsWith('/') ? u : '/$u',
+    );
+    return abs.toString();
+  }
+
   Future<void> _acceptMatchRequest(int matchId) async {
     try {
       final result = await _matchingService.acceptMatchRequest(matchId);
@@ -1107,13 +1176,14 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
     final match = request['match'] as Map<String, dynamic>? ?? {};
     final property = request['property'] as Map<String, dynamic>? ?? {};
     final interestedUser = request['interested_user'] as Map<String, dynamic>? ?? {};
-    final matchId = match['id'] as int? ?? 0;
+    final matchId = match['id'] is num ? (match['id'] as num).toInt() : 0;
     final propertyTitle = property['title'] as String? ?? 'Propiedad sin título';
     final propertyAddress = property['address'] as String? ?? 'Dirección no especificada';
     final userName = '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'.trim();
     final userUsername = interestedUser['username'] as String? ?? 'Usuario';
     final displayName = userName.isNotEmpty ? userName : userUsername;
-    final score = match['score'] as int? ?? 0;
+    final avatar = _resolveAvatar((interestedUser['profile_picture'] as String?) ?? '');
+    final score = match['score'] is num ? (match['score'] as num).round() : 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1131,11 +1201,12 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
-                child: const Icon(Icons.person, color: Colors.white, size: 24),
-              ),
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+              backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+              child: avatar.isEmpty ? const Icon(Icons.person, color: Colors.white, size: 24) : null,
+            ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
