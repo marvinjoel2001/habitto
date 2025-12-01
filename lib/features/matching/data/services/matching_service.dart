@@ -178,7 +178,7 @@ class MatchingService {
 
   Future<Map<String, dynamic>> acceptMatchRequest(int matchId) async {
     try {
-      final response = await _apiService.post('/api/matches/$matchId/accept/', {});
+      final response = await _apiService.post('/api/matches/$matchId/owner_accept/', {});
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
           : {'success': false, 'error': response['error'] ?? 'Error al aceptar solicitud', 'data': null};

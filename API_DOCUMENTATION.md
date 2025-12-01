@@ -2858,6 +2858,82 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
   - `POST /api/matches/{id}/accept/`: Acepta un match y crea notificación/mensaje.
   - `POST /api/matches/{id}/reject/`: Rechaza un match y almacena feedback opcional.
 
+### Aprobar Match (Inquilino)
+- **Endpoint**: `POST /api/matches/{id}/accept/`
+- **Autenticación**: Requerida (JWT)
+- **Body**: vacío (no requiere payload)
+- **Ejemplo (curl)**:
+```bash
+curl -X POST http://localhost:8000/api/matches/123/accept/ \
+  -H "Authorization: Bearer TU_TOKEN_JWT"
+```
+- **Respuesta (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Match aceptado exitosamente",
+  "data": {
+    "status": "accepted",
+    "match": {
+      "id": 123,
+      "match_type": "property",
+      "subject_id": 45,
+      "target_user": 7,
+      "score": 85.0,
+      "status": "accepted",
+      "metadata": { "details": { /* opcional */ } },
+      "created_at": "2025-11-05T12:00:00Z",
+      "updated_at": "2025-11-29T14:20:00Z"
+    }
+  }
+}
+```
+- **Efectos**:
+  - Marca el `Match` como `accepted`.
+  - Crea una `Notification` para el inquilino.
+  - Si el match es de tipo `property`, crea un `Message` al propietario indicando interés.
+
+### Aprobar Match (Propietario/Agente)
+- **Endpoint**: `POST /api/matches/{id}/owner_accept/`
+- **Autenticación**: Requerida (JWT; solo propietario o agente de la propiedad puede aprobar)
+- **Body**: vacío (no requiere payload)
+- **Ejemplo (curl)**:
+```bash
+curl -X POST http://localhost:8000/api/matches/123/owner_accept/ \
+  -H "Authorization: Bearer TU_TOKEN_JWT"
+```
+- **Respuesta (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Match aceptado por propietario/agente",
+  "data": {
+    "status": "accepted",
+    "match": {
+      "id": 123,
+      "match_type": "property",
+      "subject_id": 45,
+      "target_user": 7,
+      "score": 85.0,
+      "status": "accepted",
+      "metadata": { /* opcional */ },
+      "created_at": "2025-11-05T12:00:00Z",
+      "updated_at": "2025-11-29T14:20:00Z"
+    }
+  }
+}
+```
+- **Efectos**:
+  - Marca el `Match` como `accepted`.
+  - Envía `Notification` al inquilino y al propietario.
+  - Emite notificación WebSocket de `match_accepted`.
+  - Si la propiedad permite roomies y el inquilino busca roomie, convierte la propiedad en “roomie listing” y notifica.
+
+### Errores comunes (aprobar match)
+- **401 Unauthorized**: falta o token inválido.
+- **403 Forbidden**: el match no pertenece al usuario (inquilino) o el usuario no es propietario/agente de la propiedad en `owner_accept`.
+- **404 Not Found**: match o propiedad no existen.
+
 ### `GET /api/matches/my/?type=property|roommate|agent&status=pending|accepted|rejected`
 - **Descripción**: Lista los matches del usuario autenticado directamente por token (sin necesidad de `search_profile_id`).
 - **Autenticación**: Requerida.
@@ -2985,6 +3061,7 @@ Sistema de matching inteligente para inquilinos, propietarios y agentes.
     ]
   }
   ```
+  - Observación: `interested_user.profile_picture` devuelve la foto de perfil actual del usuario (URL absoluta). Si la foto principal está vacía, se usa la última marcada como `is_current` en su historial.
 
 ### Cómo se eligen las propiedades mostradas
 - El sistema genera matches con `score` calculado por reglas: ubicación, precio vs presupuesto, amenities, preferencias de roomie, reputación y frescura, y un factor familiar (p.ej., hijos vs dormitorios).
