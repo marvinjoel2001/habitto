@@ -31,7 +31,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
       });
 
       final result = await _matchingService.getPendingMatchRequests();
-      
+
       if (result['success']) {
         final requests = (result['data'] as List<dynamic>?) ?? [];
         setState(() {
@@ -58,9 +58,10 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
       if (result['success']) {
         // Remove the accepted request from the list
         setState(() {
-          _matchRequests.removeWhere((request) => request['match']['id'] == matchId);
+          _matchRequests
+              .removeWhere((request) => request['match']['id'] == matchId);
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Solicitud de match aceptada'),
@@ -94,9 +95,10 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
       if (result['success']) {
         // Remove the rejected request from the list
         setState(() {
-          _matchRequests.removeWhere((request) => request['match']['id'] == matchId);
+          _matchRequests
+              .removeWhere((request) => request['match']['id'] == matchId);
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Solicitud de match rechazada'),
@@ -216,7 +218,8 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                         : RefreshIndicator(
                             onRefresh: _loadMatchRequests,
                             child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
                               itemCount: _matchRequests.length,
                               itemBuilder: (context, index) {
                                 final request = _matchRequests[index];
@@ -233,12 +236,17 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
   Widget _buildMatchRequestTile(Map<String, dynamic> request) {
     final match = request['match'] as Map<String, dynamic>? ?? {};
     final property = request['property'] as Map<String, dynamic>? ?? {};
-    final interestedUser = request['interested_user'] as Map<String, dynamic>? ?? {};
-    
+    final interestedUser =
+        request['interested_user'] as Map<String, dynamic>? ?? {};
+
     final matchId = match['id'] as int? ?? 0;
-    final propertyTitle = property['title'] as String? ?? 'Propiedad sin título';
-    final propertyAddress = property['address'] as String? ?? 'Dirección no especificada';
-    final userName = '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'.trim();
+    final propertyTitle =
+        property['title'] as String? ?? 'Propiedad sin título';
+    final propertyAddress =
+        property['address'] as String? ?? 'Dirección no especificada';
+    final userName =
+        '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'
+            .trim();
     final userUsername = interestedUser['username'] as String? ?? 'Usuario';
     final displayName = userName.isNotEmpty ? userName : userUsername;
     String _resolveAvatar(String? url) {
@@ -246,10 +254,16 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
       if (u.isEmpty) return '';
       if (u.startsWith('http://') || u.startsWith('https://')) return u;
       final base = Uri.parse(AppConfig.baseUrl);
-      final abs = Uri(scheme: base.scheme, host: base.host, port: base.port == 0 ? null : base.port, path: u.startsWith('/') ? u : '/$u');
+      final abs = Uri(
+          scheme: base.scheme,
+          host: base.host,
+          port: base.port == 0 ? null : base.port,
+          path: u.startsWith('/') ? u : '/$u');
       return abs.toString();
     }
-    final avatarUrl = _resolveAvatar(interestedUser['profile_picture'] as String?);
+
+    final avatarUrl =
+        _resolveAvatar(interestedUser['profile_picture'] as String?);
     final score = match['score'] is num ? (match['score'] as num).round() : 0;
 
     return Container(
@@ -257,20 +271,27 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.18),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.65),
+                  Colors.white.withValues(alpha: 0.55),
+                ],
+              ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+                color: Colors.black.withValues(alpha: 0.08),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 8,
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -283,11 +304,17 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                     // Avatar del usuario interesado
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-                      backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.3),
+                      backgroundImage:
+                          avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
                       child: avatarUrl.isEmpty
                           ? Text(
-                              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                              displayName.isNotEmpty
+                                  ? displayName[0].toUpperCase()
+                                  : 'U',
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.bold,
@@ -323,7 +350,8 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                     ),
                     // Score de compatibilidad
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -348,10 +376,17 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.05),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.75),
+                        Colors.white.withValues(alpha: 0.65),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.grey.withValues(alpha: 0.1),
+                      color: Colors.black.withValues(alpha: 0.06),
                       width: 1,
                     ),
                   ),
@@ -371,7 +406,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                         propertyAddress,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[600],
+                          color: Colors.black.withValues(alpha: 0.55),
                         ),
                       ),
                     ],
@@ -385,13 +420,13 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                       child: ElevatedButton(
                         onPressed: () => _rejectMatchRequest(matchId),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.withValues(alpha: 0.1),
+                          backgroundColor: Colors.red.withValues(alpha: 0.08),
                           foregroundColor: Colors.red[700],
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
-                              color: Colors.red.withValues(alpha: 0.3),
+                              color: Colors.red.withValues(alpha: 0.22),
                               width: 1,
                             ),
                           ),
@@ -411,13 +446,13 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                       child: ElevatedButton(
                         onPressed: () => _acceptMatchRequest(matchId),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.withValues(alpha: 0.1),
+                          backgroundColor: Colors.green.withValues(alpha: 0.08),
                           foregroundColor: Colors.green[700],
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
-                              color: Colors.green.withValues(alpha: 0.3),
+                              color: Colors.green.withValues(alpha: 0.22),
                               width: 1,
                             ),
                           ),

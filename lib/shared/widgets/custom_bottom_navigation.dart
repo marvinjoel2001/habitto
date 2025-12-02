@@ -19,6 +19,7 @@ class CustomBottomNavigation extends StatefulWidget {
   final VoidCallback onSwipeRight;
   final VoidCallback onGoBack;
   final VoidCallback onAddFavorite;
+  final String userMode; // 'inquilino' | 'propietario' | 'agente'
 
   const CustomBottomNavigation({
     super.key,
@@ -34,6 +35,7 @@ class CustomBottomNavigation extends StatefulWidget {
     required this.onSwipeRight,
     required this.onGoBack,
     required this.onAddFavorite,
+    required this.userMode,
   });
 
   @override
@@ -44,6 +46,25 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   bool _isFloatingMenuVisible = false;
   OverlayEntry? _ownerOverlayEntry;
   OverlayEntry? _tenantOverlayEntry;
+
+  bool _isWhiteMode() {
+    if (widget.currentIndex == 2) {
+      return true; // Chat/Buzón
+    }
+    if (widget.userMode != 'inquilino' && widget.currentIndex == 0) {
+      return true; // Candidatos/Leads
+    }
+    return false;
+  }
+
+  bool _isLabelBlackMode(int index) {
+    if (index == 2) return true; // Chat
+    if (widget.userMode != 'inquilino' && index == 0)
+      return true; // Candidatos/Leads
+    if (widget.userMode == 'propietario' && index == 1)
+      return true; // Propiedades
+    return false;
+  }
 
   void _toggleFloatingMenu() {
     setState(() {
@@ -165,6 +186,16 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        if (_isWhiteMode())
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: 110,
+              color: Colors.white,
+            ),
+          ),
         // Main navigation container with SafeArea
         SafeArea(
           top: false,
@@ -176,19 +207,32 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                 child: BackdropFilter(
                   filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                   child: Container(
-                    height: 84,
+                    height: 72,
                     margin:
                         const EdgeInsets.only(left: 16, right: 16, bottom: 0),
                     decoration: BoxDecoration(
-                      gradient: AppTheme.getCardGradient(opacity: 0.28),
+                      gradient: _isWhiteMode()
+                          ? LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withValues(alpha: 0.72),
+                                Colors.white.withValues(alpha: 0.62),
+                              ],
+                            )
+                          : AppTheme.getCardGradient(opacity: 0.28),
                       borderRadius: BorderRadius.circular(40),
                       border: Border.all(
-                        color: AppTheme.darkGrayBase.withValues(alpha: 0.30),
+                        color: _isWhiteMode()
+                            ? AppTheme.darkGrayBase.withValues(alpha: 0.12)
+                            : AppTheme.darkGrayBase.withValues(alpha: 0.30),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
+                          color: _isWhiteMode()
+                              ? Colors.black.withValues(alpha: 0.06)
+                              : Colors.black.withValues(alpha: 0.12),
                           spreadRadius: 0,
                           blurRadius: 6,
                           offset: const Offset(0, 2),
@@ -198,69 +242,96 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final totalWidth = constraints.maxWidth;
-                        final itemWidth =
-                            totalWidth / 5; // Divide equally among 5 items
+                        final selectedIndex = widget.currentIndex;
+                        const double extraSelectedWidth = 38.0;
+                        const double spacing = 8.0;
+                        const int itemCount = 4;
+                        const double totalSpacing = spacing * (itemCount - 1);
+                        final double baseWidth =
+                            (totalWidth - totalSpacing - extraSelectedWidth) /
+                                itemCount;
 
                         return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             SizedBox(
-                              width: itemWidth,
+                              width: baseWidth +
+                                  (selectedIndex == 0 ? extraSelectedWidth : 0),
                               child: Center(
                                 child: _buildNavItem(
                                     context,
                                     0,
-                                    Icons.favorite_outline,
-                                    Icons.favorite,
-                                    'Likes'),
+                                    widget.userMode == 'inquilino'
+                                        ? Icons.style_outlined
+                                        : widget.userMode == 'propietario'
+                                            ? Icons.group_outlined
+                                            : Icons.leaderboard_outlined,
+                                    widget.userMode == 'inquilino'
+                                        ? Icons.style
+                                        : widget.userMode == 'propietario'
+                                            ? Icons.groups
+                                            : Icons.leaderboard,
+                                    widget.userMode == 'inquilino'
+                                        ? 'Explorar'
+                                        : widget.userMode == 'propietario'
+                                            ? 'Candidatos'
+                                            : 'Leads'),
                               ),
                             ),
+                            const SizedBox(width: spacing),
                             SizedBox(
-                              width: itemWidth,
+                              width: baseWidth +
+                                  (selectedIndex == 1 ? extraSelectedWidth : 0),
                               child: Center(
                                 child: _buildNavItem(
                                     context,
                                     1,
-                                    Icons.search_outlined,
-                                    Icons.search,
-                                    'Buscar'),
+                                    widget.userMode == 'inquilino'
+                                        ? Icons.map_outlined
+                                        : widget.userMode == 'propietario'
+                                            ? Icons.home_work_outlined
+                                            : Icons.domain_outlined,
+                                    widget.userMode == 'inquilino'
+                                        ? Icons.map
+                                        : widget.userMode == 'propietario'
+                                            ? Icons.home_work
+                                            : Icons.domain,
+                                    widget.userMode == 'inquilino'
+                                        ? 'Mapa'
+                                        : widget.userMode == 'propietario'
+                                            ? 'Propiedades'
+                                            : 'Portafolio'),
                               ),
                             ),
+                            const SizedBox(width: spacing),
                             SizedBox(
-                              width: itemWidth,
+                              width: baseWidth +
+                                  (selectedIndex == 2 ? extraSelectedWidth : 0),
                               child: Center(
-                                child: widget.isOwnerOrAgent
-                                    ? _buildCenterButtonForOwners(context)
-                                    : _buildNavItem(
-                                        context,
-                                        2,
-                                        Icons.credit_card,
-                                        Icons.credit_card,
-                                        '',
-                                        color: AppTheme.primaryColor),
+                                child: _buildNavItem(
+                                    context,
+                                    2,
+                                    Icons.chat_bubble_outline,
+                                    Icons.chat_bubble,
+                                    widget.userMode == 'agente'
+                                        ? 'Buzón'
+                                        : 'Chat'),
                               ),
                             ),
+                            const SizedBox(width: spacing),
                             SizedBox(
-                              width: itemWidth,
+                              width: baseWidth +
+                                  (selectedIndex == 3 ? extraSelectedWidth : 0),
                               child: Center(
                                 child: _buildNavItem(
                                     context,
                                     3,
-                                    Icons.chat_bubble_outline,
-                                    Icons.chat_bubble,
-                                    'Chat'),
-                              ),
-                            ),
-                            SizedBox(
-                              width: itemWidth,
-                              child: Center(
-                                child: _buildNavItem(
-                                    context,
-                                    4,
                                     Icons.person_outline,
                                     Icons.person,
-                                    'Perfil'),
+                                    widget.userMode == 'agente'
+                                        ? 'Perfil Prof.'
+                                        : 'Perfil'),
                               ),
                             ),
                           ],
@@ -355,6 +426,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   }) {
     final isSelected = widget.currentIndex == index;
     final itemColor = color ?? Theme.of(context).colorScheme.primary;
+    final bool labelBlack = _isLabelBlackMode(index);
     final textScaleFactor = MediaQuery.textScalerOf(context).scale(1.0);
 
     if (isSelected) {
@@ -371,12 +443,12 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
           splashColor: itemColor.withValues(alpha: 0.7),
           highlightColor: itemColor.withValues(alpha: 0.6),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: itemColor.withValues(alpha: 0.50),
+              color: AppTheme.secondaryColor.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: itemColor.withValues(alpha: 0.5),
+                color: Colors.white.withValues(alpha: 0.35),
                 width: 1,
               ),
             ),
@@ -387,13 +459,18 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(activeIcon, color: Colors.white, size: 18),
+                  Icon(
+                    activeIcon,
+                    color: labelBlack ? AppTheme.darkGrayBase : Colors.white,
+                    size: 18,
+                  ),
                   if (label.isNotEmpty) ...[
                     const SizedBox(width: 4),
                     Text(
                       label,
                       style: TextStyle(
-                        color: Colors.white,
+                        color:
+                            labelBlack ? AppTheme.darkGrayBase : Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 12 * textScaleFactor.clamp(0.8, 1.2),
                       ),
@@ -421,18 +498,26 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
         splashColor: Colors.white.withValues(alpha: 0.2),
         highlightColor: Colors.white.withValues(alpha: 0.1),
         child: Container(
-          width: 48,
-          height: 48,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.18),
+            color: _isWhiteMode()
+                ? Colors.white.withValues(alpha: 0.28)
+                : Colors.black.withValues(alpha: 0.18),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
-              width: 1,
+              color: _isWhiteMode()
+                  ? AppTheme.darkGrayBase.withValues(alpha: 0.18)
+                  : Colors.white.withValues(alpha: 0.22),
+              width: 0.9,
             ),
           ),
           child: Center(
-            child: Icon(inactiveIcon, color: Colors.white, size: 22),
+            child: Icon(
+              inactiveIcon,
+              color: _isWhiteMode() ? AppTheme.darkGrayBase : Colors.white,
+              size: 22,
+            ),
           ),
         ),
       ),

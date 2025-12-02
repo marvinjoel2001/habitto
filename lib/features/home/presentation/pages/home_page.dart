@@ -9,6 +9,10 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/swipe_property_card.dart';
 import '../../../matching/data/services/matching_service.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
+import '../../../agent/presentation/pages/agent_leads_page.dart';
+import '../../../agent/presentation/pages/agent_portfolio_page.dart';
+import '../../../properties/presentation/pages/properties_list_page.dart';
+import '../../../chat/presentation/pages/match_requests_page.dart';
 import '../../../profile/presentation/pages/create_search_profile_page.dart';
 import '../../../search/presentation/pages/search_page.dart' as search;
 import '../../../chat/presentation/pages/chat_page.dart';
@@ -75,7 +79,7 @@ class _HomePageState extends State<HomePage> {
         if (mounted) {
           setState(() {
             _userMode = mode;
-            _currentIndex = mode == profile.UserMode.inquilino ? 2 : 1;
+            _currentIndex = 0;
           });
         }
       }
@@ -155,13 +159,33 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<Widget> get _pages => [
-        const LikesPage(), // Index 0 - Likes
-        const search.SearchPage(), // Index 1 - Buscar
-        const SizedBox.shrink(), // Index 2 - Home (handled separately with key)
-        const ChatPage(), // Index 3 - Chat
-        profile.ProfilePage(
-          onModeChanged: _onUserModeChanged,
-        ), // Index 4 - Perfil
+        if (_userMode == profile.UserMode.inquilino) ...[
+          // Explorar (Deck)
+          HomeContent(deckKey: _deckKey),
+          // Mapa
+          const search.SearchPage(),
+          // Chat
+          const ChatPage(),
+          // Perfil
+          profile.ProfilePage(onModeChanged: _onUserModeChanged),
+        ] else if (_userMode == profile.UserMode.propietario) ...[
+          // Candidatos (solicitudes de match)
+          const MatchRequestsPage(),
+          // Mis Propiedades
+          const PropertiesListPage(),
+          // Chat
+          const ChatPage(),
+          // Perfil
+          profile.ProfilePage(onModeChanged: _onUserModeChanged),
+        ] else ...[
+          // Agente
+          const AgentLeadsPage(),
+          const AgentPortfolioPage(),
+          // Buzón
+          const ChatPage(),
+          // Perfil profesional
+          profile.ProfilePage(onModeChanged: _onUserModeChanged),
+        ]
       ];
 
   bool get _showAddButton =>
@@ -175,13 +199,14 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         extendBody: false,
-        body: _currentIndex == 2
-            ? HomeContent(deckKey: _deckKey)
-            : _pages[_currentIndex],
+        body: _pages[_currentIndex],
         bottomNavigationBar: CustomBottomNavigation(
           currentIndex: _currentIndex,
           showAddButton: _showAddButton,
           isOwnerOrAgent: _isOwnerOrAgent,
+          userMode: _userMode == profile.UserMode.inquilino
+              ? 'inquilino'
+              : (_userMode == profile.UserMode.propietario ? 'propietario' : 'agente'),
           showTenantFloatingMenu: _showTenantFloatingMenu,
           onTenantMenuClose: _closeTenantFloatingMenu,
           onSwipeLeft: _handleSwipeLeft,
@@ -189,36 +214,14 @@ class _HomePageState extends State<HomePage> {
           onGoBack: _handleGoBack,
           onAddFavorite: _handleAddFavorite,
           onTap: (index) {
-            // For direct users (tenants)
-            if (_isDirectUser) {
-              if (index == 2) {
-                if (_currentIndex != 2) {
-                  setState(() {
-                    _currentIndex = 2;
-                    _showTenantFloatingMenu = false;
-                  });
-                } else {
-                  _toggleTenantFloatingMenu();
-                }
-              } else {
-                setState(() {
-                  _currentIndex = index;
-                  _closeTenantFloatingMenu(); // Close menu when navigating
-                });
-              }
-            } else {
-              // For owners/agents, only navigate for non-center buttons
-              if (index != 2) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              }
-              // For index 2 (center button), let CustomBottomNavigation handle the floating menu
-            }
+            setState(() {
+              _currentIndex = index;
+              _closeTenantFloatingMenu();
+            });
           },
           onHomeTap: () {
             setState(() {
-              _currentIndex = 2; // Home is at index 2
+              _currentIndex = 0;
             });
           },
           onMoreTap: () {
