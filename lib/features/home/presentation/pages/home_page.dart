@@ -36,6 +36,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 1;
+  int _lastIndex = 1;
   profile.UserMode _userMode = profile.UserMode.inquilino;
   final ProfileService _profileService = ProfileService();
   bool _isInitializingProfile = false; // Flag to prevent repeated calls
@@ -199,7 +200,34 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         extendBody: false,
-        body: _pages[_currentIndex],
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, anim) {
+            final bool isForward = _currentIndex >= _lastIndex;
+            final offsetTween = Tween<Offset>(
+              begin: isForward ? const Offset(0.12, 0) : const Offset(-0.12, 0),
+              end: Offset.zero,
+            ).chain(CurveTween(curve: Curves.easeOutCubic));
+            final scaleTween = Tween<double>(begin: 0.98, end: 1.0)
+                .chain(CurveTween(curve: Curves.easeOutCubic));
+            return FadeTransition(
+              opacity: anim,
+              child: SlideTransition(
+                position: anim.drive(offsetTween),
+                child: ScaleTransition(
+                  scale: anim.drive(scaleTween),
+                  child: child,
+                ),
+              ),
+            );
+          },
+          child: KeyedSubtree(
+            key: ValueKey<int>(_currentIndex),
+            child: _pages[_currentIndex],
+          ),
+        ),
         bottomNavigationBar: CustomBottomNavigation(
           currentIndex: _currentIndex,
           showAddButton: _showAddButton,
@@ -215,12 +243,14 @@ class _HomePageState extends State<HomePage> {
           onAddFavorite: _handleAddFavorite,
           onTap: (index) {
             setState(() {
+              _lastIndex = _currentIndex;
               _currentIndex = index;
               _closeTenantFloatingMenu();
             });
           },
           onHomeTap: () {
             setState(() {
+              _lastIndex = _currentIndex;
               _currentIndex = 0;
             });
           },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import '../../data/services/property_service.dart';
 import '../../domain/entities/property.dart';
 import '../../../../shared/widgets/custom_button.dart';
@@ -30,8 +31,8 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
     });
 
     try {
-      final response = await _propertyService.getProperties();
-      
+      final response = await _propertyService.getMyProperties(pageSize: 50);
+
       if (response['success']) {
         setState(() {
           _properties = response['data']['properties'];
@@ -55,12 +56,21 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Mis Propiedades'),
-        backgroundColor: AppTheme.primaryColor,
+        title: const Text(
+          'Mis Propiedades',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, color: Colors.black),
             onPressed: () {
               Navigator.pushNamed(context, '/add-property').then((_) {
                 _loadProperties(); // Reload properties after adding new one
@@ -175,116 +185,259 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
   }
 
   Widget _buildPropertyCard(Property property) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    property.type.toUpperCase(),
-                    style: const TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: property.isActive ? Colors.green : Colors.red,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    property.isActive ? 'ACTIVA' : 'INACTIVA',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              property.address,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.85),
+                  Colors.white.withOpacity(0.65),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.4),
+                width: 1.5,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              property.description,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-            Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.bed, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text('${property.bedrooms}'),
-                const SizedBox(width: 16),
-                Icon(Icons.bathtub, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text('${property.bathrooms}'),
-                const SizedBox(width: 16),
-                Icon(Icons.square_foot, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text('${property.size.toInt()}m²'),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withOpacity(0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        property.type.toUpperCase(),
+                        style: const TextStyle(
+                          color:
+                              Color(0xFF005041), // Darker teal for visibility
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: property.isActive
+                            ? const Color(0xFFE8F5E9) // Light Green
+                            : const Color(0xFFFFEBEE), // Light Red
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: property.isActive
+                              ? Colors.green.withOpacity(0.5)
+                              : Colors.red.withOpacity(0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color:
+                                  property.isActive ? Colors.green : Colors.red,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            property.isActive ? 'ACTIVA' : 'INACTIVA',
+                            style: TextStyle(
+                              color: property.isActive
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 Text(
-                  'Bs. ${property.price.toStringAsFixed(0)}',
+                  property.address,
                   style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                    letterSpacing: -0.5,
                   ),
                 ),
-                const Text(
-                  '/mes',
+                const SizedBox(height: 8),
+                Text(
+                  property.description,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: Colors.grey[600],
+                    height: 1.4,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    // Navigate to property details
-                  },
-                  child: const Text('Ver detalles'),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _buildFeatureBadge(
+                        Icons.bed_outlined, '${property.bedrooms}'),
+                    const SizedBox(width: 12),
+                    _buildFeatureBadge(
+                        Icons.bathtub_outlined, '${property.bathrooms}'),
+                    const SizedBox(width: 12),
+                    _buildFeatureBadge(
+                        Icons.square_foot, '${property.size.toInt()}m²'),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  height: 1,
+                  color: Colors.black.withOpacity(0.05),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Precio de alquiler',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Bs. ${property.price.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: Color(
+                                    0xFF1A1A1A), // Black for better contrast
+                                height: 1,
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 3, left: 4),
+                              child: Text(
+                                '/mes',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        // Navigate to property details
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        backgroundColor:
+                            AppTheme.primaryColor.withOpacity(0.15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        children: const [
+                          Text(
+                            'Ver detalles',
+                            style: TextStyle(
+                              color: Color(0xFF005041), // Darker teal
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 12,
+                            color: Color(0xFF005041),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureBadge(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.grey[200] ?? Colors.grey,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: Colors.grey[800],
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

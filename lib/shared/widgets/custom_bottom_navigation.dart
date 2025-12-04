@@ -46,13 +46,16 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   bool _isFloatingMenuVisible = false;
   OverlayEntry? _ownerOverlayEntry;
   OverlayEntry? _tenantOverlayEntry;
+  final Duration _animDuration = const Duration(milliseconds: 220);
+  final Curve _animCurve = Curves.easeOutCubic;
 
   bool _isWhiteMode() {
     if (widget.currentIndex == 2) {
       return true; // Chat/Buzón
     }
-    if (widget.userMode != 'inquilino' && widget.currentIndex == 0) {
-      return true; // Candidatos/Leads
+    if (widget.userMode != 'inquilino') {
+      if (widget.currentIndex == 0) return true; // Candidatos/Leads
+      if (widget.currentIndex == 1) return true; // Propiedades/Portafolio
     }
     return false;
   }
@@ -206,7 +209,9 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                 borderRadius: BorderRadius.circular(40),
                 child: BackdropFilter(
                   filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: _animDuration,
+                    curve: _animCurve,
                     height: 72,
                     margin:
                         const EdgeInsets.only(left: 16, right: 16, bottom: 0),
@@ -248,93 +253,116 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                         const int itemCount = 4;
                         const double totalSpacing = spacing * (itemCount - 1);
                         final double baseWidth =
-                            (totalWidth - totalSpacing - extraSelectedWidth) /
-                                itemCount;
+                            ((totalWidth - totalSpacing - extraSelectedWidth) /
+                                    itemCount)
+                                .floorToDouble();
 
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: baseWidth +
-                                  (selectedIndex == 0 ? extraSelectedWidth : 0),
-                              child: Center(
-                                child: _buildNavItem(
-                                    context,
-                                    0,
-                                    widget.userMode == 'inquilino'
-                                        ? Icons.style_outlined
-                                        : widget.userMode == 'propietario'
-                                            ? Icons.group_outlined
-                                            : Icons.leaderboard_outlined,
-                                    widget.userMode == 'inquilino'
-                                        ? Icons.style
-                                        : widget.userMode == 'propietario'
-                                            ? Icons.groups
-                                            : Icons.leaderboard,
-                                    widget.userMode == 'inquilino'
-                                        ? 'Explorar'
-                                        : widget.userMode == 'propietario'
-                                            ? 'Candidatos'
-                                            : 'Leads'),
-                              ),
+                        return ClipRect(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const NeverScrollableScrollPhysics(),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                AnimatedContainer(
+                                  duration: _animDuration,
+                                  curve: _animCurve,
+                                  width: baseWidth +
+                                      (selectedIndex == 0
+                                          ? extraSelectedWidth
+                                          : 0),
+                                  child: Center(
+                                    child: _buildNavItem(
+                                        context,
+                                        0,
+                                        widget.userMode == 'inquilino'
+                                            ? Icons.style_outlined
+                                            : widget.userMode == 'propietario'
+                                                ? Icons.group_outlined
+                                                : Icons.leaderboard_outlined,
+                                        widget.userMode == 'inquilino'
+                                            ? Icons.style
+                                            : widget.userMode == 'propietario'
+                                                ? Icons.groups
+                                                : Icons.leaderboard,
+                                        widget.userMode == 'inquilino'
+                                            ? 'Explorar'
+                                            : widget.userMode == 'propietario'
+                                                ? 'Candidatos'
+                                                : 'Leads'),
+                                  ),
+                                ),
+                                const SizedBox(width: spacing),
+                                AnimatedContainer(
+                                  duration: _animDuration,
+                                  curve: _animCurve,
+                                  width: baseWidth +
+                                      (selectedIndex == 1
+                                          ? extraSelectedWidth
+                                          : 0),
+                                  child: Center(
+                                    child: _buildNavItem(
+                                        context,
+                                        1,
+                                        widget.userMode == 'inquilino'
+                                            ? Icons.map_outlined
+                                            : widget.userMode == 'propietario'
+                                                ? Icons.home_work_outlined
+                                                : Icons.domain_outlined,
+                                        widget.userMode == 'inquilino'
+                                            ? Icons.map
+                                            : widget.userMode == 'propietario'
+                                                ? Icons.home_work
+                                                : Icons.domain,
+                                        widget.userMode == 'inquilino'
+                                            ? 'Mapa'
+                                            : widget.userMode == 'propietario'
+                                                ? 'Propiedades'
+                                                : 'Portafolio'),
+                                  ),
+                                ),
+                                const SizedBox(width: spacing),
+                                AnimatedContainer(
+                                  duration: _animDuration,
+                                  curve: _animCurve,
+                                  width: baseWidth +
+                                      (selectedIndex == 2
+                                          ? extraSelectedWidth
+                                          : 0),
+                                  child: Center(
+                                    child: _buildNavItem(
+                                        context,
+                                        2,
+                                        Icons.chat_bubble_outline,
+                                        Icons.chat_bubble,
+                                        widget.userMode == 'agente'
+                                            ? 'Buzón'
+                                            : 'Chat'),
+                                  ),
+                                ),
+                                const SizedBox(width: spacing),
+                                AnimatedContainer(
+                                  duration: _animDuration,
+                                  curve: _animCurve,
+                                  width: baseWidth +
+                                      (selectedIndex == 3
+                                          ? extraSelectedWidth
+                                          : 0),
+                                  child: Center(
+                                    child: _buildNavItem(
+                                        context,
+                                        3,
+                                        Icons.person_outline,
+                                        Icons.person,
+                                        widget.userMode == 'agente'
+                                            ? 'Perfil Prof.'
+                                            : 'Perfil'),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: spacing),
-                            SizedBox(
-                              width: baseWidth +
-                                  (selectedIndex == 1 ? extraSelectedWidth : 0),
-                              child: Center(
-                                child: _buildNavItem(
-                                    context,
-                                    1,
-                                    widget.userMode == 'inquilino'
-                                        ? Icons.map_outlined
-                                        : widget.userMode == 'propietario'
-                                            ? Icons.home_work_outlined
-                                            : Icons.domain_outlined,
-                                    widget.userMode == 'inquilino'
-                                        ? Icons.map
-                                        : widget.userMode == 'propietario'
-                                            ? Icons.home_work
-                                            : Icons.domain,
-                                    widget.userMode == 'inquilino'
-                                        ? 'Mapa'
-                                        : widget.userMode == 'propietario'
-                                            ? 'Propiedades'
-                                            : 'Portafolio'),
-                              ),
-                            ),
-                            const SizedBox(width: spacing),
-                            SizedBox(
-                              width: baseWidth +
-                                  (selectedIndex == 2 ? extraSelectedWidth : 0),
-                              child: Center(
-                                child: _buildNavItem(
-                                    context,
-                                    2,
-                                    Icons.chat_bubble_outline,
-                                    Icons.chat_bubble,
-                                    widget.userMode == 'agente'
-                                        ? 'Buzón'
-                                        : 'Chat'),
-                              ),
-                            ),
-                            const SizedBox(width: spacing),
-                            SizedBox(
-                              width: baseWidth +
-                                  (selectedIndex == 3 ? extraSelectedWidth : 0),
-                              child: Center(
-                                child: _buildNavItem(
-                                    context,
-                                    3,
-                                    Icons.person_outline,
-                                    Icons.person,
-                                    widget.userMode == 'agente'
-                                        ? 'Perfil Prof.'
-                                        : 'Perfil'),
-                              ),
-                            ),
-                          ],
+                          ),
                         );
                       },
                     ),
@@ -442,7 +470,9 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
           borderRadius: BorderRadius.circular(25),
           splashColor: itemColor.withValues(alpha: 0.7),
           highlightColor: itemColor.withValues(alpha: 0.6),
-          child: Container(
+          child: AnimatedContainer(
+            duration: _animDuration,
+            curve: _animCurve,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppTheme.secondaryColor.withValues(alpha: 0.85),
@@ -497,11 +527,14 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
         borderRadius: BorderRadius.circular(28),
         splashColor: Colors.white.withValues(alpha: 0.2),
         highlightColor: Colors.white.withValues(alpha: 0.1),
-        child: Container(
+        child: AnimatedContainer(
+          duration: _animDuration,
+          curve: _animCurve,
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(100),
             color: _isWhiteMode()
                 ? Colors.white.withValues(alpha: 0.28)
                 : Colors.black.withValues(alpha: 0.18),
