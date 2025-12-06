@@ -14,7 +14,8 @@ class AppConfig {
   static const String profilesEndpoint = '/api/profiles/';
   static const String currentProfileEndpoint = '/api/profiles/me/';
   static const String updateProfileEndpoint = '/api/profiles/update_me/';
-  static const String uploadProfilePictureEndpoint = '/api/profiles/upload_profile_picture/';
+  static const String uploadProfilePictureEndpoint =
+      '/api/profiles/upload_profile_picture/';
   static const String searchProfilesEndpoint = '/api/profiles/search-profile/';
   static const String propertiesEndpoint = '/api/properties/';
   static const String amenitiesEndpoint = '/api/amenities/';
@@ -22,6 +23,11 @@ class AppConfig {
   static const String loginEndpoint = '/api/login/';
   static const String logoutEndpoint = '/api/logout/';
   static const String refreshTokenEndpoint = '/api/refresh/';
+
+  // Social Auth Endpoints (dj-rest-auth)
+  static const String socialGoogleEndpoint = '/dj-rest-auth/google/';
+  static const String socialFacebookEndpoint = '/dj-rest-auth/facebook/';
+  static const String socialAppleEndpoint = '/dj-rest-auth/apple/';
 
   // Endpoints alternativos (compatibilidad                               con documentación nueva)
   // Algunos despliegues usan SimpleJWT por defecto:
@@ -48,6 +54,11 @@ class AppConfig {
     }
   }
 
+  // Base URL para pruebas locales de login social según plataforma
+  static String socialBaseUrl() {
+    return httpBaseUri().toString();
+  }
+
   static String wsScheme() {
     final http = httpBaseUri();
     return http.scheme == 'https' ? 'wss' : 'ws';
@@ -72,11 +83,16 @@ class AppConfig {
   static String sanitizeUrl(String url) {
     if (url.isEmpty) return url;
     Uri? u;
-    try { u = Uri.parse(url); } catch (_) {}
+    try {
+      u = Uri.parse(url);
+    } catch (_) {}
     if (u == null || !u.hasScheme) return url;
     final http = httpBaseUri();
-    final host = (u.host == 'localhost' || u.host == '127.0.0.1') ? http.host : u.host;
-    final port = (u.host == 'localhost' || u.host == '127.0.0.1') ? http.port : (u.hasPort ? u.port : http.port);
+    final host =
+        (u.host == 'localhost' || u.host == '127.0.0.1') ? http.host : u.host;
+    final port = (u.host == 'localhost' || u.host == '127.0.0.1')
+        ? http.port
+        : (u.hasPort ? u.port : http.port);
     final scheme = http.scheme;
     final rebuilt = Uri(
       scheme: scheme,

@@ -95,7 +95,7 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
 
   @override
   Widget build(BuildContext context) {
-    print('SwipePropertyCard: images length ' + widget.images.length.toString());
+    print('SwipePropertyCard: images length ${widget.images.length}');
     return Padding(
       padding: EdgeInsets.fromLTRB(
         widget.outerHorizontalPadding,
@@ -110,316 +110,352 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
           curve: Curves.easeOut,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: const Border.fromBorderSide(
-              BorderSide(color: Colors.white, width: 2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: const Border.fromBorderSide(
+                BorderSide(color: Colors.white, width: 2),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+                BoxShadow(
+                  color:
+                      Colors.white.withOpacity(widget.isDragging ? 0.35 : 0.0),
+                  blurRadius: 18,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 0),
+                ),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.25),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(widget.isDragging ? 0.35 : 0.0),
-                blurRadius: 18,
-                spreadRadius: 1,
-                offset: const Offset(0, 0),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                PageView.builder(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: widget.images.isNotEmpty ? widget.images.length : 1,
-                  onPageChanged: (i) => setState(() => _page = i),
-                  itemBuilder: (_, i) {
-                    if (widget.images.isEmpty) {
-                      return _noImagePlaceholder();
-                    }
-                    final url = widget.images[i];
-                    return Stack(
-                      children: [
-                        Positioned.fill(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: Image.network(
-                              url,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return Container(
-                                  color: Colors.black12,
-                                  alignment: Alignment.center,
-                                  child: const CircularProgressIndicator(),
-                                );
-                              },
-                              errorBuilder: (context, error, stack) => _noImagePlaceholder(),
-                              semanticLabel: 'property-image',
-                            ),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final w = constraints.maxWidth;
-                              return GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTapDown: (details) {
-                                  final dx = details.localPosition.dx;
-                                  final rightZone = dx > w * 0.66;
-                                  final leftZone = dx < w * 0.34;
-                                  if (rightZone) {
-                                    if (_page < (widget.images.length - 1)) {
-                                      _pageController.animateToPage(
-                                        _page + 1,
-                                        duration: const Duration(milliseconds: 220),
-                                        curve: Curves.easeOut,
-                                      );
-                                    }
-                                  } else if (leftZone) {
-                                    if (_page > 0) {
-                                      _pageController.animateToPage(
-                                        _page - 1,
-                                        duration: const Duration(milliseconds: 220),
-                                        curve: Curves.easeOut,
-                                      );
-                                    }
-                                  } else {
-                                    widget.onOpenImage?.call(_page);
-                                  }
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-
-                Positioned.fill(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: IgnorePointer(
-                      child: Container(
-                        color: Colors.black.withValues(
-                          alpha: (0.0 + (widget.likeProgress * 0.45)).clamp(0.0, 0.45),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                Positioned.fill(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: IgnorePointer(
-                      child: Container(
-                        color: Colors.white.withValues(
-                          alpha: (0.0 + (_rejectProgressFromDx(widget.dragDx, MediaQuery.of(context).size.width) * 0.45))
-                              .clamp(0.0, 0.45),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                Positioned(
-                  top: 36,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      widget.images.isNotEmpty ? widget.images.length : 1,
-                      (i) {
-                        final active = i == _page;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: active ? 42 : 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(active ? 0.9 : 0.6),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-
-                // Chip superior (distancia) opcional
-                if (widget.distanceKm != null)
-                  Positioned(
-                    top: 26,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.35),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  PageView.builder(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount:
+                        widget.images.isNotEmpty ? widget.images.length : 1,
+                    onPageChanged: (i) => setState(() => _page = i),
+                    itemBuilder: (_, i) {
+                      if (widget.images.isEmpty) {
+                        return _noImagePlaceholder();
+                      }
+                      final url = widget.images[i];
+                      return Stack(
                         children: [
-                          const Icon(Icons.place_outlined, color: Colors.white, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${widget.distanceKm!.toStringAsFixed(1)} km',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // Overlay inferior: blur + gradiente con mismo padding lateral que la imagen
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                      child: Container(
-                        padding: EdgeInsets.only(top: 16, bottom: widget.overlayBottomSpace),
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.getCardGradient(opacity: 0.10),
-                          border: Border(
-                            top: BorderSide(
-                              color: Colors.white.withOpacity(0.15),
-                              width: 0.8,
-                            ),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 16.0),
-                                    child: AutoSizeText(
-                                      widget.title,
-                                      maxLines: 3,
-                                      minFontSize: 18,
-                                      stepGranularity: 1,
-                                      overflow: TextOverflow.visible,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 16.0),
-                                  child: Text(
-                                    widget.priceLabel,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 16.0),
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: widget.tags.map((t) => _GlassTag(label: t)).toList(),
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: Image.network(
+                                url,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(
+                                    color: Colors.black12,
+                                    alignment: Alignment.center,
+                                    child: const CircularProgressIndicator(),
+                                  );
+                                },
+                                errorBuilder: (context, error, stack) =>
+                                    _noImagePlaceholder(),
+                                semanticLabel: 'property-image',
                               ),
                             ),
-                            const SizedBox(height: 16),
+                          ),
+                          Positioned.fill(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final w = constraints.maxWidth;
+                                return GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTapDown: (details) {
+                                    final dx = details.localPosition.dx;
+                                    final rightZone = dx > w * 0.66;
+                                    final leftZone = dx < w * 0.34;
+                                    if (rightZone) {
+                                      if (_page < (widget.images.length - 1)) {
+                                        _pageController.animateToPage(
+                                          _page + 1,
+                                          duration:
+                                              const Duration(milliseconds: 220),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    } else if (leftZone) {
+                                      if (_page > 0) {
+                                        _pageController.animateToPage(
+                                          _page - 1,
+                                          duration:
+                                              const Duration(milliseconds: 220),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    } else {
+                                      widget.onOpenImage?.call(_page);
+                                    }
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: IgnorePointer(
+                        child: Container(
+                          color: Colors.black.withValues(
+                            alpha: (0.0 + (widget.likeProgress * 0.45))
+                                .clamp(0.0, 0.45),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: IgnorePointer(
+                        child: Container(
+                          color: Colors.white.withValues(
+                            alpha: (0.0 +
+                                    (_rejectProgressFromDx(widget.dragDx,
+                                            MediaQuery.of(context).size.width) *
+                                        0.45))
+                                .clamp(0.0, 0.45),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  Positioned(
+                    top: 36,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        widget.images.isNotEmpty ? widget.images.length : 1,
+                        (i) {
+                          final active = i == _page;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: active ? 42 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color:
+                                  Colors.white.withOpacity(active ? 0.9 : 0.6),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // Chip superior (distancia) opcional
+                  if (widget.distanceKm != null)
+                    Positioned(
+                      top: 26,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.35),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.place_outlined,
+                                color: Colors.white, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${widget.distanceKm!.toStringAsFixed(1)} km',
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ),
 
-                // Overlay de corazón (like) cuando arrastra a la derecha (centrado, verde del tema, tamaño grande)
-                Align(
-                  alignment: Alignment.center,
-                  child: IgnorePointer(
-                    child: Opacity(
-                      opacity: _calculateInitialOpacity(widget.likeProgress),
-                      child: Transform.scale(
-                        scale: 0.9 + (widget.likeProgress * 0.3),
+                  // Overlay inferior: blur + gradiente con mismo padding lateral que la imagen
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
                         child: Container(
-                          width: 160,
-                          height: 160,
+                          padding: EdgeInsets.only(
+                              top: 16,
+                              // Si es negativo (solapamiento), usamos 0 o un valor positivo pequeño para el padding real,
+                              // ya que el margen visual lo da el Positioned bottom.
+                              // Pero aquí 'overlayBottomSpace' se pasaba como padding bottom directo.
+                              // Si viene negativo, debemos ignorarlo en el padding y manejarlo de otra forma o usar 0.
+                              bottom: widget.overlayBottomSpace < 0
+                                  ? 16.0
+                                  : widget.overlayBottomSpace),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.95),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.secondaryColor.withOpacity(0.35),
-                                blurRadius: 36,
-                                spreadRadius: 10,
+                            gradient: AppTheme.getCardGradient(opacity: 0.10),
+                            border: Border(
+                              top: BorderSide(
+                                color: Colors.white.withOpacity(0.15),
+                                width: 0.8,
                               ),
-                            ],
-                            border: Border.all(
-                              color: AppTheme.secondaryColor.withOpacity(0.65),
-                              width: 3,
                             ),
                           ),
-                          child: Icon(
-                            Icons.favorite,
-                            color: AppTheme.secondaryColor,
-                            size: 88,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.only(left: 16.0),
+                                      child: AutoSizeText(
+                                        widget.title,
+                                        maxLines: 3,
+                                        minFontSize: 18,
+                                        stepGranularity: 1,
+                                        overflow: TextOverflow.visible,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 16.0),
+                                    child: Text(
+                                      widget.priceLabel,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16.0),
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: widget.tags
+                                      .map((t) => _GlassTag(label: t))
+                                      .toList(),
+                                ),
+                              ),
+                              // Si el espacio inferior es negativo (para solapar botones),
+                              // necesitamos asegurar un espacio mínimo para que el contenido no se corte
+                              // pero permitiendo que el overlay "suba" visualmente.
+                              // Usamos math.max para que nunca sea negativo el SizedBox.
+                              SizedBox(
+                                  height: widget.overlayBottomSpace < 0
+                                      ? 16.0 // Padding mínimo visual si hay solapamiento
+                                      : 16.0),
+                            ],
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                // Overlay de X (reject) cuando arrastra a la izquierda - SIN fondo circular (centrado, tamaño grande)
-                Align(
-                  alignment: Alignment.center,
-                  child: IgnorePointer(
-                    child: Opacity(
-                      opacity: _calculateInitialOpacity(_rejectProgressFromDx(widget.dragDx, MediaQuery.of(context).size.width)),
-                      child: Transform.scale(
-                        scale: 0.9 + (_rejectProgressFromDx(widget.dragDx, MediaQuery.of(context).size.width) * 0.3),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.red,
-                          size: 140,
+                  // Overlay de corazón (like) cuando arrastra a la derecha (centrado, verde del tema, tamaño grande)
+                  Align(
+                    alignment: Alignment.center,
+                    child: IgnorePointer(
+                      child: Opacity(
+                        opacity: _calculateInitialOpacity(widget.likeProgress),
+                        child: Transform.scale(
+                          scale: 0.9 + (widget.likeProgress * 0.3),
+                          child: Container(
+                            width: 160,
+                            height: 160,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.95),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      AppTheme.secondaryColor.withOpacity(0.35),
+                                  blurRadius: 36,
+                                  spreadRadius: 10,
+                                ),
+                              ],
+                              border: Border.all(
+                                color:
+                                    AppTheme.secondaryColor.withOpacity(0.65),
+                                width: 3,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.favorite,
+                              color: AppTheme.secondaryColor,
+                              size: 88,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+
+                  // Overlay de X (reject) cuando arrastra a la izquierda - SIN fondo circular (centrado, tamaño grande)
+                  Align(
+                    alignment: Alignment.center,
+                    child: IgnorePointer(
+                      child: Opacity(
+                        opacity: _calculateInitialOpacity(_rejectProgressFromDx(
+                            widget.dragDx, MediaQuery.of(context).size.width)),
+                        child: Transform.scale(
+                          scale: 0.9 +
+                              (_rejectProgressFromDx(widget.dragDx,
+                                      MediaQuery.of(context).size.width) *
+                                  0.3),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.red,
+                            size: 140,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
 

@@ -197,6 +197,7 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                                     text: 'Siguiente',
                                     onPressed: _nextPage,
                                     backgroundColor: Theme.of(context).colorScheme.primary,
+                                    textColor: Colors.white,
                                   ),
                                 ),
                               ),
@@ -237,6 +238,7 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                                         Navigator.pushReplacementNamed(context, '/login');
                                       },
                                       backgroundColor: Theme.of(context).colorScheme.primary,
+                                      textColor: Colors.white,
                                     ),
                                     const SizedBox(height: 12),
                                     CustomButton(
@@ -245,6 +247,7 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                                         Navigator.pushReplacementNamed(context, '/register');
                                       },
                                       backgroundColor: Theme.of(context).colorScheme.secondary,
+                                      textColor: Colors.white,
                                     ),
                                   ],
                                 )
@@ -252,6 +255,7 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                                   text: 'Siguiente',
                                   onPressed: _nextPage,
                                   backgroundColor: Theme.of(context).colorScheme.primary,
+                                  textColor: Colors.white,
                                 ),
                         ),
                       ),

@@ -1,75 +1,102 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
-import '../theme/app_theme.dart';
 
 class SocialLoginButton extends StatelessWidget {
-  final IconData icon;
-  final String text;
+  final IconData? icon;
   final VoidCallback onPressed;
   final Color? backgroundColor;
-  final Color? textColor;
   final Color? iconColor;
+  final String? imageAsset;
+  final bool showGlow;
+  final bool isLoading;
 
   const SocialLoginButton({
     super.key,
-    required this.icon,
-    required this.text,
+    this.icon,
     required this.onPressed,
     this.backgroundColor,
-    this.textColor,
     this.iconColor,
+    this.imageAsset,
+    this.showGlow = true,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          height: 50,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.3), width: 1),
-          ),
-          child: ElevatedButton(
-            onPressed: onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.whiteColor.withValues(alpha: 0.15),
-              foregroundColor: textColor ?? AppTheme.whiteColor,
-              elevation: 0,
-              shadowColor: Colors.transparent,
-              minimumSize: const Size(0, 50),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: AppTheme.whiteColor.withValues(alpha: 0.3), width: 1),
+    // Usamos el color primario del tema en lugar del verde menta fijo
+    final theme = Theme.of(context);
+    final glowColor = theme.colorScheme.primary;
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        if (showGlow)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: glowColor.withValues(alpha: 0.35),
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
               ),
             ),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: iconColor ?? AppTheme.whiteColor, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    text,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: textColor ?? AppTheme.whiteColor,
-                    ),
-                  ),
-                ],
+          ),
+        ClipOval(
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: glowColor.withValues(alpha: 0.6),
+                  width: 1,
+                ),
+              ),
+              child: Material(
+                color: (backgroundColor ?? Colors.white).withValues(alpha: 0.15),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: onPressed,
+                  customBorder: const CircleBorder(),
+                  child: isLoading
+                      ? const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : (imageAsset != null
+                          ? Image.asset(
+                              imageAsset!,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            )
+                          : Center(
+                              child: Icon(
+                                icon,
+                                color: iconColor ?? Colors.white,
+                                size: 24,
+                              ),
+                            )),
+                ),
               ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

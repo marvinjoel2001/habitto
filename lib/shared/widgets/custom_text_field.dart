@@ -14,6 +14,8 @@ class CustomTextField extends StatefulWidget {
   final FocusNode? focusNode;
   final TextInputAction? textInputAction;
   final Function(String)? onFieldSubmitted;
+  final Color? textColor;
+  final Color? fillColor;
 
   const CustomTextField({
     super.key,
@@ -29,6 +31,8 @@ class CustomTextField extends StatefulWidget {
     this.focusNode,
     this.textInputAction,
     this.onFieldSubmitted,
+    this.textColor,
+    this.fillColor,
   });
 
   @override
@@ -52,15 +56,15 @@ class _CustomTextFieldState extends State<CustomTextField> {
       validator: widget.validator,
       maxLines: widget.isPassword ? 1 : widget.maxLines,
       onTap: widget.onTap,
-      cursorColor: AppTheme.blackColor,
-      style: const TextStyle(
+      cursorColor: widget.textColor ?? AppTheme.blackColor,
+      style: TextStyle(
         fontSize: 16,
-        color: AppTheme.blackColor,
+        color: widget.textColor ?? AppTheme.blackColor,
       ),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: const TextStyle(
-          color: AppTheme.blackColor,
+        hintStyle: TextStyle(
+          color: (widget.textColor ?? AppTheme.blackColor).withOpacity(0.7),
           fontSize: 16,
         ),
         prefixIcon: widget.prefixIcon,
@@ -68,7 +72,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             ? IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: AppTheme.blackColor.withOpacity(0.6),
+                  color: (widget.textColor ?? AppTheme.blackColor).withOpacity(0.6),
                 ),
                 onPressed: () {
                   setState(() {
@@ -79,7 +83,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             : widget.suffixIcon,
         filled: true,
         // Mantener el relleno del Theme (no negro). Si no existe, usar el color de diseño.
-        fillColor: inputTheme.fillColor ?? AppTheme.lightGrayishDark,
+        fillColor: widget.fillColor ?? inputTheme.fillColor ?? AppTheme.lightGrayishDark,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

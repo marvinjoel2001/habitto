@@ -1,129 +1,109 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // 🎨 Paleta de colores - Menta Fresca y Grises Oscuros Balanceados
-  static const Color primaryColor = Color(0xFFA9F9E2); // Menta suave principal
-  static const Color secondaryColor =
-      Color(0xFF7CE6B8); // Menta más intenso para contraste
-  static const Color accentMint =
-      Color(0xFF66FFC4); // Menta vibrante para acentos
+  static const Color primaryColor = Color(0xFFEC4A7E);
+  static const Color secondaryColor = Color(0xFF9C55CC);
+  static const Color accentMint = Color(0xFFFFD06A);
+  static const Color mintGreen = Color(0xFF5C74F0);
 
-  // 🌑 Tonos Grises Oscuros para el degradado y fondos (NO NEGRO PURO)
-  static const Color darkGrayBase =
-      Color(0xFF1C1C1E); // Gris muy oscuro, base principal
-  static const Color mediumGray =
-      Color(0xFF2C2C2E); // Gris oscuro medio para transiciones
-  static const Color lightGrayishDark =
-      Color(0xFF424244); // Un gris oscuro más claro
+  static const Color darkGrayBase = Color(0xFFF5F7FA);
+  static const Color mediumGray = Color(0xFFECEFF4);
+  static const Color lightGrayishDark = Color(0xFFE2E6ED);
 
-  // 🍃 Paleta de soporte (tonos neutros y verdes)
-  static const Color paleMint1 = Color(0xFFDFFFF6); // Menta muy pálido
-  static const Color whiteMint =
-      Color(0xFFF5FFFA); // Un blanco con un toque mínimo de menta
+  static const Color paleMint1 = Color(0xFFFF4848);
+  static const Color whiteMint = Color(0xFFFFFFFF);
 
-  // 🎭 Colores base (Tonos Neutros y de Sistema)
-  static const Color blackColor =
-      Color(0xFF0A0A0A); // Se mantiene para algunas sombras o detalles
-  static const Color whiteColor = Color(0xFFFCFCFC); // Blanco puro y limpio
-  static const Color grayColor = Color(
-      0xFFF0F5F2); // Para inputs en light theme (si se usara un light mode real)
+  static const Color blackColor = Color(0xFF000000);
+  static const Color whiteColor = Color(0xFFFFFFFF);
+  static const Color grayColor = Color(0xFFF0F5F2);
   static const Color errorColor = Color(0xFFCF6679);
-  static const Color backgroundColor = darkGrayBase; // Color de fondo principal
+  static const Color backgroundColor = darkGrayBase;
 
-  // 📝 Estilos de texto
   static const TextStyle headlineSmall = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: whiteColor,
+    color: blackColor,
   );
 
   static const TextStyle bodyMedium = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: whiteColor,
+    color: blackColor,
   );
 
-  // 🌟 Gradiente PRINCIPAL - (Blanco/Menta a Gris Oscuro - Más luminoso arriba, sutil abajo)
   static const LinearGradient profileGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.bottomLeft,
+    end: Alignment.topRight,
     colors: [
-      whiteMint, // Empieza casi blanco con un toque de menta
-      primaryColor, // Pasa por el menta suave
-      mediumGray, // Transiciona a un gris oscuro medio
-      darkGrayBase, // Termina en un gris muy oscuro (no negro)
-    ],
-    // Ajusta los stops para la transición más gradual y luminosa arriba
-    stops: [0.0, 0.25, 0.65, 1.0],
-  );
-
-  // 🌈 Gradiente SUAVE - (Similar, pero quizá menos contraste)
-  static const LinearGradient profileGradientSoft = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [
-      paleMint1,
-      mediumGray,
-    ],
-    stops: [0.0, 1.0],
-  );
-
-  // 💫 Gradiente VIBRANTE - (Para botones y elementos destacados)
-  static const LinearGradient profileGradientWarm = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      secondaryColor,
       accentMint,
+      paleMint1,
+      primaryColor,
+      secondaryColor,
+      mintGreen,
     ],
-    stops: [0.0, 1.0],
+    stops: [0.0, 0.25, 0.5, 0.75, 1.0],
   );
 
-  // 🎨 Gradiente para cards - Glassmorphism (Menta y Transparencia sobre el fondo)
-  // Ajustamos las opacidades para que se vean bien sobre el nuevo fondo
+  static const LinearGradient profileGradientSoft = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      mintGreen,
+      secondaryColor,
+      primaryColor,
+    ],
+  );
+
+  static const LinearGradient profileGradientWarm = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      accentMint,
+      paleMint1,
+      primaryColor,
+    ],
+  );
+
   static LinearGradient getCardGradient({double opacity = 0.20}) {
     return LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
       colors: [
-        const Color.fromARGB(255, 0, 0, 0)
-            .withValues(alpha: opacity * 1.5), // Más transparente, pero presente
-        primaryColor.withValues(alpha: opacity * 0.5), // Toque de menta muy sutil
+        whiteColor.withValues(alpha: 0.30),
+        whiteColor.withValues(alpha: 0.65),
+        whiteColor.withValues(alpha: 0.92),
       ],
-      stops: const [0.0, 1.0],
+      stops: const [0.0, 0.55, 1.0],
     );
   }
 
-  // 🌞 Light/Main Theme - Diseñado para usarse con el fondo de degradado
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-    brightness:
-        Brightness.dark, // Para que el texto de la barra de estado sea blanco
-    scaffoldBackgroundColor: darkGrayBase, // Fondo base gris oscuro
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: darkGrayBase,
     colorScheme: const ColorScheme(
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
       primary: primaryColor,
-      onPrimary: Color(0xFF003D2B), // Texto oscuro sobre el menta
+      onPrimary: blackColor,
       secondary: accentMint,
       onSecondary: blackColor,
-      tertiary: paleMint1,
+      tertiary: secondaryColor,
       onTertiary: blackColor,
       error: errorColor,
-      onError: blackColor,
-      surface:
-          mediumGray, // Superficies ligeramente más claras que el fondo base
-      onSurface: whiteColor,
+      onError: whiteColor,
+      surface: whiteColor,
+      onSurface: blackColor,
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
-      foregroundColor: whiteColor,
+      foregroundColor: blackColor,
       elevation: 0,
       centerTitle: true,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
-        foregroundColor: const Color(0xFF003D2B),
+        foregroundColor: whiteColor,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(28),
@@ -133,50 +113,46 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: const Color.fromARGB(255, 254, 254, 255), // Un gris oscuro claro para los inputs
-      hintStyle: const TextStyle(color: Color.fromARGB(255, 220, 220, 220)),
+      fillColor: blackColor.withValues(alpha: 0.05),
+      hintStyle: TextStyle(color: blackColor.withValues(alpha: 0.4)),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        // Borde plomito delgado también al enfocar
-        borderSide: BorderSide(color: darkGrayBase.withValues(alpha: 0.4), width: 1.0),
+        borderSide: const BorderSide(color: secondaryColor, width: 1.0),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        // Borde plomito súper delgado en estado normal
         borderSide: BorderSide(
-          color: darkGrayBase.withValues(alpha: 0.3),
-          width: 0.8,
+          color: blackColor.withValues(alpha: 0.1),
+          width: 0.5,
         ),
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: darkGrayBase.withOpacity(0.2),
-          width: 0.8,
+          color: blackColor.withValues(alpha: 0.05),
+          width: 0.5,
         ),
       ),
     ),
   );
 
-  // 🌚 Dark Theme - (Esencialmente el mismo que el lightTheme en este diseño)
   static ThemeData darkTheme = lightTheme;
 
-  // 🎨 Fondo del perfil con variantes
   static BoxDecoration getProfileBackground({int variant = 1}) {
     LinearGradient gradient;
     switch (variant) {
       case 1:
-        gradient = profileGradient; // Principal: Blanco/Menta a Gris Oscuro
+        gradient = profileGradient;
         break;
       case 2:
-        gradient = profileGradientSoft; // Suave
+        gradient = profileGradientSoft;
         break;
       case 3:
-        gradient = profileGradientWarm; // Vibrante (para otros elementos)
+        gradient = profileGradientWarm;
         break;
       default:
         gradient = profileGradient;
@@ -184,43 +160,36 @@ class AppTheme {
     return BoxDecoration(gradient: gradient);
   }
 
-  // 💎 Cards con glassmorphism
-  // Hemos ajustado las opacidades en getCardGradient directamente para mayor control
   static BoxDecoration getGlassCard() {
     return BoxDecoration(
-      gradient: getCardGradient(), // Usa el gradiente ajustado para las cards
+      gradient: getCardGradient(),
       borderRadius: BorderRadius.circular(24),
       border: Border.all(
-        color: whiteColor.withOpacity(0.25), // Borde un poco más visible
-        width: 1.5,
+        color: blackColor.withValues(alpha: 0.1),
+        width: 1.0,
       ),
       boxShadow: [
         BoxShadow(
-          color: blackColor.withOpacity(0.15), // Sombra más suave
-          blurRadius: 15,
-          offset: const Offset(0, 6),
+          color: blackColor.withValues(alpha: 0.05),
+          blurRadius: 16,
+          offset: const Offset(0, 8),
         ),
       ],
     );
   }
 
-  // ✨ Botón mint con gradiente y glow
   static BoxDecoration getMintButtonDecoration() {
     return BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [secondaryColor, primaryColor, accentMint],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
+      gradient: profileGradient,
       borderRadius: BorderRadius.circular(28),
       boxShadow: [
         BoxShadow(
-          color: primaryColor.withOpacity(0.5),
+          color: primaryColor.withValues(alpha: 0.3),
           blurRadius: 20,
           offset: const Offset(0, 8),
         ),
         BoxShadow(
-          color: accentMint.withOpacity(0.3),
+          color: accentMint.withValues(alpha: 0.2),
           blurRadius: 40,
           offset: const Offset(0, 16),
         ),
@@ -228,19 +197,13 @@ class AppTheme {
     );
   }
 
-  // 🎯 Borde para foto de perfil
   static BoxDecoration getProfileImageBorder() {
     return BoxDecoration(
       shape: BoxShape.circle,
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [accentMint, secondaryColor, primaryColor],
-        stops: [0.0, 0.5, 1.0],
-      ),
+      gradient: profileGradient,
       boxShadow: [
         BoxShadow(
-          color: accentMint.withValues(alpha: 0.4),
+          color: primaryColor.withValues(alpha: 0.3),
           blurRadius: 24,
           spreadRadius: 2,
         ),

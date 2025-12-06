@@ -193,74 +193,127 @@ class _HomePageState extends State<HomePage> {
       _userMode == profile.UserMode.propietario ||
       _userMode == profile.UserMode.agente;
 
+  int _backgroundVariantForIndex() {
+    if (_userMode == profile.UserMode.inquilino) {
+      switch (_currentIndex) {
+        case 0:
+          return 1;
+        case 1:
+          return 2;
+        case 2:
+          return 3;
+        case 3:
+        default:
+          return 1;
+      }
+    } else if (_userMode == profile.UserMode.propietario) {
+      switch (_currentIndex) {
+        case 0:
+          return 1;
+        case 1:
+          return 2;
+        case 2:
+          return 3;
+        case 3:
+        default:
+          return 1;
+      }
+    } else {
+      switch (_currentIndex) {
+        case 0:
+          return 2;
+        case 1:
+          return 2;
+        case 2:
+          return 3;
+        case 3:
+        default:
+          return 1;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: AppTheme.getProfileBackground(),
+      decoration:
+          AppTheme.getProfileBackground(variant: _backgroundVariantForIndex()),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        extendBody: false,
-        body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          transitionBuilder: (child, anim) {
-            final bool isForward = _currentIndex >= _lastIndex;
-            final offsetTween = Tween<Offset>(
-              begin: isForward ? const Offset(0.12, 0) : const Offset(-0.12, 0),
-              end: Offset.zero,
-            ).chain(CurveTween(curve: Curves.easeOutCubic));
-            final scaleTween = Tween<double>(begin: 0.98, end: 1.0)
-                .chain(CurveTween(curve: Curves.easeOutCubic));
-            return FadeTransition(
-              opacity: anim,
-              child: SlideTransition(
-                position: anim.drive(offsetTween),
-                child: ScaleTransition(
-                  scale: anim.drive(scaleTween),
-                  child: child,
-                ),
+        extendBody: true,
+        body: Stack(
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, anim) {
+                final bool isForward = _currentIndex >= _lastIndex;
+                final offsetTween = Tween<Offset>(
+                  begin: isForward
+                      ? const Offset(0.12, 0)
+                      : const Offset(-0.12, 0),
+                  end: Offset.zero,
+                ).chain(CurveTween(curve: Curves.easeOutCubic));
+                final scaleTween = Tween<double>(begin: 0.98, end: 1.0)
+                    .chain(CurveTween(curve: Curves.easeOutCubic));
+                return FadeTransition(
+                  opacity: anim,
+                  child: SlideTransition(
+                    position: anim.drive(offsetTween),
+                    child: ScaleTransition(
+                      scale: anim.drive(scaleTween),
+                      child: child,
+                    ),
+                  ),
+                );
+              },
+              child: KeyedSubtree(
+                key: ValueKey<int>(_currentIndex),
+                child: _pages[_currentIndex],
               ),
-            );
-          },
-          child: KeyedSubtree(
-            key: ValueKey<int>(_currentIndex),
-            child: _pages[_currentIndex],
-          ),
-        ),
-        bottomNavigationBar: CustomBottomNavigation(
-          currentIndex: _currentIndex,
-          showAddButton: _showAddButton,
-          isOwnerOrAgent: _isOwnerOrAgent,
-          userMode: _userMode == profile.UserMode.inquilino
-              ? 'inquilino'
-              : (_userMode == profile.UserMode.propietario ? 'propietario' : 'agente'),
-          showTenantFloatingMenu: _showTenantFloatingMenu,
-          onTenantMenuClose: _closeTenantFloatingMenu,
-          onSwipeLeft: _handleSwipeLeft,
-          onSwipeRight: _handleSwipeRight,
-          onGoBack: _handleGoBack,
-          onAddFavorite: _handleAddFavorite,
-          onTap: (index) {
-            setState(() {
-              _lastIndex = _currentIndex;
-              _currentIndex = index;
-              _closeTenantFloatingMenu();
-            });
-          },
-          onHomeTap: () {
-            setState(() {
-              _lastIndex = _currentIndex;
-              _currentIndex = 0;
-            });
-          },
-          onMoreTap: () {
-            // Navigate to More page for owners/agents
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const MorePage()),
-            );
-          },
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: CustomBottomNavigation(
+                currentIndex: _currentIndex,
+                showAddButton: _showAddButton,
+                isOwnerOrAgent: _isOwnerOrAgent,
+                userMode: _userMode == profile.UserMode.inquilino
+                    ? 'inquilino'
+                    : (_userMode == profile.UserMode.propietario
+                        ? 'propietario'
+                        : 'agente'),
+                showTenantFloatingMenu: _showTenantFloatingMenu,
+                onTenantMenuClose: _closeTenantFloatingMenu,
+                onSwipeLeft: _handleSwipeLeft,
+                onSwipeRight: _handleSwipeRight,
+                onGoBack: _handleGoBack,
+                onAddFavorite: _handleAddFavorite,
+                onTap: (index) {
+                  setState(() {
+                    _lastIndex = _currentIndex;
+                    _currentIndex = index;
+                    _closeTenantFloatingMenu();
+                  });
+                },
+                onHomeTap: () {
+                  setState(() {
+                    _lastIndex = _currentIndex;
+                    _currentIndex = 0;
+                  });
+                },
+                onMoreTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MorePage()),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -319,12 +372,16 @@ class _CircleActionButton extends StatefulWidget {
   final Color bgColor;
   final Color iconColor;
   final VoidCallback? onTap;
+  final double size;
+  final double opacity;
 
   const _CircleActionButton({
     required this.icon,
     required this.bgColor,
     required this.iconColor,
     this.onTap,
+    this.size = 64.0,
+    this.opacity = 0.28,
   });
 
   @override
@@ -371,13 +428,13 @@ class _CircleActionButtonState extends State<_CircleActionButton>
           child: BackdropFilter(
             filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
-              width: 64,
-              height: 64,
+              width: widget.size,
+              height: widget.size,
               decoration: BoxDecoration(
-                gradient: AppTheme.getCardGradient(opacity: 0.28),
+                gradient: AppTheme.getCardGradient(opacity: widget.opacity),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.30),
+                  color: Colors.white.withOpacity(widget.opacity + 0.02),
                   width: 1.2,
                 ),
                 boxShadow: [
@@ -388,7 +445,8 @@ class _CircleActionButtonState extends State<_CircleActionButton>
                   ),
                 ],
               ),
-              child: Icon(widget.icon, color: widget.iconColor, size: 28),
+              child: Icon(widget.icon,
+                  color: widget.iconColor, size: widget.size * 0.45),
             ),
           ),
         ),
@@ -684,31 +742,51 @@ class _HomeContentState extends State<HomeContent> {
                             Builder(builder: (ctx) {
                               final sz = MediaQuery.of(ctx).size;
                               final pad = MediaQuery.of(ctx).padding;
-                              const double actionRowHeight = 64.0;
-                              const double rowSpacing = 28.0;
-                              const double bottomNavApprox = 96.0;
-                              const double topAreaApprox = 140.0;
+
+                              // Altura de la fila de botones de acción
+                              const double actionRowHeight = 80.0;
+                              // Espacio para el bottom spacing que hemos aumentado (para levantar botones)
+                              const double extraBottomSpacing = 85.0;
+
+                              // Ajustamos reservedBottom considerando el nuevo espaciado inferior
+                              // para que la card se reduzca y no haya overflow.
                               final double reservedBottom = actionRowHeight +
-                                  rowSpacing +
-                                  bottomNavApprox +
-                                  pad.bottom;
-                              final double available =
-                                  sz.height - topAreaApprox - reservedBottom;
-                              final double candidate =
-                                  math.min(sz.height * 0.66, available);
-                              final double dynamicHeight =
-                                  math.max(candidate, 320.0);
+                                  extraBottomSpacing +
+                                  (pad.bottom > 0 ? pad.bottom : 0.0);
+
+                              // Altura disponible para el área principal
+                              const double topAreaHeight =
+                                  100.0; // Espacio superior para filtros/header
+
+                              // Reducimos un poco más para asegurar que los botones no tapen información vital
+                              const double sizeReduction = 20.0;
+
+                              final double availableHeight = sz.height -
+                                  topAreaHeight -
+                                  reservedBottom -
+                                  sizeReduction;
+
+                              // Altura dinámica de la card
+                              final double cardHeight =
+                                  math.max(availableHeight, 400.0);
+
                               return SizedBox(
-                                height: dynamicHeight,
+                                height: cardHeight,
                                 child: PropertySwipeDeck(
                                   key: widget.deckKey,
                                   properties: _cards,
+                                  // Pasar el padding inferior negativo para que la card se solape con los botones
+                                  overlayBottomSpace: -(actionRowHeight / 2),
                                   onLike: (p) async {
-                                    final res = await _matchingService.likeProperty(p.id);
+                                    final res = await _matchingService
+                                        .likeProperty(p.id);
                                     if (res['success'] != true) {
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text(res['error'] ?? 'Error al hacer like')),
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(res['error'] ??
+                                                  'Error al hacer like')),
                                         );
                                       }
                                       return;
@@ -726,10 +804,14 @@ class _HomeContentState extends State<HomeContent> {
                                     );
                                   },
                                   onReject: (p) async {
-                                    final res = await _matchingService.rejectProperty(p.id);
+                                    final res = await _matchingService
+                                        .rejectProperty(p.id);
                                     if (res['success'] != true && mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(res['error'] ?? 'Error al rechazar')),
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(res['error'] ??
+                                                'Error al rechazar')),
                                       );
                                     }
                                   },
@@ -743,87 +825,98 @@ class _HomeContentState extends State<HomeContent> {
             ),
           ),
           if (!_isLoading && _currentTopProperty != null && _cards.isNotEmpty)
-            Container(
-              color: Colors.transparent,
-              margin: EdgeInsets.zero,
-              padding: EdgeInsets.zero,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _CircleActionButton(
-                    icon: Icons.rotate_left,
-                    bgColor: Colors.transparent,
-                    iconColor: Colors.amber,
-                    onTap: () => widget.deckKey.currentState?.goBack(),
-                  ),
-                  const SizedBox(width: 18),
-                  _CircleActionButton(
-                    icon: Icons.close,
-                    bgColor: Colors.transparent,
-                    iconColor: Colors.redAccent,
-                    onTap: () async {
-                      final p = _currentTopProperty;
-                      if (p != null) {
-                        await _matchingService.rejectProperty(p.id);
-                      }
-                      _spawnBigXAndSwipeLeft();
-                    },
-                  ),
-                  const SizedBox(width: 18),
-                  _CircleActionButton(
-                    icon: Icons.favorite,
-                    bgColor: Colors.transparent,
-                    iconColor: AppTheme.secondaryColor,
-                    onTap: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      final p = _currentTopProperty;
-                      if (p != null) {
-                        final res = await _matchingService.likeProperty(p.id);
-                        if (res['success'] == true) {
-                          _spawnHeartsBurst();
-                          messenger.showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  '¡Like enviado! El propietario será notificado.'),
-                              backgroundColor: AppTheme.secondaryColor,
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                          widget.deckKey.currentState?.swipeRight();
-                        } else {
-                          messenger.showSnackBar(
-                            SnackBar(
+            Transform.translate(
+              offset: const Offset(0, -40.0),
+              child: Container(
+                color: Colors.transparent,
+                margin: EdgeInsets.zero,
+                padding: EdgeInsets.zero,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _CircleActionButton(
+                      icon: Icons.rotate_left,
+                      bgColor: Colors.transparent,
+                      iconColor: Colors.amber,
+                      size: 54,
+                      opacity: 0.15,
+                      onTap: () => widget.deckKey.currentState?.goBack(),
+                    ),
+                    const SizedBox(width: 18),
+                    _CircleActionButton(
+                      icon: Icons.close,
+                      bgColor: Colors.transparent,
+                      iconColor: Colors.redAccent,
+                      size: 54,
+                      opacity: 0.15,
+                      onTap: () async {
+                        final p = _currentTopProperty;
+                        if (p != null) {
+                          await _matchingService.rejectProperty(p.id);
+                        }
+                        _spawnBigXAndSwipeLeft();
+                      },
+                    ),
+                    const SizedBox(width: 18),
+                    _CircleActionButton(
+                      icon: Icons.favorite,
+                      bgColor: Colors.transparent,
+                      iconColor: AppTheme.secondaryColor,
+                      size: 78,
+                      opacity: 0.32,
+                      onTap: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        final p = _currentTopProperty;
+                        if (p != null) {
+                          final res = await _matchingService.likeProperty(p.id);
+                          if (res['success'] == true) {
+                            _spawnHeartsBurst();
+                            messenger.showSnackBar(
+                              const SnackBar(
                                 content: Text(
-                                    res['error'] ?? 'Error al hacer like')),
-                          );
+                                    '¡Like enviado! El propietario será notificado.'),
+                                backgroundColor: AppTheme.secondaryColor,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                            widget.deckKey.currentState?.swipeRight();
+                          } else {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      res['error'] ?? 'Error al hacer like')),
+                            );
+                          }
                         }
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 18),
-                  _CircleActionButton(
-                    icon: Icons.star,
-                    bgColor: Colors.transparent,
-                    iconColor: Colors.blueAccent,
-                    onTap: () async {
-                      final p = _currentTopProperty;
-                      if (p != null) {
-                        final res =
-                            await _profileService.addFavoriteViaApi(p.id);
-                        if (res['success'] != true && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(res['error'] ??
-                                    'Error al agregar favorito')),
-                          );
+                      },
+                    ),
+                    const SizedBox(width: 18),
+                    _CircleActionButton(
+                      icon: Icons.star,
+                      bgColor: Colors.transparent,
+                      iconColor: Colors.blueAccent,
+                      size: 54,
+                      opacity: 0.15,
+                      onTap: () async {
+                        final p = _currentTopProperty;
+                        if (p != null) {
+                          final res =
+                              await _profileService.addFavoriteViaApi(p.id);
+                          if (res['success'] != true && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(res['error'] ??
+                                      'Error al agregar favorito')),
+                            );
+                          }
                         }
-                      }
-                    },
-                  ),
-                ],
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 85),
         ],
       ),
     );
@@ -985,12 +1078,14 @@ class PropertySwipeDeck extends StatefulWidget {
   final ValueChanged<HomePropertyCardData>? onTopChange;
   final ValueChanged<HomePropertyCardData>? onLike;
   final ValueChanged<HomePropertyCardData>? onReject;
+  final double overlayBottomSpace;
   const PropertySwipeDeck({
     super.key,
     required this.properties,
     this.onTopChange,
     this.onLike,
     this.onReject,
+    this.overlayBottomSpace = 0.0,
   });
 
   @override
@@ -1183,7 +1278,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                         onOpenImage: (index) =>
                             _openFullScreen(property.images, index),
                         outerTopPadding: 0.0,
-                        overlayBottomSpace: 0.0,
+                        overlayBottomSpace: widget.overlayBottomSpace,
                       ),
                     ),
                   ),
@@ -1200,7 +1295,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                   onOpenImage: (index) =>
                       _openFullScreen(property.images, index),
                   outerTopPadding: 0.0,
-                  overlayBottomSpace: 0.0,
+                  overlayBottomSpace: widget.overlayBottomSpace,
                 ),
         ),
       );

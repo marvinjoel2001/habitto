@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import '../../data/services/property_service.dart';
 import '../../domain/entities/property.dart';
+import '../../data/services/photo_service.dart';
+import '../../../../core/services/api_service.dart';
+import 'package:habitto/config/app_config.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/theme/app_theme.dart';
 
@@ -14,6 +17,7 @@ class PropertiesListPage extends StatefulWidget {
 
 class _PropertiesListPageState extends State<PropertiesListPage> {
   final PropertyService _propertyService = PropertyService();
+  final PhotoService _photoService = PhotoService(ApiService());
   List<Property> _properties = [];
   bool _isLoading = true;
   String? _error;
@@ -80,14 +84,17 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
         ],
       ),
       body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add-property').then((_) {
-            _loadProperties(); // Reload properties after adding new one
-          });
-        },
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/add-property').then((_) {
+              _loadProperties(); // Reload properties after adding new one
+            });
+          },
+          backgroundColor: AppTheme.primaryColor,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -174,7 +181,8 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
     return RefreshIndicator(
       onRefresh: _loadProperties,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding:
+            const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
         itemCount: _properties.length,
         itemBuilder: (context, index) {
           final property = _properties[index];
@@ -202,7 +210,7 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -223,36 +231,25 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
               children: [
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppTheme.primaryColor.withOpacity(0.5),
-                          width: 1,
-                        ),
-                      ),
+                    Expanded(
                       child: Text(
-                        property.type.toUpperCase(),
+                        property.address,
                         style: const TextStyle(
-                          color:
-                              Color(0xFF005041), // Darker teal for visibility
-                          fontSize: 11,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
+                          color: Color(0xFF1A1A1A),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: property.isActive
-                            ? const Color(0xFFE8F5E9) // Light Green
-                            : const Color(0xFFFFEBEE), // Light Red
+                            ? const Color(0xFFE8F5E9)
+                            : const Color(0xFFFFEBEE),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: property.isActive
@@ -261,156 +258,106 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
                           width: 1,
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color:
-                                  property.isActive ? Colors.green : Colors.red,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            property.isActive ? 'ACTIVA' : 'INACTIVA',
-                            style: TextStyle(
-                              color: property.isActive
-                                  ? Colors.green[700]
-                                  : Colors.red[700],
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        property.isActive ? 'ACTIVA' : 'INACTIVA',
+                        style: TextStyle(
+                          color: property.isActive
+                              ? Colors.green[700]
+                              : Colors.red[700],
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  property.address,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  property.description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    height: 1.4,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    _buildFeatureBadge(
-                        Icons.bed_outlined, '${property.bedrooms}'),
-                    const SizedBox(width: 12),
-                    _buildFeatureBadge(
-                        Icons.bathtub_outlined, '${property.bathrooms}'),
-                    const SizedBox(width: 12),
-                    _buildFeatureBadge(
-                        Icons.square_foot, '${property.size.toInt()}m²'),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  height: 1,
-                  color: Colors.black.withOpacity(0.05),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Precio de alquiler',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Bs. ${property.price.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: Color(
-                                    0xFF1A1A1A), // Black for better contrast
-                                height: 1,
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 3, left: 4),
-                              child: Text(
-                                '/mes',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () {
-                        // Navigate to property details
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        backgroundColor:
-                            AppTheme.primaryColor.withOpacity(0.15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Row(
-                        children: const [
-                          Text(
-                            'Ver detalles',
-                            style: TextStyle(
-                              color: Color(0xFF005041), // Darker teal
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                          SizedBox(width: 4),
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 12,
-                            color: Color(0xFF005041),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 12),
+                FutureBuilder<Map<String, dynamic>>(
+                  future: _photoService.getPropertyPhotos(property.id),
+                  builder: (context, snapshot) {
+                    List<String> urls = [];
+                    const fallback = 'assets/images/empty.jpg';
+                    if (property.mainPhoto != null &&
+                        property.mainPhoto!.isNotEmpty) {
+                      urls.add(AppConfig.sanitizeUrl(property.mainPhoto!));
+                    }
+                    if (snapshot.hasData && snapshot.data!['success'] == true) {
+                      final photos =
+                          (snapshot.data!['data']['photos'] as List<dynamic>? ??
+                                  [])
+                              .map((p) => (p.image as String?) ?? '')
+                              .where((s) => s.isNotEmpty)
+                              .map((s) => AppConfig.sanitizeUrl(s))
+                              .toList();
+                      urls.addAll(photos);
+                    }
+                    while (urls.length < 6) {
+                      urls.add('');
+                    }
+                    return _buildAlbumCollage(urls, fallback);
+                  },
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAlbumCollage(List<String> urls, String fallbackAsset) {
+    String? u(int i) =>
+        (i >= 0 && i < urls.length && urls[i].isNotEmpty) ? urls[i] : null;
+    Widget tile({String? url, double radius = 14}) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: url != null
+            ? Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    Image.asset(fallbackAsset, fit: BoxFit.cover),
+              )
+            : Image.asset(fallbackAsset, fit: BoxFit.cover),
+      );
+    }
+
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 2,
+              child: SizedBox(
+                height: 180,
+                child: tile(url: u(0)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 1,
+              child: Column(
+                children: [
+                  SizedBox(height: 86, child: tile(url: u(1))),
+                  const SizedBox(height: 8),
+                  SizedBox(height: 86, child: tile(url: u(2))),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: SizedBox(height: 100, child: tile(url: u(3)))),
+            const SizedBox(width: 8),
+            Expanded(child: SizedBox(height: 100, child: tile(url: u(4)))),
+            const SizedBox(width: 8),
+            Expanded(child: SizedBox(height: 100, child: tile(url: u(5)))),
+          ],
+        ),
+      ],
     );
   }
 

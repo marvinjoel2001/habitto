@@ -189,55 +189,52 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        if (_isWhiteMode())
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              height: 110,
-              color: Colors.white,
-            ),
-          ),
-        // Main navigation container with SafeArea
         SafeArea(
           top: false,
           child: Stack(
             children: [
               // Main navigation container
               ClipRRect(
-                borderRadius: BorderRadius.circular(40),
+                borderRadius: BorderRadius.circular(22),
                 child: BackdropFilter(
                   filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                   child: AnimatedContainer(
                     duration: _animDuration,
                     curve: _animCurve,
-                    height: 72,
+                    height: 64,
                     margin:
                         const EdgeInsets.only(left: 16, right: 16, bottom: 0),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
                       gradient: _isWhiteMode()
                           ? LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
                               colors: [
-                                Colors.white.withValues(alpha: 0.72),
-                                Colors.white.withValues(alpha: 0.62),
+                                Colors.white.withOpacity(0.32),
+                                Colors.white.withOpacity(0.68),
+                                Colors.white.withOpacity(0.92),
                               ],
+                              stops: const [0.0, 0.55, 1.0],
                             )
                           : AppTheme.getCardGradient(opacity: 0.28),
-                      borderRadius: BorderRadius.circular(40),
+                      borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: _isWhiteMode()
-                            ? AppTheme.darkGrayBase.withValues(alpha: 0.12)
+                            ? Colors.white.withOpacity(0.35)
                             : AppTheme.darkGrayBase.withValues(alpha: 0.30),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: _isWhiteMode()
-                              ? Colors.black.withValues(alpha: 0.06)
-                              : Colors.black.withValues(alpha: 0.12),
+                          color: Colors.black.withOpacity(0.18),
+                          spreadRadius: 0,
+                          blurRadius: 18,
+                          offset: const Offset(0, 8),
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
                           spreadRadius: 0,
                           blurRadius: 6,
                           offset: const Offset(0, 2),
@@ -473,14 +470,21 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
           child: AnimatedContainer(
             duration: _animDuration,
             curve: _animCurve,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withValues(alpha: 0.85),
-              borderRadius: BorderRadius.circular(20),
+              color: AppTheme.mintGreen,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.35),
+                color: Colors.white.withOpacity(0.2),
                 width: 1,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.mintGreen.withOpacity(0.45),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -491,7 +495,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                 children: [
                   Icon(
                     activeIcon,
-                    color: labelBlack ? AppTheme.darkGrayBase : Colors.white,
+                    color: Colors.white,
                     size: 18,
                   ),
                   if (label.isNotEmpty) ...[
@@ -499,8 +503,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                     Text(
                       label,
                       style: TextStyle(
-                        color:
-                            labelBlack ? AppTheme.darkGrayBase : Colors.white,
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 12 * textScaleFactor.clamp(0.8, 1.2),
                       ),
@@ -530,25 +533,21 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
         child: AnimatedContainer(
           duration: _animDuration,
           curve: _animCurve,
-          width: 56,
-          height: 56,
+          width: 52,
+          height: 52,
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(100),
-            color: _isWhiteMode()
-                ? Colors.white.withValues(alpha: 0.28)
-                : Colors.black.withValues(alpha: 0.18),
+            color: Colors.white,
             border: Border.all(
-              color: _isWhiteMode()
-                  ? AppTheme.darkGrayBase.withValues(alpha: 0.18)
-                  : Colors.white.withValues(alpha: 0.22),
+              color: Colors.white.withOpacity(0.5),
               width: 0.9,
             ),
           ),
           child: Center(
             child: Icon(
               inactiveIcon,
-              color: _isWhiteMode() ? AppTheme.darkGrayBase : Colors.white,
+              color: const Color(0xFF6B7280),
               size: 22,
             ),
           ),

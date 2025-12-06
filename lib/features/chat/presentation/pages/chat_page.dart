@@ -63,7 +63,9 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _loadUnreadNotificationsCount() async {
     final count = await _notificationService.unreadCount();
-    setState(() { _unreadNotificationsCount = count; });
+    setState(() {
+      _unreadNotificationsCount = count;
+    });
   }
 
   Future<void> _loadMessages() async {
@@ -75,10 +77,11 @@ class _ChatPageState extends State<ChatPage> {
 
       // Obtener el ID del usuario actual
       final currentUserIdStr = await _tokenStorage.getCurrentUserId();
-      final currentUserId = currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
-      
+      final currentUserId =
+          currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
+
       print('Current user ID from token: $currentUserId');
-      
+
       if (currentUserId != null) {
         setState(() {
           _currentUserId = currentUserId;
@@ -93,7 +96,7 @@ class _ChatPageState extends State<ChatPage> {
       print('Loading conversations for user: $currentUserId');
       Map<String, dynamic> result = await _messageService.getConversations();
       print('Conversations service result: $result');
-      
+
       if (result['success']) {
         final data = result['data'];
         if (data == null || (data as List).isEmpty) {
@@ -104,21 +107,26 @@ class _ChatPageState extends State<ChatPage> {
           });
           return;
         }
-        if (data.isNotEmpty && data.first is Map && (data.first as Map)['last_message'] != null) {
+        if (data.isNotEmpty &&
+            data.first is Map &&
+            (data.first as Map)['last_message'] != null) {
           final convs = List<Map<String, dynamic>>.from(data);
           final Map<String, int> userIdMap = {};
           final List<ChatMessage> items = [];
           for (final c in convs) {
             final otherUserId = c['counterpart_id'] as int;
             final lastMsg = c['last_message'] as MessageModel;
-            final counterpartName = (c['counterpart_full_name'] as String?)?.trim();
-            final counterpartUsername = (c['counterpart_username'] as String?)?.trim();
+            final counterpartName =
+                (c['counterpart_full_name'] as String?)?.trim();
+            final counterpartUsername =
+                (c['counterpart_username'] as String?)?.trim();
             final name = (counterpartName != null && counterpartName.isNotEmpty)
                 ? counterpartName
                 : (counterpartUsername != null && counterpartUsername.isNotEmpty
                     ? counterpartUsername
                     : 'Usuario $otherUserId');
-            final avatar = _resolveAvatar((c['counterpart_profile_picture'] as String?) ?? '');
+            final avatar = _resolveAvatar(
+                (c['counterpart_profile_picture'] as String?) ?? '');
             final chatMessage = lastMsg.toChatMessage(
               currentUserId: _currentUserId ?? lastMsg.receiver,
               senderName: name,
@@ -146,7 +154,6 @@ class _ChatPageState extends State<ChatPage> {
             _isLoading = false;
           });
           _openInboxWebSocket();
-          
         } else {
           setState(() {
             _messages = [];
@@ -198,23 +205,27 @@ class _ChatPageState extends State<ChatPage> {
     final userId = _currentUserId!;
     WebSocketChannel? ch;
     try {
-      final uri1 = AppConfig.buildWsUri('${AppConfig.wsInboxPath}$userId/', token: accessToken);
+      final uri1 = AppConfig.buildWsUri('${AppConfig.wsInboxPath}$userId/',
+          token: accessToken);
       ch = WebSocketChannel.connect(uri1);
     } catch (_) {}
     if (ch == null) {
       try {
-        final uri2 = AppConfig.buildWsUri('${AppConfig.wsInboxPath}$userId', token: accessToken);
+        final uri2 = AppConfig.buildWsUri('${AppConfig.wsInboxPath}$userId',
+            token: accessToken);
         ch = WebSocketChannel.connect(uri2);
       } catch (_) {}
     }
     if (ch == null) {
       try {
-        final uri3 = AppConfig.buildWsUri('/ws/notifications/$userId/', token: accessToken);
+        final uri3 = AppConfig.buildWsUri('/ws/notifications/$userId/',
+            token: accessToken);
         ch = WebSocketChannel.connect(uri3);
       } catch (_) {}
       if (ch == null) {
         try {
-          final uri4 = AppConfig.buildWsUri('/ws/notifications/$userId', token: accessToken);
+          final uri4 = AppConfig.buildWsUri('/ws/notifications/$userId',
+              token: accessToken);
           ch = WebSocketChannel.connect(uri4);
         } catch (_) {}
       }
@@ -236,24 +247,32 @@ class _ChatPageState extends State<ChatPage> {
           if (createdAtStr != null) {
             createdAt = DateTime.tryParse(createdAtStr) ?? DateTime.now();
           }
-          final other = (sender == _currentUserId) ? (receiver ?? sender ?? 0) : (sender ?? receiver ?? 0);
+          final other = (sender == _currentUserId)
+              ? (receiver ?? sender ?? 0)
+              : (sender ?? receiver ?? 0);
           final nameRaw = (data['counterpart_full_name'] as String?)?.trim();
           final usernameRaw = (data['counterpart_username'] as String?)?.trim();
           final displayName = (nameRaw != null && nameRaw.isNotEmpty)
               ? nameRaw
-              : (usernameRaw != null && usernameRaw.isNotEmpty ? usernameRaw : 'Usuario $other');
-          final avatar = _resolveAvatar(((data['counterpart_profile_picture'] as String?) ?? '').trim());
+              : (usernameRaw != null && usernameRaw.isNotEmpty
+                  ? usernameRaw
+                  : 'Usuario $other');
+          final avatar = _resolveAvatar(
+              ((data['counterpart_profile_picture'] as String?) ?? '').trim());
           final timeStr = _formatTime(createdAt);
-          final existingIndex = _messages.indexWhere((m) => _messageUserIds[m.id] == other);
+          final existingIndex =
+              _messages.indexWhere((m) => _messageUserIds[m.id] == other);
           if (existingIndex != -1) {
             final prev = _messages[existingIndex];
             final updated = ChatMessage(
               id: mid ?? prev.id,
-              senderName: displayName.isNotEmpty ? displayName : prev.senderName,
+              senderName:
+                  displayName.isNotEmpty ? displayName : prev.senderName,
               message: content.isNotEmpty ? content : prev.message,
               time: timeStr,
               isFromCurrentUser: sender == _currentUserId,
-              avatarUrl: (_avatarByUserId[other] ?? (avatar.isNotEmpty ? avatar : prev.avatarUrl)),
+              avatarUrl: (_avatarByUserId[other] ??
+                  (avatar.isNotEmpty ? avatar : prev.avatarUrl)),
               isOnline: prev.isOnline,
             );
             setState(() {
@@ -307,12 +326,14 @@ class _ChatPageState extends State<ChatPage> {
     final userId = _currentUserId!;
     WebSocketChannel? ch;
     try {
-      final uri1 = AppConfig.buildWsUri('/ws/property-notifications/$userId/', token: accessToken);
+      final uri1 = AppConfig.buildWsUri('/ws/property-notifications/$userId/',
+          token: accessToken);
       ch = WebSocketChannel.connect(uri1);
     } catch (_) {}
     if (ch == null) {
       try {
-        final uri2 = AppConfig.buildWsUri('/ws/property-notifications/$userId', token: accessToken);
+        final uri2 = AppConfig.buildWsUri('/ws/property-notifications/$userId',
+            token: accessToken);
         ch = WebSocketChannel.connect(uri2);
       } catch (_) {}
     }
@@ -323,13 +344,18 @@ class _ChatPageState extends State<ChatPage> {
         final data = raw is String ? _tryParseJson(raw) : raw;
         if (data is Map<String, dynamic>) {
           final event = (data['event'] ?? data['type'] ?? '').toString();
-          if (event.isNotEmpty && (event.contains('property_like') || event.contains('match_request'))) {
+          if (event.isNotEmpty &&
+              (event.contains('property_like') ||
+                  event.contains('match_request'))) {
             await _loadPendingMatchRequests();
             setState(() {});
           }
           if (data.containsKey('pending_requests_count')) {
             final c = int.tryParse(data['pending_requests_count'].toString());
-            if (c != null) setState(() { _pendingMatchRequestsCount = c; });
+            if (c != null)
+              setState(() {
+                _pendingMatchRequestsCount = c;
+              });
           }
         }
       } catch (_) {}
@@ -366,7 +392,9 @@ class _ChatPageState extends State<ChatPage> {
 
   Map<String, dynamic>? _tryParseJson(String s) {
     try {
-      return s.isNotEmpty ? Map<String, dynamic>.from(jsonDecode(s) as Map) : null;
+      return s.isNotEmpty
+          ? Map<String, dynamic>.from(jsonDecode(s) as Map)
+          : null;
     } catch (_) {
       return null;
     }
@@ -377,7 +405,8 @@ class _ChatPageState extends State<ChatPage> {
     Future.delayed(delay, () {
       if (mounted && _inboxChannel == null) {
         _openInboxWebSocket();
-        _inboxReconnectDelayMs = (_inboxReconnectDelayMs * 2).clamp(1000, 10000);
+        _inboxReconnectDelayMs =
+            (_inboxReconnectDelayMs * 2).clamp(1000, 10000);
       }
     });
   }
@@ -394,7 +423,8 @@ class _ChatPageState extends State<ChatPage> {
       ),
       child: Text(
         '$count',
-        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+        style: const TextStyle(
+            color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -491,77 +521,87 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
       body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Buscar conversaciones...',
-                  hintStyle: const TextStyle(color: Colors.black45),
-                  prefixIcon: const Icon(Icons.search, color: Colors.black54),
-                  filled: true,
-                  fillColor: const Color(0xFFF3F4F6),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: const BorderSide(color: Color(0xFF9CA3AF)),
-                  ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Buscar conversaciones...',
+                hintStyle: const TextStyle(color: Colors.black45),
+                prefixIcon: const Icon(Icons.search, color: Colors.black54),
+                filled: true,
+                fillColor: const Color(0xFFF3F4F6),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
                 ),
-                style: const TextStyle(color: Colors.black),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: const BorderSide(color: Color(0xFF9CA3AF)),
+                ),
               ),
+              style: const TextStyle(color: Colors.black),
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _error.isNotEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.error_outline, size: 64, color: Colors.black26),
-                                const SizedBox(height: 16),
-                                Text(_error, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54, fontSize: 16)),
-                                const SizedBox(height: 16),
-                                ElevatedButton(onPressed: () async { await _loadMessages(); await _loadPendingMatchRequests(); }, child: const Text('Reintentar')),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: () async {
-                              await _loadMessages();
-                              await _loadPendingMatchRequests();
-                              await _loadUnreadNotificationsCount();
-                            },
-                            child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                              itemCount: _messages.length + 2,
-                              itemBuilder: (context, index) {
-                                if (index == 0) {
-                                  return _buildNotificationsShortcutTile();
-                                } else if (index == 1) {
-                                  return _buildMatchRequestsShortcutTile();
-                                }
-                                final message = _messages[index - 2];
-                                return _buildMessageTile(message);
-                              },
-                            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error.isNotEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline,
+                                  size: 64, color: Colors.black26),
+                              const SizedBox(height: 16),
+                              Text(_error,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                      color: Colors.black54, fontSize: 16)),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                  onPressed: () async {
+                                    await _loadMessages();
+                                    await _loadPendingMatchRequests();
+                                  },
+                                  child: const Text('Reintentar')),
+                            ],
                           ),
-              ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            await _loadMessages();
+                            await _loadPendingMatchRequests();
+                            await _loadUnreadNotificationsCount();
+                          },
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
+                            itemCount: _messages.length + 2,
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                return _buildNotificationsShortcutTile();
+                              } else if (index == 1) {
+                                return _buildMatchRequestsShortcutTile();
+                              }
+                              final message = _messages[index - 2];
+                              return _buildMessageTile(message);
+                            },
+                          ),
+                        ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildMessageTile(ChatMessage message) {
@@ -594,7 +634,8 @@ class _ChatPageState extends State<ChatPage> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFFE5E7EB)),
           boxShadow: const [
-            BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
+            BoxShadow(
+                color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
           ],
         ),
         child: Row(
@@ -603,7 +644,9 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 Builder(builder: (context) {
                   final otherId = _messageUserIds[message.id];
-                  final url = otherId != null ? (_avatarByUserId[otherId] ?? message.avatarUrl) : message.avatarUrl;
+                  final url = otherId != null
+                      ? (_avatarByUserId[otherId] ?? message.avatarUrl)
+                      : message.avatarUrl;
                   return CircleAvatar(
                     radius: 24,
                     backgroundColor: Colors.grey[300],
@@ -668,7 +711,9 @@ class _ChatPageState extends State<ChatPage> {
                           Icon(
                             Icons.done_all,
                             size: 16,
-                            color: message.isFromCurrentUser ? Colors.blueAccent : Colors.transparent,
+                            color: message.isFromCurrentUser
+                                ? Colors.blueAccent
+                                : Colors.transparent,
                           ),
                         ],
                       ),
@@ -705,7 +750,8 @@ class _ChatPageState extends State<ChatPage> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFFE5E7EB)),
           boxShadow: const [
-            BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
+            BoxShadow(
+                color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
           ],
         ),
         child: Row(
@@ -727,23 +773,36 @@ class _ChatPageState extends State<ChatPage> {
                         children: [
                           const Text(
                             'Solicitudes de Match',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black),
                           ),
                           const SizedBox(width: 8),
                           if (_pendingMatchRequestsCount > 0)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(10)),
-                              child: Text('$_pendingMatchRequestsCount', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                  color: Colors.redAccent,
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: Text('$_pendingMatchRequestsCount',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600)),
                             ),
                         ],
                       ),
-                      const Icon(Icons.arrow_forward_ios, color: Color(0xFF9CA3AF), size: 16),
+                      const Icon(Icons.arrow_forward_ios,
+                          color: Color(0xFF9CA3AF), size: 16),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _pendingMatchRequestsCount > 0 ? 'Toca para revisar y aceptar' : 'Por el momento no tienes solicitudes',
+                    _pendingMatchRequestsCount > 0
+                        ? 'Toca para revisar y aceptar'
+                        : 'Por el momento no tienes solicitudes',
                     style: const TextStyle(fontSize: 14, color: Colors.black54),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -777,7 +836,8 @@ class _ChatPageState extends State<ChatPage> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFFDBEAFE)),
           boxShadow: const [
-            BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
+            BoxShadow(
+                color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
           ],
         ),
         child: Row(
@@ -785,27 +845,40 @@ class _ChatPageState extends State<ChatPage> {
             CircleAvatar(
               radius: 24,
               backgroundColor: Colors.indigoAccent.withValues(alpha: 0.3),
-              child: const Icon(Icons.notifications_none, color: Colors.white, size: 24),
+              child: const Icon(Icons.notifications_none,
+                  color: Colors.white, size: 24),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('Notificaciones', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black)),
+                  Text('Notificaciones',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black)),
                   SizedBox(height: 4),
-                  Text('Revisa tus avisos recientes', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                  Text('Revisa tus avisos recientes',
+                      style: TextStyle(fontSize: 14, color: Colors.black54)),
                 ],
               ),
             ),
             if (_unreadNotificationsCount > 0)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: Colors.indigoAccent, borderRadius: BorderRadius.circular(10)),
-                child: Text('$_unreadNotificationsCount', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                decoration: BoxDecoration(
+                    color: Colors.indigoAccent,
+                    borderRadius: BorderRadius.circular(10)),
+                child: Text('$_unreadNotificationsCount',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
               ),
             const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_ios, color: Color(0xFF9CA3AF), size: 16),
+            const Icon(Icons.arrow_forward_ios,
+                color: Color(0xFF9CA3AF), size: 16),
           ],
         ),
       ),
@@ -852,13 +925,23 @@ class _NotificationsPageState extends State<_NotificationsPage> {
   }
 
   Future<void> _load() async {
-    setState(() { _isLoading = true; _error = ''; });
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
     final resp = await _notifications.list(pageSize: 50);
     if (resp['success'] == true && resp['data'] != null) {
-      final results = List<Map<String, dynamic>>.from((resp['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)));
-      setState(() { _items = results; _isLoading = false; });
+      final results = List<Map<String, dynamic>>.from((resp['data'] as List)
+          .map((e) => Map<String, dynamic>.from(e as Map)));
+      setState(() {
+        _items = results;
+        _isLoading = false;
+      });
     } else {
-      setState(() { _error = resp['error'] ?? 'Error obteniendo notificaciones'; _isLoading = false; });
+      setState(() {
+        _error = resp['error'] ?? 'Error obteniendo notificaciones';
+        _isLoading = false;
+      });
     }
   }
 
@@ -871,7 +954,9 @@ class _NotificationsPageState extends State<_NotificationsPage> {
           _items[idx]['is_read'] = true;
         }
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notificación marcada como leída'), duration: Duration(seconds: 2)));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Notificación marcada como leída'),
+          duration: Duration(seconds: 2)));
     }
   }
 
@@ -882,9 +967,19 @@ class _NotificationsPageState extends State<_NotificationsPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
-        title: const Text('Notificaciones', style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600)),
-        actions: [IconButton(icon: const Icon(Icons.refresh, color: Colors.black), onPressed: _load)],
+        leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => Navigator.pop(context)),
+        title: const Text('Notificaciones',
+            style: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.w600)),
+        actions: [
+          IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.black),
+              onPressed: _load)
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -893,11 +988,16 @@ class _NotificationsPageState extends State<_NotificationsPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.black26),
+                      const Icon(Icons.error_outline,
+                          size: 64, color: Colors.black26),
                       const SizedBox(height: 16),
-                      Text(_error, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54, fontSize: 16)),
+                      Text(_error,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              color: Colors.black54, fontSize: 16)),
                       const SizedBox(height: 16),
-                      ElevatedButton(onPressed: _load, child: const Text('Reintentar')),
+                      ElevatedButton(
+                          onPressed: _load, child: const Text('Reintentar')),
                     ],
                   ),
                 )
@@ -906,62 +1006,96 @@ class _NotificationsPageState extends State<_NotificationsPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.notifications_off, size: 64, color: Colors.black26),
+                          Icon(Icons.notifications_off,
+                              size: 64, color: Colors.black26),
                           SizedBox(height: 16),
-                          Text('Por el momento no tienes notificaciones', style: TextStyle(color: Colors.black54, fontSize: 18)),
+                          Text('Por el momento no tienes notificaciones',
+                              style: TextStyle(
+                                  color: Colors.black54, fontSize: 18)),
                         ],
                       ),
                     )
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         itemCount: _items.length,
                         itemBuilder: (context, index) {
                           final n = _items[index];
-                          final title = (n['title'] as String?) ?? 'Notificación';
-                          final message = (n['message'] as String?) ?? (n['content'] as String?) ?? '';
+                          final title =
+                              (n['title'] as String?) ?? 'Notificación';
+                          final message = (n['message'] as String?) ??
+                              (n['content'] as String?) ??
+                              '';
                           final isRead = (n['is_read'] as bool?) ?? false;
                           final createdAt = (n['created_at'] as String?) ?? '';
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isRead ? const Color(0xFFF9FAFB) : const Color(0xFFEFF6FF),
+                              color: isRead
+                                  ? const Color(0xFFF9FAFB)
+                                  : const Color(0xFFEFF6FF),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFE5E7EB)),
-                              boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4))],
+                              border:
+                                  Border.all(color: const Color(0xFFE5E7EB)),
+                              boxShadow: const [
+                                BoxShadow(
+                                    color: Color(0x11000000),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 4))
+                              ],
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 CircleAvatar(
                                   radius: 20,
-                                  backgroundColor: Colors.indigoAccent.withValues(alpha: 0.25),
-                                  child: const Icon(Icons.notifications, color: Colors.white, size: 20),
+                                  backgroundColor: Colors.indigoAccent
+                                      .withValues(alpha: 0.25),
+                                  child: const Icon(Icons.notifications,
+                                      color: Colors.white, size: 20),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black)),
-                                          Text(createdAt, style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                                          Text(title,
+                                              style: const TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black)),
+                                          Text(createdAt,
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.black45)),
                                         ],
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(message, style: const TextStyle(fontSize: 14, color: Colors.black87), maxLines: 3, overflow: TextOverflow.ellipsis),
+                                      Text(message,
+                                          style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black87),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis),
                                       const SizedBox(height: 8),
                                       if (!isRead)
                                         Align(
                                           alignment: Alignment.centerRight,
                                           child: TextButton.icon(
-                                            onPressed: () => _markRead((n['id'] as int?) ?? 0),
-                                            icon: const Icon(Icons.done, size: 16),
-                                            label: const Text('Marcar como leída'),
+                                            onPressed: () => _markRead(
+                                                (n['id'] as int?) ?? 0),
+                                            icon: const Icon(Icons.done,
+                                                size: 16),
+                                            label:
+                                                const Text('Marcar como leída'),
                                           ),
                                         ),
                                     ],
@@ -1035,7 +1169,8 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
       final result = await _matchingService.acceptMatchRequest(matchId);
       if (result['success']) {
         setState(() {
-          _matchRequests.removeWhere((request) => (request['match'] as Map?)?['id'] == matchId);
+          _matchRequests.removeWhere(
+              (request) => (request['match'] as Map?)?['id'] == matchId);
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1069,7 +1204,8 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
       final result = await _matchingService.rejectMatchRequest(matchId);
       if (result['success']) {
         setState(() {
-          _matchRequests.removeWhere((request) => (request['match'] as Map?)?['id'] == matchId);
+          _matchRequests.removeWhere(
+              (request) => (request['match'] as Map?)?['id'] == matchId);
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1134,11 +1270,17 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                            Icon(Icons.error_outline,
+                                size: 64, color: Colors.grey[400]),
                             const SizedBox(height: 16),
-                            Text(_error, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                            Text(_error,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: Colors.grey[600], fontSize: 16)),
                             const SizedBox(height: 16),
-                            ElevatedButton(onPressed: _loadMatchRequests, child: const Text('Reintentar')),
+                            ElevatedButton(
+                                onPressed: _loadMatchRequests,
+                                child: const Text('Reintentar')),
                           ],
                         ),
                       )
@@ -1147,21 +1289,29 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.favorite_border, size: 64, color: Colors.grey[400]),
+                                Icon(Icons.favorite_border,
+                                    size: 64, color: Colors.grey[400]),
                                 const SizedBox(height: 16),
-                                Text('No tienes solicitudes de match pendientes', style: TextStyle(color: Colors.grey[600], fontSize: 18)),
+                                Text(
+                                    'No tienes solicitudes de match pendientes',
+                                    style: TextStyle(
+                                        color: Colors.grey[600], fontSize: 18)),
                                 const SizedBox(height: 8),
-                                Text('Las nuevas solicitudes aparecerán aquí', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                                Text('Las nuevas solicitudes aparecerán aquí',
+                                    style: TextStyle(
+                                        color: Colors.grey[500], fontSize: 14)),
                               ],
                             ),
                           )
                         : RefreshIndicator(
                             onRefresh: _loadMatchRequests,
                             child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
                               itemCount: _matchRequests.length,
                               itemBuilder: (context, index) {
-                                final request = _matchRequests[index] as Map<String, dynamic>;
+                                final request = _matchRequests[index]
+                                    as Map<String, dynamic>;
                                 return _buildMatchRequestTile(request);
                               },
                             ),
@@ -1175,14 +1325,20 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
   Widget _buildMatchRequestTile(Map<String, dynamic> request) {
     final match = request['match'] as Map<String, dynamic>? ?? {};
     final property = request['property'] as Map<String, dynamic>? ?? {};
-    final interestedUser = request['interested_user'] as Map<String, dynamic>? ?? {};
+    final interestedUser =
+        request['interested_user'] as Map<String, dynamic>? ?? {};
     final matchId = match['id'] is num ? (match['id'] as num).toInt() : 0;
-    final propertyTitle = property['title'] as String? ?? 'Propiedad sin título';
-    final propertyAddress = property['address'] as String? ?? 'Dirección no especificada';
-    final userName = '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'.trim();
+    final propertyTitle =
+        property['title'] as String? ?? 'Propiedad sin título';
+    final propertyAddress =
+        property['address'] as String? ?? 'Dirección no especificada';
+    final userName =
+        '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'
+            .trim();
     final userUsername = interestedUser['username'] as String? ?? 'Usuario';
     final displayName = userName.isNotEmpty ? userName : userUsername;
-    final avatar = _resolveAvatar((interestedUser['profile_picture'] as String?) ?? '');
+    final avatar =
+        _resolveAvatar((interestedUser['profile_picture'] as String?) ?? '');
     final score = match['score'] is num ? (match['score'] as num).round() : 0;
 
     return Container(
@@ -1193,7 +1349,8 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: const [
-          BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
+          BoxShadow(
+              color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -1201,20 +1358,29 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
         children: [
           Row(
             children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
-              backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-              child: avatar.isEmpty ? const Icon(Icons.person, color: Colors.white, size: 24) : null,
-            ),
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+                backgroundImage:
+                    avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                child: avatar.isEmpty
+                    ? const Icon(Icons.person, color: Colors.white, size: 24)
+                    : null,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(displayName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black)),
+                    Text(displayName,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black)),
                     const SizedBox(height: 2),
-                    Text('@$userUsername', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                    Text('@$userUsername',
+                        style:
+                            TextStyle(fontSize: 14, color: Colors.grey[600])),
                   ],
                 ),
               ),
@@ -1223,9 +1389,14 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green.withValues(alpha: 0.3), width: 1),
+                  border: Border.all(
+                      color: Colors.green.withValues(alpha: 0.3), width: 1),
                 ),
-                child: Text('$score%', style: TextStyle(color: Colors.green[700], fontSize: 12, fontWeight: FontWeight.w600)),
+                child: Text('$score%',
+                    style: TextStyle(
+                        color: Colors.green[700],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -1240,9 +1411,14 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(propertyTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
+                Text(propertyTitle,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87)),
                 const SizedBox(height: 4),
-                Text(propertyAddress, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                Text(propertyAddress,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600])),
               ],
             ),
           ),
@@ -1258,11 +1434,14 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.red.withValues(alpha: 0.3), width: 1),
+                      side: BorderSide(
+                          color: Colors.red.withValues(alpha: 0.3), width: 1),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Rechazar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  child: const Text('Rechazar',
+                      style:
+                          TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1275,11 +1454,14 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.green.withValues(alpha: 0.3), width: 1),
+                      side: BorderSide(
+                          color: Colors.green.withValues(alpha: 0.3), width: 1),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Aceptar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  child: const Text('Aceptar',
+                      style:
+                          TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

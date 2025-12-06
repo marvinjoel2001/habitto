@@ -115,6 +115,27 @@ curl -X GET http://localhost:8000/api/profiles/picture_history/ \
 - Las URLs de las imágenes incluyen el dominio completo en las respuestas
 - **Si no envías el token JWT, la API responde `401 Unauthorized`. Asegúrate de incluir `Authorization: Bearer <token>`.
 
+## Autenticación Social (Google, Facebook, Apple)
+- Dependencias: `django-allauth`, `dj-rest-auth`, `requests-oauthlib`.
+- Configuración en entorno:
+  - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+  - `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`
+  - `APPLE_CLIENT_ID`, `APPLE_CLIENT_SECRET`
+- Endpoints:
+  - `POST /dj-rest-auth/google/`
+    - Body: `{ "access_token": "<GOOGLE_ACCESS_TOKEN>" }`
+  - `POST /dj-rest-auth/facebook/`
+    - Body: `{ "access_token": "<FACEBOOK_ACCESS_TOKEN>" }`
+  - `POST /dj-rest-auth/apple/`
+    - Body: `{ "id_token": "<APPLE_ID_TOKEN>" }`
+- Respuesta (200 OK):
+```json
+{ "access": "<ACCESS_TOKEN>", "refresh": "<REFRESH_TOKEN>" }
+```
+- Comportamiento:
+  - Usuarios nuevos reciben `UserProfile` con `user_type: "inquilino"`.
+  - Autenticación basada en JWT (SimpleJWT) con el mismo formato que login normal.
+
 ### Envío de verificación automática
 - **Endpoint**: `POST /api/profiles/submit_verification/`
 - **Autenticación**: Requerida (JWT)
@@ -3469,3 +3490,44 @@ Sistema para reportar perfiles de usuarios (propietarios, agentes, inquilinos) y
   - Retorna `403` si existe bloqueo en cualquiera de los dos sentidos.
 - Matching/Recomendaciones:
   - Matches y recomendaciones excluyen usuarios bloqueados y propiedades de dueños bloqueados.
+### Eliminación diferida de cuenta
+- **Endpoint**: `POST /api/profiles/request_delete_account/`
+- **Autenticación**: Requerida (JWT)
+- **Descripción**: Agenda la eliminación definitiva de la cuenta en 30 días. El usuario recibirá una notificación; si vuelve a iniciar sesión antes de la fecha, se cancela la eliminación automáticamente.
+- **Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Eliminación programada",
+  "data": {
+    "status": "deletion_scheduled",
+    "scheduled_for": "2025-12-31T10:00:00Z"
+  }
+}
+```
+
+- **Cancelar eliminación**
+  - **Endpoint**: `POST /api/profiles/cancel_delete_account/`
+  - **Autenticación**: Requerida (JWT)
+  - **Descripción**: Cancela manualmente la eliminación programada. Nota: iniciar sesión mediante `POST /api/login/` también cancela la eliminación pendiente de manera automática.
+  - **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Eliminación cancelada",
+    "data": { "status": "deletion_cancelled" }
+  }
+  ```
+
+- **Login que cancela eliminación**
+  - **Endpoint**: `POST /api/login/`
+  - **Body**:
+    ```json
+    { "username": "usuario", "password": "secreto" }
+    ```
+  - **Efecto adicional**: si el perfil del usuario tiene `deletion_pending=true`, se restablece automáticamente (se borran los campos de eliminación).
+
+- **Eliminación definitiva**
+  - Proceso: tarea/command de backend ejecuta la eliminación definitiva cuando `deletion_scheduled_for <= now`.
+  - Command manual (ops): `python manage.py purge_soft_deleted_users`
+  - Efecto: se elimina el `User` y por cascada sus datos asociados.

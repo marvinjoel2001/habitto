@@ -20,16 +20,19 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
 
   // Swipe animation controller
   late AnimationController _animationController;
-  Animation<Offset>? _currentAnimation;
+  Animation<Offset>? _offsetAnimation;
 
   // Card tracking
   int _currentCardIndex = 0;
   bool _isDragging = false;
   Offset _dragPosition = Offset.zero;
-  double _dragAngle = 0.0;
+
+  // Flag to indicate if we are animating off-screen
+  bool _isAnimatingOut = false;
+  int _pendingDirection = 0; // -1: Left (Reject), 1: Right (Accept)
 
   // Swipe thresholds
-  static const double _swipeThreshold = 150.0;
+  static const double _swipeThreshold = 120.0;
   static const double _maxRotation = 0.3; // radians
 
   @override
@@ -39,9 +42,55 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _animationController.addListener(() {
-      setState(() {});
+
+    _animationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        if (_isAnimatingOut) {
+          // Animation completed, move to next card
+          final direction = _pendingDirection;
+          final currentRequest = _currentCardIndex < _matchRequests.length
+              ? _matchRequests[_currentCardIndex]
+              : null;
+          final matchId = currentRequest != null
+              ? (currentRequest['match']?['id'] as int? ?? 0)
+              : 0;
+
+          setState(() {
+            _currentCardIndex++;
+            _dragPosition = Offset.zero;
+            _isDragging = false;
+            _isAnimatingOut = false;
+            _pendingDirection = 0;
+          });
+
+          // Reset controller for next usage
+          _animationController.reset();
+
+          // Perform action after UI update
+          if (direction == 1) {
+            _acceptMatchRequest(matchId);
+          } else if (direction == -1) {
+            _rejectMatchRequest(matchId);
+          }
+        } else {
+          // Reset animation (snap back) completed
+          setState(() {
+            _dragPosition = Offset.zero;
+            _isDragging = false;
+          });
+          _animationController.reset();
+        }
+      }
     });
+
+    _animationController.addListener(() {
+      if (_offsetAnimation != null) {
+        setState(() {
+          _dragPosition = _offsetAnimation!.value;
+        });
+      }
+    });
+
     _loadMatchRequests();
   }
 
@@ -85,7 +134,6 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
       final result = await _matchingService.acceptMatchRequest(matchId);
       if (mounted) {
         if (result['success']) {
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Solicitud de match aceptada'),
@@ -116,124 +164,11 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
     }
   }
 
-  // Swipe gesture handling
-  void _onPanStart(DragStartDetails details) {
-    if (_currentCardIndex >= _matchRequests.length) return;
-
-    setState(() {
-      _isDragging = true;
-    });
-  }
-
-  void _onPanUpdate(DragUpdateDetails details) {
-    if (_currentCardIndex >= _matchRequests.length) return;
-
-    setState(() {
-      _dragPosition += details.delta;
-      _dragAngle = (_dragPosition.dx / _swipeThreshold) * _maxRotation;
-    });
-  }
-
-  void _onPanEnd(DragEndDetails details) {
-    if (_currentCardIndex >= _matchRequests.length) return;
-
-    final velocity = details.velocity.pixelsPerSecond.dx;
-    final shouldSwipeLeft =
-        _dragPosition.dx < -_swipeThreshold || velocity < -500;
-    final shouldSwipeRight =
-        _dragPosition.dx > _swipeThreshold || velocity > 500;
-
-    if (shouldSwipeLeft) {
-      _swipeCardLeft();
-    } else if (shouldSwipeRight) {
-      _swipeCardRight();
-    } else {
-      _resetCardPosition();
-    }
-  }
-
-  void _swipeCardLeft() {
-    final currentRequest = _matchRequests[_currentCardIndex];
-    final matchId = currentRequest['match']?['id'] as int? ?? 0;
-
-    _animateCardOffScreen(-1).then((_) {
-      if (mounted) {
-        _rejectMatchRequest(matchId);
-      }
-    });
-  }
-
-  void _swipeCardRight() {
-    final currentRequest = _matchRequests[_currentCardIndex];
-    final matchId = currentRequest['match']?['id'] as int? ?? 0;
-
-    _animateCardOffScreen(1).then((_) {
-      if (mounted) {
-        _acceptMatchRequest(matchId);
-      }
-    });
-  }
-
-  void _resetCardPosition() {
-    setState(() {
-      _isDragging = false;
-    });
-
-    _currentAnimation = Tween<Offset>(
-      begin: _dragPosition,
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutBack,
-      ),
-    );
-
-    _animationController.reset();
-    _animationController.forward().then((_) {
-      if (mounted) {
-        setState(() {
-          _dragPosition = Offset.zero;
-          _dragAngle = 0.0;
-        });
-      }
-    });
-  }
-
-  Future<void> _animateCardOffScreen(int direction) async {
-    setState(() {
-      _isDragging = false;
-    });
-
-    _currentAnimation = Tween<Offset>(
-      begin: _dragPosition,
-      end: Offset(direction * 400, _dragPosition.dy),
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    await _animationController.forward();
-
-    if (mounted) {
-      setState(() {
-        _currentCardIndex++;
-        _dragPosition = Offset.zero;
-        _dragAngle = 0.0;
-      });
-    }
-
-    _animationController.reset();
-  }
-
   Future<void> _rejectMatchRequest(int matchId) async {
     try {
       final result = await _matchingService.rejectMatchRequest(matchId);
       if (mounted) {
         if (result['success']) {
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Solicitud de match rechazada'),
@@ -264,28 +199,99 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
     }
   }
 
+  // Swipe gesture handling
+  void _onPanStart(DragStartDetails details) {
+    if (_currentCardIndex >= _matchRequests.length ||
+        _animationController.isAnimating) return;
+
+    setState(() {
+      _isDragging = true;
+    });
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    if (_currentCardIndex >= _matchRequests.length ||
+        _animationController.isAnimating) return;
+
+    setState(() {
+      _dragPosition += details.delta;
+    });
+  }
+
+  void _onPanEnd(DragEndDetails details) {
+    if (_currentCardIndex >= _matchRequests.length ||
+        _animationController.isAnimating) return;
+
+    final velocity = details.velocity.pixelsPerSecond.dx;
+    final width = MediaQuery.of(context).size.width;
+    final threshold = width * 0.35;
+
+    final shouldSwipeLeft = _dragPosition.dx < -threshold || velocity < -700;
+    final shouldSwipeRight = _dragPosition.dx > threshold || velocity > 700;
+
+    if (shouldSwipeLeft) {
+      _swipeCardLeft();
+    } else if (shouldSwipeRight) {
+      _swipeCardRight();
+    } else {
+      _resetCardPosition();
+    }
+  }
+
+  void _animateTo(Offset target, {bool isDismiss = false, int direction = 0}) {
+    _isAnimatingOut = isDismiss;
+    _pendingDirection = direction;
+
+    _offsetAnimation = Tween<Offset>(
+      begin: _dragPosition,
+      end: target,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _animationController.forward(from: 0.0);
+  }
+
+  void _swipeCardLeft() {
+    final width = MediaQuery.of(context).size.width;
+    _animateTo(Offset(-width * 1.5, _dragPosition.dy),
+        isDismiss: true, direction: -1);
+  }
+
+  void _swipeCardRight() {
+    final width = MediaQuery.of(context).size.width;
+    _animateTo(Offset(width * 1.5, _dragPosition.dy),
+        isDismiss: true, direction: 1);
+  }
+
+  void _resetCardPosition() {
+    _animateTo(Offset.zero, isDismiss: false);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.whiteColor),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
+        automaticallyImplyLeading: false,
+        title: Text(
           'Solicitudes de Match',
           style: TextStyle(
-            color: AppTheme.whiteColor,
+            color: onSurface,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppTheme.whiteColor),
+            icon: Icon(Icons.refresh, color: onSurface),
             onPressed: _loadMatchRequests,
           ),
         ],
@@ -309,14 +315,14 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                             Icon(
                               Icons.error_outline,
                               size: 64,
-                              color: AppTheme.whiteColor.withOpacity(0.6),
+                              color: onSurface.withOpacity(0.6),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               _error,
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: AppTheme.whiteColor.withOpacity(0.8),
+                                color: onSurface.withOpacity(0.8),
                                 fontSize: 16,
                               ),
                             ),
@@ -340,13 +346,13 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                 Icon(
                                   Icons.favorite_border,
                                   size: 64,
-                                  color: AppTheme.whiteColor.withOpacity(0.6),
+                                  color: onSurface.withOpacity(0.6),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No tienes más solicitudes de match',
                                   style: TextStyle(
-                                    color: AppTheme.whiteColor.withOpacity(0.8),
+                                    color: onSurface.withOpacity(0.8),
                                     fontSize: 18,
                                   ),
                                 ),
@@ -354,7 +360,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                 Text(
                                   'Las nuevas solicitudes aparecerán aquí',
                                   style: TextStyle(
-                                    color: AppTheme.whiteColor.withOpacity(0.6),
+                                    color: onSurface.withOpacity(0.6),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -370,18 +376,25 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                               ],
                             ),
                           )
-                        : Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Background cards (for depth effect)
-                              if (_currentCardIndex + 1 < _matchRequests.length)
-                                _buildBackgroundCard(1),
-                              if (_currentCardIndex + 2 < _matchRequests.length)
-                                _buildBackgroundCard(2),
-
-                              // Current swipe card
-                              _buildSwipeCard(),
-                            ],
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              final cardWidth = constraints.maxWidth * 0.9;
+                              final cardHeight = constraints.maxHeight * 0.85;
+                              return Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  if (_currentCardIndex + 1 <
+                                      _matchRequests.length)
+                                    _buildBackgroundCard(
+                                        1, cardWidth, cardHeight),
+                                  if (_currentCardIndex + 2 <
+                                      _matchRequests.length)
+                                    _buildBackgroundCard(
+                                        2, cardWidth, cardHeight),
+                                  _buildSwipeCard(cardWidth, cardHeight),
+                                ],
+                              );
+                            },
                           ),
           ),
 
@@ -470,7 +483,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
     );
   }
 
-  Widget _buildSwipeCard() {
+  Widget _buildSwipeCard(double cardWidth, double cardHeight) {
     if (_currentCardIndex >= _matchRequests.length) {
       return const SizedBox.shrink();
     }
@@ -508,10 +521,11 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
     final propertyAddress =
         property['address'] as String? ?? 'Dirección no especificada';
 
-    final cardOffset = _currentAnimation?.value ?? _dragPosition;
+    // Use _dragPosition directly, which is updated by animation listener
+    final cardOffset = _dragPosition;
     final cardAngle = _isDragging
-        ? _dragAngle
-        : (_dragPosition.dx) * _maxRotation / _swipeThreshold;
+        ? (_dragPosition.dx / _swipeThreshold) * _maxRotation
+        : (_dragPosition.dx / _swipeThreshold) * _maxRotation;
 
     return GestureDetector(
       onPanStart: _onPanStart,
@@ -522,8 +536,8 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
           ..translate(cardOffset.dx, cardOffset.dy)
           ..rotateZ(cardAngle),
         child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.9,
-          height: MediaQuery.of(context).size.height * 0.7,
+          width: cardWidth,
+          height: cardHeight,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: BackdropFilter(
@@ -554,7 +568,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                 child: Column(
                   children: [
                     Expanded(
-                      flex: 7,
+                      flex: 65,
                       child: Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -615,9 +629,10 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                       ),
                     ),
                     Expanded(
-                      flex: 3,
+                      flex: 35,
                       child: Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.9),
                           borderRadius: const BorderRadius.vertical(
@@ -625,28 +640,117 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
+                            Flexible(
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          displayName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF005041),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '@$userUsername',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: const Color(0xFF1A1A1A)
+                                                .withOpacity(0.7),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppTheme.secondaryColor
+                                              .withOpacity(0.8),
+                                          AppTheme.primaryColor
+                                              .withOpacity(0.8),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppTheme.primaryColor
+                                            .withOpacity(0.5),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '$score%',
+                                      style: const TextStyle(
+                                        color: AppTheme.darkGrayBase,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Flexible(
+                              child: SingleChildScrollView(
+                                physics: const BouncingScrollPhysics(),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        AppTheme.primaryColor.withOpacity(0.1),
+                                        AppTheme.secondaryColor
+                                            .withOpacity(0.1),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppTheme.primaryColor
+                                          .withOpacity(0.2),
+                                      width: 1,
+                                    ),
+                                  ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        displayName,
+                                        propertyTitle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
                                           color: Color(0xFF005041),
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '@$userUsername',
+                                        propertyAddress,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 13,
                                           color: const Color(0xFF1A1A1A)
                                               .withOpacity(0.7),
                                         ),
@@ -654,74 +758,6 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                     ],
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppTheme.secondaryColor
-                                            .withOpacity(0.8),
-                                        AppTheme.primaryColor.withOpacity(0.8),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: AppTheme.primaryColor
-                                          .withOpacity(0.5),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '$score%',
-                                    style: const TextStyle(
-                                      color: AppTheme.darkGrayBase,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppTheme.primaryColor.withOpacity(0.1),
-                                    AppTheme.secondaryColor.withOpacity(0.1),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppTheme.primaryColor.withOpacity(0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    propertyTitle,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF005041),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    propertyAddress,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: const Color(0xFF1A1A1A)
-                                          .withOpacity(0.7),
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           ],
@@ -738,15 +774,15 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
     );
   }
 
-  Widget _buildBackgroundCard(int offset) {
+  Widget _buildBackgroundCard(int offset, double cardWidth, double cardHeight) {
     final cardIndex = _currentCardIndex + offset;
     if (cardIndex >= _matchRequests.length) return const SizedBox.shrink();
 
     return Transform.scale(
       scale: 1.0 - (offset * 0.05),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.7,
+        width: cardWidth,
+        height: cardHeight,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [

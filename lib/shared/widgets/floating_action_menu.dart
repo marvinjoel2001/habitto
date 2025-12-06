@@ -246,13 +246,10 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
           ],
         ),
         child: const Center(
-          child: Text(
-            '✕',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-            ),
+          child: Icon(
+            Icons.close,
+            color: Colors.white,
+            size: 28,
           ),
         ),
       ),

@@ -5,6 +5,8 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/social_login_button.dart';
 import 'dart:ui' as ui;
+import 'dart:io' show Platform;
+import 'package:fluttertoast/fluttertoast.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -22,10 +24,22 @@ class _LoginPageState extends State<LoginPage> {
   final ScrollController _scrollController = ScrollController();
   final AuthService _authService = AuthService();
   bool _isLoading = false;
+  String? _socialLoading; // 'google' | 'facebook' | 'apple'
   double _keyboardHeight = 0;
   bool _isKeyboardVisible = false;
   bool _isPasswordFieldFocused = false;
   final double _originalPadding = 56;
+
+  void _showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: const Color(0xFF98FB98).withValues(alpha: 0.9),
+      textColor: Colors.black,
+      fontSize: 14,
+    );
+  }
 
   @override
   void initState() {
@@ -139,8 +153,10 @@ class _LoginPageState extends State<LoginPage> {
         final safetyMargin = screenHeight < 600
             ? 45.0
             : 55.0; // Márgenes ligeramente reducidos en pantallas pequeñas
-        final targetPosition =
-            keyboardTop - renderBox.size.height - safetyMargin - 30; // 30px extra para el botón de login
+        final targetPosition = keyboardTop -
+            renderBox.size.height -
+            safetyMargin -
+            30; // 30px extra para el botón de login
         final currentScroll = _scrollController.offset;
         final neededScroll = inputPosition.dy - targetPosition;
 
@@ -243,15 +259,10 @@ class _LoginPageState extends State<LoginPage> {
       if (response['success']) {
         navigator.pushReplacementNamed('/home');
       } else {
-        messenger.showSnackBar(
-          SnackBar(
-              content: Text(response['error'] ?? 'Error de autenticación')),
-        );
+        _showToast(response['error'] ?? 'Error de autenticación');
       }
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      _showToast('Error: ${e.toString()}');
     } finally {
       setState(() {
         _isLoading = false;
@@ -286,10 +297,16 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             // Fondo sin blur ni overlays encima
             Image.asset(
-              'assets/images/loginboys2.jpg',
+              'assets/images/login_background.jpg',
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
+              errorBuilder: (context, error, stackTrace) {
+                // Si la imagen falla (por memoria o no encontrada), mostrar un fondo sólido oscuro
+                return Container(
+                  color: const Color(0xFF1A1A1A),
+                );
+              },
             ),
             // Overlay con tinte más oscuro (mejor legibilidad)
             Positioned.fill(
@@ -312,7 +329,9 @@ class _LoginPageState extends State<LoginPage> {
             // Contenedor glass con manejo inteligente del teclado
             SafeArea(
               child: Align(
-                alignment: _isKeyboardVisible ? Alignment.center : Alignment.bottomCenter,
+                alignment: _isKeyboardVisible
+                    ? Alignment.center
+                    : Alignment.bottomCenter,
                 child: AnimatedPadding(
                   padding: EdgeInsets.only(
                     bottom: _isKeyboardVisible
@@ -324,7 +343,10 @@ class _LoginPageState extends State<LoginPage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
-                      margin: _isKeyboardVisible ? const EdgeInsets.symmetric(horizontal: 20) : EdgeInsets.zero, // Márgenes originales cuando el teclado está visible
+                      margin: _isKeyboardVisible
+                          ? const EdgeInsets.symmetric(horizontal: 20)
+                          : EdgeInsets
+                              .zero, // Márgenes originales cuando el teclado está visible
                       child: BackdropFilter(
                         filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                         child: Container(
@@ -353,176 +375,273 @@ class _LoginPageState extends State<LoginPage> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                const SizedBox(height: 8),
-                                Center(
-                                  child: Text(
-                                    'Bienvenido a\nHabitto',
-                                    style: TextStyle(
-                                      // título más pequeño para ocupar menos vertical
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      height: 1.2,
-                                      shadows: [
-                                        Shadow(
-                                          blurRadius: 8,
-                                          color: Colors.black
-                                              .withValues(alpha: 0.4),
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                const SizedBox(height: 18),
-                                // Campo de email
-                                CustomTextField(
-                                  controller: _emailController,
-                                  focusNode: _emailFocusNode,
-                                  hintText: 'Email o nombre de usuario',
-                                  keyboardType: TextInputType.emailAddress,
-                                  textInputAction: TextInputAction.next,
-                                  onFieldSubmitted: (_) {
-                                    FocusScope.of(context)
-                                        .requestFocus(_passwordFocusNode);
-                                  },
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Por favor ingresa tu email o nombre de usuario';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                // Campo de contraseña
-                                CustomTextField(
-                                  controller: _passwordController,
-                                  focusNode: _passwordFocusNode,
-                                  hintText: 'Contraseña',
-                                  isPassword: true,
-                                  textInputAction: TextInputAction.done,
-                                  onFieldSubmitted: (_) {
-                                    // Primero regresar a la posición original
-                                    _returnToOriginalPosition();
-                                    // Luego ejecutar el login
-                                    _handleLogin();
-                                  },
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Por favor ingresa tu contraseña';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 10),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextButton(
-                                    onPressed: () {
-                                      // Navegar a recuperar contraseña
-                                    },
+                                  const SizedBox(height: 8),
+                                  Center(
                                     child: Text(
-                                      '¿Olvidaste tu contraseña?',
+                                      'Bienvenido a\nHabitto',
                                       style: TextStyle(
-                                        color:
-                                            Colors.white.withValues(alpha: 0.9),
-                                        fontSize: 13,
+                                        // título más pequeño para ocupar menos vertical
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        height: 1.2,
+                                        shadows: [
+                                          Shadow(
+                                            blurRadius: 8,
+                                            color: Colors.white
+                                                .withValues(alpha: 0.4),
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  // Campo de email
+                                  CustomTextField(
+                                    controller: _emailController,
+                                    focusNode: _emailFocusNode,
+                                    hintText: 'Email o nombre de usuario',
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                    textColor: Colors.white,
+                                    fillColor:
+                                        Colors.white.withValues(alpha: 0.1),
+                                    onFieldSubmitted: (_) {
+                                      FocusScope.of(context)
+                                          .requestFocus(_passwordFocusNode);
+                                    },
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Por favor ingresa tu email o nombre de usuario';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Campo de contraseña
+                                  CustomTextField(
+                                    controller: _passwordController,
+                                    focusNode: _passwordFocusNode,
+                                    hintText: 'Contraseña',
+                                    isPassword: true,
+                                    textInputAction: TextInputAction.done,
+                                    textColor: Colors.white,
+                                    fillColor:
+                                        Colors.white.withValues(alpha: 0.1),
+                                    onFieldSubmitted: (_) {
+                                      // Primero regresar a la posición original
+                                      _returnToOriginalPosition();
+                                      // Luego ejecutar el login
+                                      _handleLogin();
+                                    },
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Por favor ingresa tu contraseña';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton(
+                                      onPressed: () {
+                                        // Navegar a recuperar contraseña
+                                      },
+                                      child: Text(
+                                        '¿Olvidaste tu contraseña?',
+                                        style: TextStyle(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.9),
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 16),
-                                // Botón de iniciar sesión
-                                CustomButton(
-                                  text: 'Iniciar Sesión',
-                                  onPressed: _handleLogin,
-                                  isLoading: _isLoading,
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(height: 20),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                        child: Divider(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.4))),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12),
-                                      child: Text(
-                                        'O inicia sesión con',
-                                        style: TextStyle(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.9),
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                        child: Divider(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.4))),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: SocialLoginButton(
-                                        icon: Icons.facebook,
-                                        text: 'Facebook',
-                                        onPressed: () {
-                                          // Login con Facebook
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: SocialLoginButton(
-                                        icon: Icons.g_mobiledata,
-                                        text: 'Google',
-                                        onPressed: () {
-                                          // Login con Google
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Center(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                                  const SizedBox(height: 16),
+                                  // Botón de iniciar sesión
+                                  CustomButton(
+                                    text: 'Iniciar Sesión',
+                                    textColor: Colors.white,
+                                    onPressed: _handleLogin,
+                                    isLoading: _isLoading,
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Row(
                                     children: [
-                                      Text(
-                                        '¿No tienes una cuenta? ',
-                                        style: TextStyle(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.9),
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pushNamed(
-                                              context, '/register');
-                                        },
+                                      Expanded(
+                                          child: Divider(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.4))),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12),
                                         child: Text(
-                                          'Regístrate',
+                                          'O inicia sesión con',
                                           style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .secondary,
+                                            color: Colors.white
+                                                .withValues(alpha: 0.9),
                                             fontSize: 13,
-                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
+                                      Expanded(
+                                          child: Divider(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.4))),
                                     ],
                                   ),
-                                ),
-                              ],
+                                  // Botones de redes sociales en fila centrada
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SocialLoginButton(
+                                        imageAsset: 'assets/icons/facebook.png',
+                                        isLoading: _socialLoading == 'facebook',
+                                        onPressed: _socialLoading == null
+                                            ? () async {
+                                                setState(() {
+                                                  _socialLoading = 'facebook';
+                                                });
+                                                final navigator =
+                                                    Navigator.of(context);
+                                                try {
+                                                  final res = await _authService
+                                                      .loginWithFacebook();
+                                                  if (res['success'] == true) {
+                                                    navigator
+                                                        .pushReplacementNamed(
+                                                            '/home');
+                                                  } else {
+                                                    _showToast(res['error'] ??
+                                                        'Error con Facebook');
+                                                  }
+                                                } catch (e) {
+                                                  _showToast('Error: $e');
+                                                } finally {
+                                                  if (mounted) {
+                                                    setState(() {
+                                                      _socialLoading = null;
+                                                    });
+                                                  }
+                                                }
+                                              }
+                                            : () {},
+                                      ),
+                                      const SizedBox(width: 20),
+                                      SocialLoginButton(
+                                        imageAsset: 'assets/icons/google.png',
+                                        isLoading: _socialLoading == 'google',
+                                        onPressed: _socialLoading == null
+                                            ? () async {
+                                                setState(() {
+                                                  _socialLoading = 'google';
+                                                });
+                                                final navigator =
+                                                    Navigator.of(context);
+                                                try {
+                                                  final res = await _authService
+                                                      .loginWithGoogle();
+                                                  if (res['success'] == true) {
+                                                    navigator
+                                                        .pushReplacementNamed(
+                                                            '/home');
+                                                  } else {
+                                                    _showToast(res['error'] ??
+                                                        'Error con Google');
+                                                  }
+                                                } catch (e) {
+                                                  _showToast('Error: $e');
+                                                } finally {
+                                                  if (mounted) {
+                                                    setState(() {
+                                                      _socialLoading = null;
+                                                    });
+                                                  }
+                                                }
+                                              }
+                                            : () {},
+                                      ),
+                                      if (Platform.isIOS) ...[
+                                        const SizedBox(width: 20),
+                                        SocialLoginButton(
+                                          imageAsset: 'assets/icons/apple.png',
+                                          isLoading: _socialLoading == 'apple',
+                                          onPressed: _socialLoading == null
+                                              ? () async {
+                                                  setState(() {
+                                                    _socialLoading = 'apple';
+                                                  });
+                                                  final navigator =
+                                                      Navigator.of(context);
+                                                  try {
+                                                    final res =
+                                                        await _authService
+                                                            .loginWithApple();
+                                                    if (res['success'] ==
+                                                        true) {
+                                                      navigator
+                                                          .pushReplacementNamed(
+                                                              '/home');
+                                                    } else {
+                                                      _showToast(res['error'] ??
+                                                          'Error con Apple');
+                                                    }
+                                                  } catch (e) {
+                                                    _showToast('Error: $e');
+                                                  } finally {
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _socialLoading = null;
+                                                      });
+                                                    }
+                                                  }
+                                                }
+                                              : () {},
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Center(
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '¿No tienes una cuenta? ',
+                                          style: TextStyle(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.9),
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pushNamed(
+                                                context, '/register');
+                                          },
+                                          child: Text(
+                                            'Regístrate',
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .secondary,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -532,7 +651,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-          ),
           ],
         ),
       ),

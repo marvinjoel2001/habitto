@@ -305,6 +305,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                   const SizedBox(height: 30),
                   _buildModeContent(),
                   _buildModernBottomButtons(),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
@@ -542,17 +543,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                     const SizedBox(height: 20),
 
                     // Botón Editar Perfil
-                    SizedBox(
-                      width: 140,
-                      child: CustomButton(
-                        text: 'Editar Perfil',
-                        onPressed: () {
-                          // Navegar a editar perfil
-                        },
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        textColor: Colors.white,
-                      ),
-                    ),
+
                   ],
                 ),
               ),
@@ -794,28 +785,10 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryColor,
+                            color: Colors.white,
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                      ),
-                    ),
-                    child: const Text(
-                      'Ver Detalles',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
                     ),
                   ),
                 ],
@@ -1424,15 +1397,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               const SizedBox(height: 20),
 
               // Botón Editar Perfil
-              SizedBox(
-                width: 140,
-                child: CustomButton(
-                  text: 'Editar Perfil',
-                  onPressed: _editProfile,
-                  backgroundColor: AppTheme.primaryColor,
-                  textColor: Colors.black,
-                ),
-              ),
+
             ],
           ),
         ],
@@ -1550,7 +1515,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                     'Ver Reseñas',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF7FFFD4),
+                      color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -1573,7 +1538,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                     'Incentivos',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF7FFFD4),
+                      color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
