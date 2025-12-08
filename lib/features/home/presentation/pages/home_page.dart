@@ -35,8 +35,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 1;
-  int _lastIndex = 1;
+  int _currentIndex = 0;
+  int _lastIndex = 0;
   profile.UserMode _userMode = profile.UserMode.inquilino;
   final ProfileService _profileService = ProfileService();
   bool _isInitializingProfile = false; // Flag to prevent repeated calls

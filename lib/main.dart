@@ -5,6 +5,7 @@ import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/register_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
+import 'features/auth/presentation/pages/splash_page.dart';
 import 'features/properties/presentation/pages/add_property_page.dart';
 import 'features/properties/presentation/pages/payment_methods_page.dart';
 import 'features/social_areas/presentation/pages/social_areas_page.dart';
@@ -53,6 +54,7 @@ class HabittoApp extends StatelessWidget {
         '/onboarding': (context) => const OnboardingPage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
+        '/splash': (context) => const SplashPage(),
         '/home': (context) => const HomePage(),
         '/add-property': (context) => const AddPropertyPage(),
         '/payment-methods': (context) => const PaymentMethodsPage(),
@@ -118,7 +120,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     if (_isAuthenticated) {
-      return const HomePage();
+      return const SplashPage();
     } else {
       return const OnboardingPage();
     }

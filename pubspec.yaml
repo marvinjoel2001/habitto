@@ -57,8 +57,8 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/logoapp.png"
+  image_path: "assets/images/logoHabitto.png"
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/logoapp.png"
+  adaptive_icon_foreground: "assets/images/logoHabitto.png"
   remove_alpha_ios: true

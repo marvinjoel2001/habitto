@@ -237,7 +237,7 @@ class _LoginPageState extends State<LoginPage> {
     final ok = await _authService.isAuthenticated();
     if (ok) {
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/splash');
     }
   }
 
@@ -257,7 +257,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response['success']) {
-        navigator.pushReplacementNamed('/home');
+        navigator.pushReplacementNamed('/splash');
       } else {
         _showToast(response['error'] ?? 'Error de autenticación');
       }
@@ -516,11 +516,8 @@ class _LoginPageState extends State<LoginPage> {
                                                   if (res['success'] == true) {
                                                     navigator
                                                         .pushReplacementNamed(
-                                                            '/home');
-                                                  } else {
-                                                    _showToast(res['error'] ??
-                                                        'Error con Facebook');
-                                                  }
+                                                            '/splash');
+                                                  } else {}
                                                 } catch (e) {
                                                   _showToast('Error: $e');
                                                 } finally {
@@ -550,7 +547,7 @@ class _LoginPageState extends State<LoginPage> {
                                                   if (res['success'] == true) {
                                                     navigator
                                                         .pushReplacementNamed(
-                                                            '/home');
+                                                            '/splash');
                                                   } else {
                                                     _showToast(res['error'] ??
                                                         'Error con Google');
