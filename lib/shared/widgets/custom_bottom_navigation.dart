@@ -203,7 +203,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                     curve: _animCurve,
                     height: 64,
                     margin:
-                        const EdgeInsets.only(left: 16, right: 16, bottom: 0),
+                        const EdgeInsets.only(left: 16, right: 16, bottom: 5),
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
