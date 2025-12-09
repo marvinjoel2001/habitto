@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/match_modal.dart';
+import '../../../../shared/widgets/ai_chat_widget.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
@@ -39,6 +40,7 @@ class _HomePageState extends State<HomePage> {
   int _lastIndex = 0;
   profile.UserMode _userMode = profile.UserMode.inquilino;
   final ProfileService _profileService = ProfileService();
+  String _userName = 'Usuario'; // Default name
   bool _isInitializingProfile = false; // Flag to prevent repeated calls
   bool _showTenantFloatingMenu =
       false; // Control tenant floating menu visibility
@@ -77,10 +79,16 @@ class _HomePageState extends State<HomePage> {
         final Profile currentProfile = result['data']['profile'] as Profile;
         final profile.UserMode mode =
             _mapUserTypeToMode(currentProfile.userType);
+        final String name = currentProfile.user.firstName.isNotEmpty
+            ? currentProfile.user.firstName
+            : (currentProfile.user.username.isNotEmpty
+                ? currentProfile.user.username
+                : 'Usuario');
         if (mounted) {
           setState(() {
             _userMode = mode;
             _currentIndex = 0;
+            _userName = name;
           });
         }
       }
@@ -159,10 +167,72 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _openAiChat() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          margin: const EdgeInsets.only(top: 40),
+          child: AiChatWidget(
+            userName: _userName,
+            onClose: () => Navigator.pop(context),
+            onProfileCreated: (data) async {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Procesando perfil...'),
+                  backgroundColor: AppTheme.primaryColor,
+                ),
+              );
+              try {
+                final result = await _profileService.createSearchProfile(data);
+                if (result['success']) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content:
+                            Text('Perfil de búsqueda creado exitosamente!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${result['error']}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> get _pages => [
         if (_userMode == profile.UserMode.inquilino) ...[
           // Explorar (Deck)
-          HomeContent(deckKey: _deckKey),
+          HomeContent(deckKey: _deckKey, onFilterTap: _openAiChat),
           // Mapa
           const search.SearchPage(),
           // Chat
@@ -273,6 +343,18 @@ class _HomePageState extends State<HomePage> {
                 child: _pages[_currentIndex],
               ),
             ),
+            if (_userMode == profile.UserMode.inquilino)
+              Positioned(
+                right: 16,
+                bottom: 100,
+                child: FloatingActionButton(
+                  heroTag: 'ai_chat_fab',
+                  onPressed: _openAiChat,
+                  backgroundColor: AppTheme.primaryColor,
+                  child: const Icon(Icons.chat_bubble_outline,
+                      color: Colors.white),
+                ),
+              ),
             Positioned(
               left: 0,
               right: 0,
@@ -430,18 +512,14 @@ class _CircleActionButtonState extends State<_CircleActionButton>
             child: Container(
               width: widget.size,
               height: widget.size,
-              decoration: BoxDecoration(
-                gradient: AppTheme.getCardGradient(opacity: widget.opacity),
+              decoration: const BoxDecoration(
+                color: Colors.white,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(widget.opacity + 0.02),
-                  width: 1.2,
-                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: Color(0x26000000), // sombra suave en bordes
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
                   ),
                 ],
               ),
@@ -457,7 +535,8 @@ class _CircleActionButtonState extends State<_CircleActionButton>
 
 class HomeContent extends StatefulWidget {
   final GlobalKey<PropertySwipeDeckState> deckKey;
-  const HomeContent({super.key, required this.deckKey});
+  final VoidCallback? onFilterTap;
+  const HomeContent({super.key, required this.deckKey, this.onFilterTap});
 
   @override
   State<HomeContent> createState() => _HomeContentState();
@@ -695,15 +774,16 @@ class _HomeContentState extends State<HomeContent> {
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.filter_list, color: Colors.black),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const CreateSearchProfilePage(),
-                          ),
-                        );
-                      },
+                      onPressed: widget.onFilterTap ??
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const CreateSearchProfilePage(),
+                              ),
+                            );
+                          },
                     ),
                   ),
                 ],

@@ -41,6 +41,10 @@ class AppConfig {
   static const String databaseName = 'habitto.db';
   static const int databaseVersion = 1;
 
+  // AI Configuration
+  static const String deepseekApiKey = 'sk-7bb75d41367543b48c164f3ff23459d5';
+  static const String deepseekBaseUrl = 'https://api.deepseek.com';
+
   static const int wsPort = 8000;
   static const String wsChatPath = '/ws/chat/';
   static const String wsTokenQueryName = 'token';

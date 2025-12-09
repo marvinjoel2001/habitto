@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 import '../../../../shared/theme/app_theme.dart';
 import '../../../profile/data/services/profile_service.dart';
 
+import 'package:permission_handler/permission_handler.dart';
+
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -20,11 +22,41 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _bootstrap() async {
+    // 1. Verificar perfil
     try {
       await _profileService.getCurrentProfile();
     } catch (_) {}
+
+    if (!mounted) return;
+
+    // 2. Solicitar permisos necesarios antes de ir a Home
+    await _requestAppPermissions();
+
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/home');
+  }
+
+  Future<void> _requestAppPermissions() async {
+    // Lista de permisos requeridos
+    final permissions = [
+      Permission.locationWhenInUse,
+      Permission.camera,
+      Permission.photos,
+      Permission.microphone,
+      Permission.notification,
+    ];
+
+    // Solicitar uno por uno para mejor UX (o en grupo si se prefiere)
+    // Aquí usamos un loop simple, pero se podría mostrar una UI explicativa para cada uno
+    for (final permission in permissions) {
+      final status = await permission.status;
+      if (!status.isGranted) {
+        // Opcional: Mostrar un diálogo explicando por qué se necesita
+        // Por simplicidad en el splash, solicitamos directamente.
+        // El sistema operativo mostrará el diálogo nativo si es necesario.
+        await permission.request();
+      }
+    }
   }
 
   @override
@@ -81,9 +113,9 @@ class _SplashPageState extends State<SplashPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text(
+                const Text(
                   'Verificando tu perfil...',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -96,24 +128,9 @@ class _SplashPageState extends State<SplashPage> {
                   height: 32,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: const Duration(seconds: 1),
-                  onEnd: () {},
-                  builder: (context, value, child) {
-                    return Transform.rotate(
-                      angle: value * 6.2831853, // 2*pi por ciclo
-                      child: Icon(
-                        Icons.refresh,
-                        size: 28,
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    );
-                  },
                 ),
               ],
             ),
