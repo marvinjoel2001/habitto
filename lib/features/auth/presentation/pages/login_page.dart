@@ -3,9 +3,7 @@ import '../../data/services/auth_service.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
-import '../../../../shared/widgets/social_login_button.dart';
 import 'dart:ui' as ui;
-import 'dart:io' show Platform;
 import 'package:fluttertoast/fluttertoast.dart';
 
 class LoginPage extends StatefulWidget {
@@ -24,7 +22,6 @@ class _LoginPageState extends State<LoginPage> {
   final ScrollController _scrollController = ScrollController();
   final AuthService _authService = AuthService();
   bool _isLoading = false;
-  String? _socialLoading; // 'google' | 'facebook' | 'apple'
   double _keyboardHeight = 0;
   bool _isKeyboardVisible = false;
   bool _isPasswordFieldFocused = false;
@@ -277,8 +274,6 @@ class _LoginPageState extends State<LoginPage> {
       _updateKeyboardState();
     });
 
-    // Calcular padding responsive basado en el tamaño de pantalla
-
     return GestureDetector(
       onTap: () {
         // Cerrar el teclado y quitar el foco cuando se toca fuera
@@ -293,6 +288,14 @@ class _LoginPageState extends State<LoginPage> {
         extendBodyBehindAppBar: true,
         resizeToAvoidBottomInset: false, // Prevenir banderas amarillas
         backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
         body: Stack(
           children: [
             // Fondo sin blur ni overlays encima
@@ -469,140 +472,6 @@ class _LoginPageState extends State<LoginPage> {
                                     isLoading: _isLoading,
                                     backgroundColor:
                                         Theme.of(context).colorScheme.primary,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                          child: Divider(
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.4))),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12),
-                                        child: Text(
-                                          'O inicia sesión con',
-                                          style: TextStyle(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.9),
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                          child: Divider(
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.4))),
-                                    ],
-                                  ),
-                                  // Botones de redes sociales en fila centrada
-                                  const SizedBox(height: 20),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SocialLoginButton(
-                                        imageAsset: 'assets/icons/facebook.png',
-                                        isLoading: _socialLoading == 'facebook',
-                                        onPressed: _socialLoading == null
-                                            ? () async {
-                                                setState(() {
-                                                  _socialLoading = 'facebook';
-                                                });
-                                                final navigator =
-                                                    Navigator.of(context);
-                                                try {
-                                                  final res = await _authService
-                                                      .loginWithFacebook();
-                                                  if (res['success'] == true) {
-                                                    navigator
-                                                        .pushReplacementNamed(
-                                                            '/splash');
-                                                  } else {}
-                                                } catch (e) {
-                                                  _showToast('Error: $e');
-                                                } finally {
-                                                  if (mounted) {
-                                                    setState(() {
-                                                      _socialLoading = null;
-                                                    });
-                                                  }
-                                                }
-                                              }
-                                            : () {},
-                                      ),
-                                      const SizedBox(width: 20),
-                                      SocialLoginButton(
-                                        imageAsset: 'assets/icons/google.png',
-                                        isLoading: _socialLoading == 'google',
-                                        onPressed: _socialLoading == null
-                                            ? () async {
-                                                setState(() {
-                                                  _socialLoading = 'google';
-                                                });
-                                                final navigator =
-                                                    Navigator.of(context);
-                                                try {
-                                                  final res = await _authService
-                                                      .loginWithGoogle();
-                                                  if (res['success'] == true) {
-                                                    navigator
-                                                        .pushReplacementNamed(
-                                                            '/splash');
-                                                  } else {
-                                                    _showToast(res['error'] ??
-                                                        'Error con Google');
-                                                  }
-                                                } catch (e) {
-                                                  _showToast('Error: $e');
-                                                } finally {
-                                                  if (mounted) {
-                                                    setState(() {
-                                                      _socialLoading = null;
-                                                    });
-                                                  }
-                                                }
-                                              }
-                                            : () {},
-                                      ),
-                                      if (Platform.isIOS) ...[
-                                        const SizedBox(width: 20),
-                                        SocialLoginButton(
-                                          imageAsset: 'assets/icons/apple.png',
-                                          isLoading: _socialLoading == 'apple',
-                                          onPressed: _socialLoading == null
-                                              ? () async {
-                                                  setState(() {
-                                                    _socialLoading = 'apple';
-                                                  });
-                                                  final navigator =
-                                                      Navigator.of(context);
-                                                  try {
-                                                    final res =
-                                                        await _authService
-                                                            .loginWithApple();
-                                                    if (res['success'] ==
-                                                        true) {
-                                                      navigator
-                                                          .pushReplacementNamed(
-                                                              '/home');
-                                                    } else {
-                                                      _showToast(res['error'] ??
-                                                          'Error con Apple');
-                                                    }
-                                                  } catch (e) {
-                                                    _showToast('Error: $e');
-                                                  } finally {
-                                                    if (mounted) {
-                                                      setState(() {
-                                                        _socialLoading = null;
-                                                      });
-                                                    }
-                                                  }
-                                                }
-                                              : () {},
-                                        ),
-                                      ],
-                                    ],
                                   ),
                                   const SizedBox(height: 24),
                                   Center(

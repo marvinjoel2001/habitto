@@ -12,6 +12,8 @@ import 'features/social_areas/presentation/pages/social_areas_page.dart';
 import 'features/alerts/presentation/pages/alert_history_page.dart';
 import 'features/auth/data/services/auth_service.dart';
 
+import 'features/auth/presentation/pages/auth_selection_page.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -52,7 +54,8 @@ class HabittoApp extends StatelessWidget {
       home: const AuthWrapper(),
       routes: {
         '/onboarding': (context) => const OnboardingPage(),
-        '/login': (context) => const LoginPage(),
+        '/login': (context) => const AuthSelectionPage(),
+        '/login-form': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/splash': (context) => const SplashPage(),
         '/home': (context) => const HomePage(),
@@ -86,7 +89,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Future<void> _checkAuthStatus() async {
     if (_isCheckingAuth) return; // Prevent repeated calls
-    
+
     _isCheckingAuth = true;
     try {
       final isAuthenticated = await _authService.isAuthenticated();
