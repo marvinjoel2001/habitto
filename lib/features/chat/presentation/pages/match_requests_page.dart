@@ -202,7 +202,9 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
   // Swipe gesture handling
   void _onPanStart(DragStartDetails details) {
     if (_currentCardIndex >= _matchRequests.length ||
-        _animationController.isAnimating) return;
+        _animationController.isAnimating) {
+      return;
+    }
 
     setState(() {
       _isDragging = true;
@@ -211,7 +213,9 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
 
   void _onPanUpdate(DragUpdateDetails details) {
     if (_currentCardIndex >= _matchRequests.length ||
-        _animationController.isAnimating) return;
+        _animationController.isAnimating) {
+      return;
+    }
 
     setState(() {
       _dragPosition += details.delta;
@@ -220,7 +224,9 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
 
   void _onPanEnd(DragEndDetails details) {
     if (_currentCardIndex >= _matchRequests.length ||
-        _animationController.isAnimating) return;
+        _animationController.isAnimating) {
+      return;
+    }
 
     final velocity = details.velocity.pixelsPerSecond.dx;
     final width = MediaQuery.of(context).size.width;
@@ -343,14 +349,14 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  Icons.favorite_border,
-                                  size: 64,
-                                  color: onSurface.withOpacity(0.6),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No tienes más solicitudes de match',
+                            Icon(
+                              Icons.favorite_border,
+                              size: 64,
+                              color: Colors.grey.shade400, // Light grey color, matching leads page icon style
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No tienes más solicitudes de match',
                                   style: TextStyle(
                                     color: onSurface.withOpacity(0.8),
                                     fontSize: 18,

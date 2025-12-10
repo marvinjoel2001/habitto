@@ -29,9 +29,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _lastNameController;
   late TextEditingController _phoneController;
   late TextEditingController _userTypeController;
+  late TextEditingController _emailController;
 
   File? _selectedImage;
   bool _isLoading = false;
+  bool _notificationsEnabled = true;
 
   @override
   void initState() {
@@ -40,6 +42,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _lastNameController = TextEditingController(text: widget.user.lastName);
     _phoneController = TextEditingController(text: widget.profile.phone);
     _userTypeController = TextEditingController(text: widget.profile.userType);
+    _emailController = TextEditingController(text: widget.user.email);
   }
 
   @override
@@ -48,6 +51,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _lastNameController.dispose();
     _phoneController.dispose();
     _userTypeController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -82,7 +86,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
 
     try {
-      // Actualizar información del perfil usando el endpoint update_me
       final profileData = {
         'phone': _phoneController.text.trim(),
         'user_type': _userTypeController.text,
@@ -97,238 +100,462 @@ class _EditProfilePageState extends State<EditProfilePage> {
         throw Exception(profileResult['error']);
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perfil actualizado correctamente')),
-      );
-
-      Navigator.of(context).pop(true); // Retornar true para indicar que se actualizó
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Perfil actualizado correctamente')),
+        );
+        Navigator.of(context).pop(true);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al actualizar perfil: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al actualizar perfil: $e')),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Editar Perfil'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        actions: [
-          if (!_isLoading)
-            TextButton(
-              onPressed: _saveProfile,
-              child: const Text(
-                'Guardar',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      body: Stack(
+        children: [
+          // 1. Background Gradient
+          Container(
+            height: 300,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF8E2DE2), // Purple
+                  Color(0xFFFF0080), // Pink/Magenta
+                  Color(0xFFFF6600), // Orange
+                ],
               ),
             ),
-        ],
-      ),
-      body: Container(
-        decoration: AppTheme.getProfileBackground(),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildProfileImageSection(),
-                      const SizedBox(height: 30),
-                      _buildFormFields(),
-                    ],
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: Text(
+                  'Editar Perfil',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+            ),
+          ),
+
+          // 2. White Container with Rounded Corners
+          Container(
+            margin: const EdgeInsets.only(top: 180),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+            ),
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildMinimalTextField(
+                            controller: _firstNameController,
+                            label: 'Nombre',
+                            enabled: false,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildMinimalTextField(
+                            controller: _lastNameController,
+                            label: 'Apellido',
+                            enabled: false,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildMinimalTextField(
+                            controller: _emailController,
+                            label: 'Email',
+                            enabled: false,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildMinimalTextField(
+                            controller: _phoneController,
+                            label: 'Teléfono',
+                            icon: Icons.phone,
+                            enabled: true,
+                            isEditable: true,
+                          ),
+                          const SizedBox(height: 32),
+                          _buildActionRow('Cambiar Contraseña', hasArrow: true),
+                          const SizedBox(height: 24),
+                          _buildNotificationSwitch(),
+                          const SizedBox(height: 40),
+                          _buildButtons(),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+
+          // 3. Avatar & Label (Overlapping)
+          Positioned(
+            top: 110,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: SizedBox(
+                height: 140,
+                width: 300, // Wide enough to hold label + avatar
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    // Label (User Type) - Behind Avatar
+                    Positioned(
+                      left: 10, // Adjust to position to the left of avatar
+                      child: Container(
+                        padding: const EdgeInsets.only(
+                          left: 20,
+                          right: 50, // Extra padding on right to slide under avatar
+                          top: 8,
+                          bottom: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: const Color(0xFF8E2DE2).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getModeIcon(_userTypeController.text),
+                              color: const Color(0xFF8E2DE2),
+                              size: 24,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _userTypeController.text.toUpperCase(),
+                              style: const TextStyle(
+                                color: Color(0xFF8E2DE2),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Avatar
+                    Container(
+                      width: 130,
+                      height: 130,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF8E2DE2), Color(0xFFFF0080)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: ClipOval(
+                          child: _selectedImage != null
+                              ? Image.file(
+                                  _selectedImage!,
+                                  fit: BoxFit.cover,
+                                )
+                              : widget.profile.profileImage != null &&
+                                      widget.profile.profileImage!.isNotEmpty
+                                  ? Image.network(
+                                      widget.profile.profileImage!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/images/unnamed.png',
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    )
+                                  : Image.asset(
+                                      'assets/images/unnamed.png',
+                                      fit: BoxFit.cover,
+                                    ),
+                        ),
+                      ),
+                    ),
+
+                    // Edit Icon (Pencil)
+                    Positioned(
+                      bottom: 5,
+                      right: 90, // Positioned relative to the stack center/width
+                      child: GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.edit,
+                            color: Color(0xFF8E2DE2),
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // Back Button
+          Positioned(
+            top: 50,
+            left: 16,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildProfileImageSection() {
+  Widget _buildMinimalTextField({
+    required TextEditingController controller,
+    required String label,
+    IconData? icon,
+    bool enabled = true,
+    bool isEditable = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: Colors.grey[400], size: 20),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: TextFormField(
+                controller: controller,
+                enabled: enabled,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w400,
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+            if (isEditable)
+              Icon(Icons.edit, color: Colors.grey[400], size: 18),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Divider(color: Colors.grey[300], thickness: 1),
+      ],
+    );
+  }
+
+  Widget _buildActionRow(String title, {bool hasArrow = false}) {
     return Column(
       children: [
-        GestureDetector(
-          onTap: _pickImage,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            if (hasArrow)
+              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Divider(color: Colors.grey[300], thickness: 1),
+      ],
+    );
+  }
+
+  Widget _buildNotificationSwitch() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          'Notificaciones',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.black87,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        Switch(
+          value: _notificationsEnabled,
+          onChanged: (value) {
+            setState(() {
+              _notificationsEnabled = value;
+            });
+          },
+          activeColor: const Color(0xFF8E2DE2),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildButtons() {
+    return Row(
+      children: [
+        Expanded(
           child: Container(
-            width: 120,
-            height: 120,
+            height: 50,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppTheme.primaryColor, width: 3),
+              borderRadius: BorderRadius.circular(25),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF8E2DE2), Color(0xFFFF0080)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: const Color(0xFFFF0080).withOpacity(0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
               ],
             ),
-            child: ClipOval(
-              child: _selectedImage != null
-                  ? Image.file(
-                      _selectedImage!,
-                      fit: BoxFit.cover,
-                    )
-                  : widget.profile.profileImage != null && widget.profile.profileImage!.isNotEmpty
-                      ? Image.network(
-                          widget.profile.profileImage!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/userempty.png',
-                              fit: BoxFit.cover,
-                            );
-                          },
-                        )
-                      : Image.asset(
-                          'assets/images/userempty.png',
-                          fit: BoxFit.cover,
-                        ),
+            child: ElevatedButton(
+              onPressed: _saveProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: const Text(
+                'GUARDAR CAMBIOS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 10),
-        TextButton.icon(
-          onPressed: _pickImage,
-          icon: const Icon(Icons.camera_alt, color: AppTheme.primaryColor),
-          label: const Text(
-            'Cambiar foto',
-            style: TextStyle(color: AppTheme.primaryColor),
+        const SizedBox(width: 16),
+        Expanded(
+          child: SizedBox(
+            height: 50,
+            child: OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.grey[400]!),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: Text(
+                'CANCELAR',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFormFields() {
-    return Column(
-      children: [
-        _buildTextField(
-          controller: _firstNameController,
-          label: 'Nombre',
-          icon: Icons.person,
-          enabled: false, // Los nombres no se pueden editar desde el perfil
-        ),
-        const SizedBox(height: 20),
-        _buildTextField(
-          controller: _lastNameController,
-          label: 'Apellido',
-          icon: Icons.person_outline,
-          enabled: false, // Los apellidos no se pueden editar desde el perfil
-        ),
-        const SizedBox(height: 20),
-        _buildTextField(
-          controller: _phoneController,
-          label: 'Teléfono',
-          icon: Icons.phone,
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'El teléfono es requerido';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 20),
-        _buildUserTypeDropdown(),
-      ],
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    String? Function(String?)? validator,
-    bool enabled = true,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        enabled: enabled,
-        validator: validator,
-        style: const TextStyle(color: AppTheme.darkGrayBase),
-        decoration: InputDecoration(
-          hintText: label,
-          floatingLabelBehavior: FloatingLabelBehavior.never,
-          labelStyle: const TextStyle(color: AppTheme.darkGrayBase),
-          prefixIcon: Icon(icon, color: AppTheme.primaryColor),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          isDense: true,
-          hintStyle: TextStyle(color: Colors.black.withOpacity(0.5)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUserTypeDropdown() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: DropdownButtonFormField<String>(
-        initialValue: _userTypeController.text,
-        decoration: InputDecoration(
-          hintText: 'Tipo de usuario',
-          floatingLabelBehavior: FloatingLabelBehavior.never,
-          labelStyle: const TextStyle(color: AppTheme.darkGrayBase),
-          prefixIcon: const Icon(Icons.badge, color: AppTheme.primaryColor),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          isDense: true,
-          hintStyle: TextStyle(color: Colors.black.withOpacity(0.5)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-        dropdownColor: Colors.white,
-        style: const TextStyle(color: AppTheme.darkGrayBase),
-        items: const [
-          DropdownMenuItem(value: 'inquilino', child: Text('Inquilino')),
-          DropdownMenuItem(value: 'propietario', child: Text('Propietario')),
-          DropdownMenuItem(value: 'agente', child: Text('Agente')),
-        ],
-        onChanged: (value) {
-          if (value != null) {
-            _userTypeController.text = value;
-          }
-        },
-      ),
-    );
+  IconData _getModeIcon(String mode) {
+    switch (mode.toLowerCase()) {
+      case 'inquilino':
+        return Icons.person_outline;
+      case 'propietario':
+        return Icons.home_work_outlined;
+      case 'agente':
+        return Icons.verified_user_outlined;
+      default:
+        return Icons.person_outline;
+    }
   }
 }

@@ -7,8 +7,9 @@ import 'dart:io';
 import '../../data/services/auth_service.dart';
 import '../../domain/entities/user.dart';
 import '../../../profile/domain/entities/profile.dart';
-import '../../../profile/presentation/pages/create_search_profile_page.dart';
+import '../../../../shared/widgets/ai_chat_widget.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import '../../../profile/data/services/profile_service.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 
 import 'dart:ui' as ui;
@@ -32,6 +33,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   final AuthService _authService = AuthService();
   final ImagePicker _imagePicker = ImagePicker();
+  final ProfileService _profileService = ProfileService();
   bool _isLoading = false;
   String _selectedUserType = 'inquilino';
   File? _selectedImage;
@@ -333,14 +335,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                     foregroundColor: Colors.black),
                                 onPressed: () {
                                   Navigator.pop(ctx);
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const CreateSearchProfilePage(),
-                                    ),
-                                  );
+                                  _showAiChatProfileCreation();
                                 },
-                                child: const Text('Crear ahora'))),
+                                child: const Text('Crear con IA'))),
                         const SizedBox(width: 12),
                         Expanded(
                             child: OutlinedButton(
@@ -380,6 +377,76 @@ class _RegisterPageState extends State<RegisterPage> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showAiChatProfileCreation() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          margin: const EdgeInsets.only(top: 40),
+          child: AiChatWidget(
+            userName: _firstNameController.text.isNotEmpty
+                ? _firstNameController.text
+                : _usernameController.text,
+            onClose: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/home');
+            },
+            onProfileCreated: (data) async {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Procesando perfil...'),
+                  backgroundColor: AppTheme.primaryColor,
+                ),
+              );
+              try {
+                final result = await _profileService.createSearchProfile(data);
+                if (result['success']) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content:
+                            Text('Perfil de búsqueda creado exitosamente!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    Navigator.pushReplacementNamed(context, '/home');
+                  }
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${result['error']}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    Navigator.pushReplacementNamed(context, '/home');
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  Navigator.pushReplacementNamed(context, '/home');
+                }
+              }
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -551,10 +618,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 hintText: 'Email',
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) {
-                  if (v == null || v.isEmpty)
+                  if (v == null || v.isEmpty) {
                     return 'Por favor ingresa tu email';
-                  if (!v.contains('@'))
+                  }
+                  if (!v.contains('@')) {
                     return 'Por favor ingresa un email válido';
+                  }
                   return null;
                 }),
             const SizedBox(height: 16),
@@ -563,8 +632,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 hintText: 'Teléfono',
                 keyboardType: TextInputType.phone,
                 validator: (v) {
-                  if (v == null || v.isEmpty)
+                  if (v == null || v.isEmpty) {
                     return 'Por favor ingresa tu teléfono';
+                  }
                   return null;
                 }),
             const SizedBox(height: 16),
@@ -610,8 +680,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: _usernameController,
                   hintText: 'Nombre de usuario',
                   validator: (v) {
-                    if (v == null || v.isEmpty)
+                    if (v == null || v.isEmpty) {
                       return 'Por favor ingresa un nombre de usuario';
+                    }
                     return null;
                   }),
               const SizedBox(height: 16),
@@ -620,10 +691,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   hintText: 'Contraseña',
                   isPassword: true,
                   validator: (v) {
-                    if (v == null || v.isEmpty)
+                    if (v == null || v.isEmpty) {
                       return 'Por favor ingresa una contraseña';
-                    if (v.length < 6)
+                    }
+                    if (v.length < 6) {
                       return 'La contraseña debe tener al menos 6 caracteres';
+                    }
                     return null;
                   }),
               const SizedBox(height: 16),
@@ -632,8 +705,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   hintText: 'Confirmar contraseña',
                   isPassword: true,
                   validator: (v) {
-                    if (v == null || v.isEmpty)
+                    if (v == null || v.isEmpty) {
                       return 'Por favor confirma tu contraseña';
+                    }
                     return null;
                   }),
               const SizedBox(height: 24),

@@ -352,10 +352,11 @@ class _ChatPageState extends State<ChatPage> {
           }
           if (data.containsKey('pending_requests_count')) {
             final c = int.tryParse(data['pending_requests_count'].toString());
-            if (c != null)
+            if (c != null) {
               setState(() {
                 _pendingMatchRequestsCount = c;
               });
+            }
           }
         }
       } catch (_) {}
@@ -849,10 +850,10 @@ class _ChatPageState extends State<ChatPage> {
                   color: Colors.white, size: 24),
             ),
             const SizedBox(width: 12),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text('Notificaciones',
                       style: TextStyle(
                           fontSize: 16,
@@ -899,14 +900,14 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 class _MatchRequestsPage extends StatefulWidget {
-  const _MatchRequestsPage({super.key});
+  const _MatchRequestsPage();
 
   @override
   State<_MatchRequestsPage> createState() => _MatchRequestsPageState();
 }
 
 class _NotificationsPage extends StatefulWidget {
-  const _NotificationsPage({super.key});
+  const _NotificationsPage();
 
   @override
   State<_NotificationsPage> createState() => _NotificationsPageState();

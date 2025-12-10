@@ -351,22 +351,25 @@ class _LoginPageState extends State<LoginPage> {
                           : EdgeInsets
                               .zero, // Márgenes originales cuando el teclado está visible
                       child: BackdropFilter(
-                        filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
                           width: MediaQuery.of(context).size.width * 0.9,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 18, vertical: 16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: Colors.white.withOpacity(
+                                0.2), // Matches AuthSelectionPage glass button style
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25),
+                              color: Colors.white.withOpacity(
+                                  0.3), // Matches AuthSelectionPage border
+                              width: 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.10),
+                                color: Colors.black.withOpacity(0.1),
                                 blurRadius: 20,
-                                spreadRadius: 2,
+                                offset: const Offset(0, 10),
                               ),
                             ],
                           ),

@@ -62,10 +62,12 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
 
   bool _isLabelBlackMode(int index) {
     if (index == 2) return true; // Chat
-    if (widget.userMode != 'inquilino' && index == 0)
+    if (widget.userMode != 'inquilino' && index == 0) {
       return true; // Candidatos/Leads
-    if (widget.userMode == 'propietario' && index == 1)
+    }
+    if (widget.userMode == 'propietario' && index == 1) {
       return true; // Propiedades
+    }
     return false;
   }
 

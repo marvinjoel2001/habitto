@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:habitto/shared/theme/app_theme.dart';
 import 'dart:ui' as ui;
 import 'dart:io' show Platform;
-import '../../../../shared/widgets/social_login_button.dart';
 import '../../data/services/auth_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -166,19 +164,21 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
               },
             ),
           ),
-          
-          // Gradient Overlay
+
+          // Gradient Overlay - MATCHING LOGIN PAGE EXACTLY
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.10),
+                    Colors.black.withValues(alpha: 0.85),
+                  ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.purple.withOpacity(0.3),
-                    Colors.orange.withOpacity(0.3),
-                    Colors.black.withOpacity(0.6),
-                  ],
                 ),
               ),
             ),
@@ -191,10 +191,11 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Spacer(),
-                  
+
                   // Logo/Brand
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 40, vertical: 16),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(30),
@@ -256,44 +257,8 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                     onPressed: () => _handleSocialLogin('facebook'),
                   ),
 
-                  const SizedBox(height: 40),
-
-                  // Voice/Mic indicator (Visual only as per design)
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF98FB98), Color(0xFF90EE90)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.3),
-                          blurRadius: 15,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.mic,
-                      color: Colors.black54,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Puedes hablar o escribir',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                  
                   const Spacer(),
-                  
+
                   const Text(
                     'Encontrar hogar nunca fue tan fácil',
                     style: TextStyle(

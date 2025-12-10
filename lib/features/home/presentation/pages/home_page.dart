@@ -17,7 +17,6 @@ import '../../../chat/presentation/pages/match_requests_page.dart';
 import '../../../profile/presentation/pages/create_search_profile_page.dart';
 import '../../../search/presentation/pages/search_page.dart' as search;
 import '../../../chat/presentation/pages/chat_page.dart';
-import '../../../likes/presentation/pages/likes_page.dart';
 import '../../../profile/domain/entities/profile.dart';
 import '../../../profile/data/services/profile_service.dart';
 import '../../../properties/data/services/property_service.dart';
@@ -668,55 +667,60 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _EmptyMatches() {
-    final cs = Theme.of(context).colorScheme;
     return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 24),
-        padding: const EdgeInsets.fromLTRB(24, 48, 24, 36),
-        decoration: BoxDecoration(
-          gradient: AppTheme.getCardGradient(opacity: 0.14),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x22000000), blurRadius: 12, offset: Offset(0, 6)),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 86,
-              height: 86,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.favorite_border,
+            size: 64,
+            color: Colors.white.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Por el momento no tenemos matchs',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 24),
+          GestureDetector(
+            onTap: _loadAllProperties,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.20),
-                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                    color: Colors.white.withOpacity(0.35), width: 1.5),
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
               ),
-              child: const Icon(Icons.favorite_border,
-                  color: Colors.white, size: 38),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.refresh,
+                    color: Colors.white.withOpacity(0.9),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Actualizar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Por el momento no tenemos matchs',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Desliza hacia abajo para recargar',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: Colors.white.withOpacity(0.85), fontSize: 14),
-            ),
-            const SizedBox(height: 24),
-            const _PullHintHand(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -796,24 +800,26 @@ class _HomeContentState extends State<HomeContent> {
                 await _loadAllProperties();
               },
               child: _isLoading
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      children: const [
-                        SizedBox(height: 200),
-                        Center(child: CircularProgressIndicator()),
-                        SizedBox(height: 600),
-                      ],
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
                     )
                   : (_cards.isEmpty
-                      ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: EdgeInsets.zero,
-                          children: [
-                            const SizedBox(height: 40),
-                            _EmptyMatches(),
-                            const SizedBox(height: 800),
-                          ],
+                      ? LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: constraints.maxHeight,
+                                ),
+                                child: Center(
+                                  child: _EmptyMatches(),
+                                ),
+                              ),
+                            );
+                          },
                         )
                       : ListView(
                           physics: const AlwaysScrollableScrollPhysics(),

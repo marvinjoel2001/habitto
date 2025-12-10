@@ -319,7 +319,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Column(
+                        const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
@@ -327,8 +327,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color:
-                                    AppTheme.blackColor.withValues(alpha: 0.9),
+                                color: Colors.white,
                               ),
                             ),
                             Text(
@@ -336,8 +335,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: AppTheme.primaryColor
-                                    .withValues(alpha: 0.8),
+                                color: Colors.white70,
                               ),
                             ),
                           ],
@@ -347,12 +345,12 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                     if (widget.onClose != null)
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.close, size: 20),
-                          color: AppTheme.blackColor.withValues(alpha: 0.7),
+                          color: Colors.white,
                           onPressed: widget.onClose,
                         ),
                       ),
@@ -493,30 +491,26 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () => _sendMessage(_currentSuggestions[index]),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryColor
-                                    .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: AppTheme.primaryColor
-                                      .withValues(alpha: 0.2),
-                                ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
-                              child: Text(
-                                _currentSuggestions[index],
-                                style: const TextStyle(
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
+                            ],
+                          ),
+                          child: Text(
+                            _currentSuggestions[index],
+                            style: const TextStyle(
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
                             ),
                           ),
                         ),

@@ -6,12 +6,12 @@ void main() {
   group('TenantFloatingMenu Responsive Tests', () {
     // Test different device sizes
     final deviceSizes = [
-      Size(320, 568), // iPhone SE
-      Size(375, 667), // iPhone 8
-      Size(414, 896), // iPhone 11 Pro Max
-      Size(360, 640), // Android small
-      Size(411, 823), // Android medium
-      Size(1440, 3040), // Android large
+      const Size(320, 568), // iPhone SE
+      const Size(375, 667), // iPhone 8
+      const Size(414, 896), // iPhone 11 Pro Max
+      const Size(360, 640), // Android small
+      const Size(411, 823), // Android medium
+      const Size(1440, 3040), // Android large
     ];
 
     for (final deviceSize in deviceSizes) {
@@ -21,7 +21,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
-              body: Container(
+              body: SizedBox(
                 width: deviceSize.width,
                 height: deviceSize.height,
                 child: Stack(
@@ -64,7 +64,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Container(
+            body: SizedBox(
               width: 320, // iPhone SE width
               height: 568,
               child: Stack(
@@ -100,7 +100,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Container(
+            body: SizedBox(
               width: 1440, // Large screen width
               height: 3040,
               child: Stack(
@@ -136,7 +136,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: MediaQuery(
-            data: const MediaQueryData(textScaleFactor: 1.5),
+            data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
             child: Scaffold(
               body: Stack(
                 children: [

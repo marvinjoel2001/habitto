@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:habitto/config/app_config.dart';
 import 'package:habitto/core/services/token_storage.dart';
 

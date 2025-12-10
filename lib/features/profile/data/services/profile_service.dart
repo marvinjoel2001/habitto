@@ -3,7 +3,6 @@ import '../../../../config/app_config.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/services/token_storage.dart';
 import '../../domain/entities/profile.dart';
-import '../../../auth/domain/entities/user.dart';
 
 /// Servicio de perfil - Capa de negocio
 /// Responsabilidad: Implementar la lógica de negocio para perfiles de usuario
@@ -27,7 +26,7 @@ class ProfileService {
     try {
       print('ProfileService: Iniciando getCurrentProfile()');
       final response = await _apiService.get(AppConfig.currentProfileEndpoint);
-      
+
       print('ProfileService: Respuesta recibida: $response');
 
       if (response['success'] && response['data'] != null) {
@@ -45,11 +44,13 @@ class ProfileService {
           // Convertir respuestas JSON a entidades de dominio
           print('ProfileService: Creando Profile.fromJson...');
           final profile = Profile.fromJson(userProfile);
-          print('ProfileService: Profile creado exitosamente: ${profile.toString()}');
-          
+          print(
+              'ProfileService: Profile creado exitosamente: ${profile.toString()}');
+
           // El usuario ya está incluido en el perfil, no necesitamos extraerlo por separado
           final user = profile.user;
-          print('ProfileService: Usuario extraído del perfil: ${user.toString()}');
+          print(
+              'ProfileService: Usuario extraído del perfil: ${user.toString()}');
 
           return {
             'success': true,
@@ -68,10 +69,13 @@ class ProfileService {
           };
         }
       } else {
-        print('ProfileService: Error en respuesta - success: ${response['success']}, data: ${response['data']}');
+        print(
+            'ProfileService: Error en respuesta - success: ${response['success']}, data: ${response['data']}');
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al obtener perfil',
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al obtener perfil',
           'data': null,
         };
       }
@@ -92,7 +96,8 @@ class ProfileService {
   /// Retorna: Profile entity
   Future<Map<String, dynamic>> getProfileById(int profileId) async {
     try {
-      final response = await _apiService.get('${AppConfig.profilesEndpoint}$profileId/');
+      final response =
+          await _apiService.get('${AppConfig.profilesEndpoint}$profileId/');
 
       if (response['success'] && response['data'] != null) {
         // Convertir respuesta JSON a entidad de dominio
@@ -106,7 +111,9 @@ class ProfileService {
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al obtener perfil',
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al obtener perfil',
           'data': null,
         };
       }
@@ -124,13 +131,17 @@ class ProfileService {
   /// Retorna: Primer Profile correspondiente al usuario
   Future<Map<String, dynamic>> getProfileByUserId(int userId) async {
     try {
-      final response = await _apiService.get(AppConfig.profilesEndpoint, queryParameters: {'user_id': userId});
+      final response = await _apiService.get(AppConfig.profilesEndpoint,
+          queryParameters: {'user_id': userId});
 
       if (response['success'] && response['data'] != null) {
         final envelope = response['data'];
         List<dynamic> results = [];
-        if (envelope is Map && envelope['data'] is Map && (envelope['data'] as Map)['results'] is List) {
-          results = List<dynamic>.from((envelope['data'] as Map)['results'] as List);
+        if (envelope is Map &&
+            envelope['data'] is Map &&
+            (envelope['data'] as Map)['results'] is List) {
+          results =
+              List<dynamic>.from((envelope['data'] as Map)['results'] as List);
         } else if (envelope is Map && envelope['results'] is List) {
           results = List<dynamic>.from(envelope['results'] as List);
         } else if (envelope is List) {
@@ -138,7 +149,8 @@ class ProfileService {
         }
 
         if (results.isNotEmpty) {
-          final profile = Profile.fromJson(Map<String, dynamic>.from(results.first as Map));
+          final profile =
+              Profile.fromJson(Map<String, dynamic>.from(results.first as Map));
           return {
             'success': true,
             'data': profile,
@@ -154,7 +166,9 @@ class ProfileService {
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al obtener perfil por usuario',
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al obtener perfil por usuario',
           'data': null,
         };
       }
@@ -171,7 +185,9 @@ class ProfileService {
   /// Ruta: PUT/PATCH /api/profiles/update_me/
   /// Datos de negocio: Datos del perfil a actualizar
   /// Retorna: Profile entity actualizado
-  Future<Map<String, dynamic>> updateCurrentProfile(Map<String, dynamic> profileData, {File? profileImage}) async {
+  Future<Map<String, dynamic>> updateCurrentProfile(
+      Map<String, dynamic> profileData,
+      {File? profileImage}) async {
     try {
       Profile? lastProfile;
 
@@ -224,7 +240,9 @@ class ProfileService {
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al actualizar perfil',
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al actualizar perfil',
           'data': null,
         };
       }
@@ -241,7 +259,8 @@ class ProfileService {
   /// Ruta: POST /api/profiles/upload_profile_picture/
   /// Datos de negocio: Archivo de imagen
   /// Retorna: Profile entity actualizado
-  Future<Map<String, dynamic>> uploadCurrentProfilePicture(File imageFile) async {
+  Future<Map<String, dynamic>> uploadCurrentProfilePicture(
+      File imageFile) async {
     try {
       final response = await _apiService.uploadFile(
         AppConfig.uploadProfilePictureEndpoint,
@@ -262,7 +281,8 @@ class ProfileService {
         if (profileJson.isEmpty) {
           return {
             'success': false,
-            'error': 'Respuesta del servidor inválida al subir imagen de perfil',
+            'error':
+                'Respuesta del servidor inválida al subir imagen de perfil',
             'data': null,
           };
         }
@@ -272,12 +292,15 @@ class ProfileService {
         return {
           'success': true,
           'data': updatedProfile,
-          'message': response['message'] ?? 'Imagen de perfil actualizada exitosamente',
+          'message': response['message'] ??
+              'Imagen de perfil actualizada exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al actualizar imagen de perfil',
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al actualizar imagen de perfil',
           'data': null,
         };
       }
@@ -294,7 +317,9 @@ class ProfileService {
   /// Ruta: PUT /api/profiles/{id}/
   /// Datos de negocio: ID del perfil y datos a actualizar
   /// Retorna: Profile entity actualizado
-  Future<Map<String, dynamic>> updateProfile(int profileId, Map<String, dynamic> profileData, {File? profileImage}) async {
+  Future<Map<String, dynamic>> updateProfile(
+      int profileId, Map<String, dynamic> profileData,
+      {File? profileImage}) async {
     try {
       Map<String, dynamic> response;
 
@@ -332,7 +357,9 @@ class ProfileService {
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al actualizar perfil',
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al actualizar perfil',
           'data': null,
         };
       }
@@ -351,7 +378,8 @@ class ProfileService {
   /// Retorna: Mensaje de confirmación
   Future<Map<String, dynamic>> verifyProfile(int profileId) async {
     try {
-      final response = await _apiService.post('${AppConfig.profilesEndpoint}$profileId/verify/', {});
+      final response = await _apiService
+          .post('${AppConfig.profilesEndpoint}$profileId/verify/', {});
 
       if (response['success']) {
         return {
@@ -362,7 +390,9 @@ class ProfileService {
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al verificar perfil',
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al verificar perfil',
           'data': null,
         };
       }
@@ -378,7 +408,8 @@ class ProfileService {
   /// Agregar propiedad a favoritos
   /// Lógica de negocio: Obtener favoritos actuales, agregar nuevo ID, actualizar perfil
   /// Datos de negocio: ID del perfil y ID de la propiedad
-  Future<Map<String, dynamic>> addToFavorites(int profileId, int propertyId) async {
+  Future<Map<String, dynamic>> addToFavorites(
+      int profileId, int propertyId) async {
     try {
       // Obtener perfil actual para obtener favoritos existentes
       final currentProfileResult = await getProfileById(profileId);
@@ -387,7 +418,8 @@ class ProfileService {
       }
 
       final Profile currentProfile = currentProfileResult['data'];
-      final List<int> favorites = List<int>.from(currentProfile.favorites ?? []);
+      final List<int> favorites =
+          List<int>.from(currentProfile.favorites ?? []);
 
       // Lógica de negocio: No agregar duplicados
       if (!favorites.contains(propertyId)) {
@@ -408,7 +440,8 @@ class ProfileService {
   /// Remover propiedad de favoritos
   /// Lógica de negocio: Obtener favoritos actuales, remover ID, actualizar perfil
   /// Datos de negocio: ID del perfil y ID de la propiedad
-  Future<Map<String, dynamic>> removeFromFavorites(int profileId, int propertyId) async {
+  Future<Map<String, dynamic>> removeFromFavorites(
+      int profileId, int propertyId) async {
     try {
       // Obtener perfil actual para obtener favoritos existentes
       final currentProfileResult = await getProfileById(profileId);
@@ -417,7 +450,8 @@ class ProfileService {
       }
 
       final Profile currentProfile = currentProfileResult['data'];
-      final List<int> favorites = List<int>.from(currentProfile.favorites ?? []);
+      final List<int> favorites =
+          List<int>.from(currentProfile.favorites ?? []);
 
       // Lógica de negocio: Remover de favoritos
       favorites.remove(propertyId);
@@ -437,7 +471,8 @@ class ProfileService {
   /// Ruta: PATCH /api/profiles/{id}/
   /// Datos de negocio: ID del perfil y archivo de imagen
   /// Retorna: Profile entity actualizado
-  Future<Map<String, dynamic>> updateProfilePicture(int profileId, File imageFile) async {
+  Future<Map<String, dynamic>> updateProfilePicture(
+      int profileId, File imageFile) async {
     try {
       final response = await _apiService.uploadFile(
         '${AppConfig.profilesEndpoint}$profileId/',
@@ -453,12 +488,15 @@ class ProfileService {
         return {
           'success': true,
           'data': updatedProfile,
-          'message': response['message'] ?? 'Imagen de perfil actualizada exitosamente',
+          'message': response['message'] ??
+              'Imagen de perfil actualizada exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al actualizar imagen de perfil',
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al actualizar imagen de perfil',
           'data': null,
         };
       }
@@ -475,7 +513,8 @@ class ProfileService {
   /// Ruta: POST /api/profiles/search-profile/
   /// Datos de negocio: Datos del perfil de búsqueda
   /// Retorna: SearchProfile entity creado
-  Future<Map<String, dynamic>> createSearchProfile(Map<String, dynamic> searchProfileData) async {
+  Future<Map<String, dynamic>> createSearchProfile(
+      Map<String, dynamic> searchProfileData) async {
     try {
       final response = await _apiService.post(
         '/api/search_profiles/',
@@ -486,12 +525,15 @@ class ProfileService {
         return {
           'success': true,
           'data': response['data'],
-          'message': response['message'] ?? 'Perfil de búsqueda creado exitosamente',
+          'message':
+              response['message'] ?? 'Perfil de búsqueda creado exitosamente',
         };
       } else {
         return {
           'success': false,
-          'error': response['error'] ?? response['message'] ?? 'Error al crear perfil de búsqueda',
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al crear perfil de búsqueda',
           'data': null,
         };
       }
@@ -517,7 +559,9 @@ class ProfileService {
             }
           : {
               'success': false,
-              'error': response['error'] ?? response['message'] ?? 'Error al agregar favorito',
+              'error': response['error'] ??
+                  response['message'] ??
+                  'Error al agregar favorito',
               'data': null,
             };
     } catch (e) {
@@ -531,7 +575,8 @@ class ProfileService {
 
   Future<Map<String, dynamic>> removeFavoriteViaApi(int propertyId) async {
     try {
-      final response = await _apiService.post('/api/profiles/remove_favorite/', {
+      final response =
+          await _apiService.post('/api/profiles/remove_favorite/', {
         'property_id': propertyId,
       });
       return response['success'] == true
@@ -542,13 +587,107 @@ class ProfileService {
             }
           : {
               'success': false,
-              'error': response['error'] ?? response['message'] ?? 'Error al remover favorito',
+              'error': response['error'] ??
+                  response['message'] ??
+                  'Error al remover favorito',
               'data': null,
             };
     } catch (e) {
       return {
         'success': false,
         'error': 'Error al remover favorito: $e',
+        'data': null,
+      };
+    }
+  }
+
+  /// Enviar verificación de perfil
+  /// Ruta: POST /api/profiles/submit_verification/
+  /// Datos de negocio: Archivos de identificación y número de documento
+  Future<Map<String, dynamic>> submitVerification({
+    required File idFront,
+    required File idBack,
+    required File selfie,
+    required String documentNumber,
+  }) async {
+    try {
+      // NOTE: Placeholder for multipart request.
+      return {
+        'success': false,
+        'error':
+            'Not implemented yet: Multiple file upload support required in ApiService',
+        'data': null,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error enviando verificación: $e',
+        'data': null,
+      };
+    }
+  }
+
+  /// Solicitar eliminación de cuenta
+  /// Ruta: POST /api/profiles/request_delete_account/
+  Future<Map<String, dynamic>> requestDeleteAccount() async {
+    try {
+      final response = await _apiService.post(
+        '${AppConfig.profilesEndpoint}request_delete_account/',
+        {},
+      );
+
+      if (response['success'] == true) {
+        return {
+          'success': true,
+          'message': response['message'] ?? 'Eliminación programada',
+          'data': response['data'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al solicitar eliminación',
+          'data': null,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error solicitando eliminación: $e',
+        'data': null,
+      };
+    }
+  }
+
+  /// Cancelar eliminación de cuenta
+  /// Ruta: POST /api/profiles/cancel_delete_account/
+  Future<Map<String, dynamic>> cancelDeleteAccount() async {
+    try {
+      final response = await _apiService.post(
+        '${AppConfig.profilesEndpoint}cancel_delete_account/',
+        {},
+      );
+
+      if (response['success'] == true) {
+        return {
+          'success': true,
+          'message': response['message'] ?? 'Eliminación cancelada',
+          'data': response['data'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': response['error'] ??
+              response['message'] ??
+              'Error al cancelar eliminación',
+          'data': null,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error cancelando eliminación: $e',
         'data': null,
       };
     }

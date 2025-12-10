@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../properties/data/services/property_service.dart';
 import '../../../properties/domain/entities/property.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 class AgentPortfolioPage extends StatefulWidget {
   const AgentPortfolioPage({super.key});
@@ -48,6 +49,7 @@ class _AgentPortfolioPageState extends State<AgentPortfolioPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false, // Removed back button
         title: const Text('Portafolio',
             style: TextStyle(
                 color: Colors.black,
@@ -59,10 +61,14 @@ class _AgentPortfolioPageState extends State<AgentPortfolioPage> {
               icon: const Icon(Icons.refresh, color: Colors.black))
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () =>
-            Navigator.pushNamed(context, '/add-property').then((_) => _load()),
-        child: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80.0), // Added bottom padding
+        child: FloatingActionButton(
+          onPressed: () => Navigator.pushNamed(context, '/add-property')
+              .then((_) => _load()),
+          backgroundColor: AppTheme.primaryColor,
+          child: const Icon(Icons.add),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -73,7 +79,11 @@ class _AgentPortfolioPageState extends State<AgentPortfolioPage> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 16,
+                        bottom: 120), // Added bottom padding for scroll
                     itemCount: _items.length,
                     itemBuilder: (context, i) {
                       final p = _items[i];

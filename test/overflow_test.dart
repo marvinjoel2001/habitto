@@ -10,7 +10,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             bottomNavigationBar: MediaQuery(
-              data: const MediaQueryData(textScaleFactor: 1.0),
+              data: const MediaQueryData(textScaler: TextScaler.linear(1.0)),
               child: CustomBottomNavigation(
                 currentIndex: 3, // Chat selected - the problematic one
                 onTap: (index) {},
@@ -33,7 +33,7 @@ void main() {
 
       // Verify no overflow errors
       expect(tester.takeException(), isNull);
-      
+
       // Verify Chat text is present and properly constrained
       final chatText = tester.widget<Text>(find.text('Chat'));
       expect(chatText.overflow, equals(TextOverflow.ellipsis));
@@ -45,7 +45,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             bottomNavigationBar: MediaQuery(
-              data: const MediaQueryData(textScaleFactor: 1.5),
+              data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
               child: CustomBottomNavigation(
                 currentIndex: 3, // Chat selected
                 onTap: (index) {},
@@ -75,7 +75,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             bottomNavigationBar: MediaQuery(
-              data: const MediaQueryData(textScaleFactor: 2.0),
+              data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
               child: CustomBottomNavigation(
                 currentIndex: 3, // Chat selected
                 onTap: (index) {},
@@ -155,7 +155,7 @@ void main() {
 
       // Verify no overflow errors
       expect(tester.takeException(), isNull);
-      
+
       // Verify center button is present
       expect(find.byIcon(Icons.home), findsOneWidget);
     });
@@ -165,7 +165,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             bottomNavigationBar: MediaQuery(
-              data: const MediaQueryData(textScaleFactor: 1.3),
+              data: const MediaQueryData(textScaler: TextScaler.linear(1.3)),
               child: CustomBottomNavigation(
                 currentIndex: 1, // Buscar selected
                 onTap: (index) {},
@@ -188,7 +188,7 @@ void main() {
 
       // Verify text is scaled but not overflowing
       expect(tester.takeException(), isNull);
-      
+
       // Find the Buscar text
       final buscarText = tester.widget<Text>(find.text('Buscar'));
       expect(buscarText.style!.fontSize, greaterThan(12));

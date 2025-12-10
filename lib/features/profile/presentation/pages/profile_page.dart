@@ -31,7 +31,8 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin {
+class _ProfilePageState extends State<ProfilePage>
+    with TickerProviderStateMixin {
   UserMode _currentMode = UserMode.inquilino;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -82,8 +83,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
       // Cargar fotos para cada propiedad
       for (final property in properties) {
-        _loadPropertyPhotos(property.id!);
-            }
+        _loadPropertyPhotos(property.id);
+      }
     } else {
       setState(() {
         _isLoadingProperties = false;
@@ -100,9 +101,9 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         _propertyPhotos[propertyId] = photos;
       });
     }
-   }
+  }
 
-   Future<void> _loadCurrentProfile() async {
+  Future<void> _loadCurrentProfile() async {
     try {
       setState(() {
         _isLoading = true;
@@ -135,7 +136,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       } else {
         print('Error cargando perfil: ${response['error']}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error cargando perfil: ${response['error']}')),
+          SnackBar(
+              content: Text('Error cargando perfil: ${response['error']}')),
         );
       }
     } catch (e) {
@@ -248,7 +250,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   Future<void> _editProfile() async {
     if (_currentProfile == null || _currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo cargar la información del perfil')),
+        const SnackBar(
+            content: Text('No se pudo cargar la información del perfil')),
       );
       return;
     }
@@ -268,15 +271,73 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     }
   }
 
+  Widget _buildGlassContainer({
+    required Widget child,
+    double blur = 15,
+    double opacity = 0.1,
+    double borderRadius = 20,
+    EdgeInsetsGeometry? padding,
+    EdgeInsetsGeometry? margin,
+    Color color = Colors.white,
+    Border? border,
+  }) {
+    return Container(
+      margin: margin,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withOpacity(0.25),
+                  color.withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(borderRadius),
+              border: border ??
+                  Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
         body: Container(
-          decoration: AppTheme.getProfileBackground(),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF8E2DE2), // Purple
+                Color(0xFFFF0080), // Pink/Magenta
+                Color(0xFFFF6600), // Orange
+              ],
+            ),
+          ),
           child: const Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),
         ),
@@ -284,143 +345,250 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     }
 
     return Scaffold(
-      body: Container(
-        decoration: AppTheme.getProfileBackground(),
-        child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _loadCurrentProfile,
-            color: AppTheme.primaryColor,
-            backgroundColor: AppTheme.darkGrayBase,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                children: [
-                  _buildModernHeader(),
-                  const SizedBox(height: 8),
-                  _buildModernModeSelector(),
-                  const SizedBox(height: 20),
-                  _buildModernProfileSection(),
-                  const SizedBox(height: 40),
-                  _buildModernActionButtons(),
-                  const SizedBox(height: 30),
-                  _buildModeContent(),
-                  _buildModernBottomButtons(),
-                  const SizedBox(height: 120),
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          // Full screen background gradient
+          Container(
+            height: double.infinity,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF8E2DE2), // Purple
+                  Color(0xFFFF0080), // Pink/Magenta
+                  Color(0xFFFF6600), // Orange
                 ],
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildModernHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-            icon: const Icon(
-              Icons.arrow_back_ios,
-              color: Colors.black,
-              size: 24,
+          // Content
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildNewHeader(),
+                  const SizedBox(height: 24),
+                  _buildStatsButtons(),
+                  const SizedBox(height: 24),
+                  _buildPropertiesTitle(),
+                  const SizedBox(height: 16),
+                  _buildModeContent(),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (String value) {
-              switch (value) {
-                case 'payment_methods':
-                  Navigator.pushNamed(context, '/payment-methods');
-                  break;
-                case 'create_property':
-                  Navigator.pushNamed(context, '/add-property');
-                  break;
-                case 'edit_profile':
-                  _editProfile();
-                  break;
-                case 'logout':
-                  _handleLogout();
-                  break;
-              }
-            },
-            icon: const Icon(
-              Icons.more_vert,
-              color: Colors.black,
-              size: 24,
-            ),
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'payment_methods',
-                child: ListTile(
-                  leading: Icon(Icons.payment, color: AppTheme.primaryColor),
-                  title: Text('Métodos de Pago'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'create_property',
-                child: ListTile(
-                  leading: Icon(Icons.add_home, color: AppTheme.primaryColor),
-                  title: Text('Crear Propiedad'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'edit_profile',
-                child: ListTile(
-                  leading: Icon(Icons.edit, color: Colors.grey),
-                  title: Text('Editar Perfil'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'logout',
-                child: ListTile(
-                  leading: Icon(Icons.logout, color: Colors.red),
-                  title: Text('Cerrar Sesión'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildModernModeSelector() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: UserMode.values.map((mode) {
-          final isActive = _currentMode == mode;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => _onSelectMode(mode),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-            color: isActive ? AppTheme.primaryColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
+  Widget _buildNewHeader() {
+    return Column(
+      children: [
+        // Top Bar (Back & Settings)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/home'),
+                icon:
+                    const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+              ),
+              IconButton(
+                onPressed: _showSettingsModal,
+                icon: const Icon(Icons.settings_outlined,
+                    color: Colors.white, size: 28),
+              ),
+            ],
           ),
-                child: Text(
-                  _getModeDisplayName(mode),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isActive ? Colors.black : Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+        ),
+
+        const SizedBox(height: 20),
+
+        // Avatar & Ribbon & Info
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Calculate center of the screen/stack
+            final centerX = constraints.maxWidth / 2;
+            // Overlap amount (how much the label goes under the avatar)
+            const overlap = 30.0;
+            // Avatar radius (approximate based on width 130)
+            const avatarRadius = 65.0;
+
+            return SizedBox(
+              height: 140,
+              width: double.infinity, // Use full width
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  // Ribbon (User Type) - Behind Avatar
+                  // Anchored to the right side of the label space
+                  Positioned(
+                    right:
+                        (constraints.maxWidth / 2) + (avatarRadius - overlap),
+                    child: _buildGlassContainer(
+                      borderRadius: 30,
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 50, // Padding to clear the overlap + gap
+                        top: 8,
+                        bottom: 8,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _getModeIcon(_currentMode),
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _getModeDisplayName(_currentMode).toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
+
+                  // Avatar - In Front
+                  Center(
+                    child: Container(
+                      width: 130,
+                      height: 130,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [Colors.white30, Colors.white10],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundImage: _getProfileImage(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        Text(
+          _getUserName().toUpperCase(),
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 1.0,
+          ),
+        ),
+        Text(
+          _getModeDisplayName(_currentMode).toUpperCase(),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: Colors.white70,
+            letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _getUserEmail(),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
+        if (_getUserPhone().isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.phone, size: 14, color: Colors.white70),
+                const SizedBox(width: 4),
+                Text(
+                  _getUserPhone(),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  IconData _getModeIcon(UserMode mode) {
+    switch (mode) {
+      case UserMode.inquilino:
+        return Icons.person_outline;
+      case UserMode.propietario:
+        return Icons.home_work_outlined;
+      case UserMode.agente:
+        return Icons.verified_user_outlined;
+    }
+  }
+
+  Widget _buildStatsButtons() {
+    final buttons = ['CLIENTES', 'VENTAS', 'COMISIONES', 'AGENDA'];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: buttons.map((label) {
+          return GestureDetector(
+            onTap: () {},
+            child: _buildGlassContainer(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -430,128 +598,194 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     );
   }
 
-  String _getModeDisplayName(UserMode mode) {
-    switch (mode) {
-      case UserMode.inquilino:
-        return 'Inquilino';
-      case UserMode.propietario:
-        return 'Propietario';
-      case UserMode.agente:
-        return 'Agente';
-    }
+  Widget _buildPropertiesTitle() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          Text(
+            _currentMode == UserMode.inquilino
+                ? 'MIS ALQUILERES'
+                : 'PROPIEDADES ASIGNADAS',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildUserInfo() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          decoration: BoxDecoration(
-
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.20), width: 1),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Foto de perfil - Alineada a la izquierda y más grande
-              Stack(
+  void _showSettingsModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white
+                  .withOpacity(0.9), // Slightly more opaque for readability
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppTheme.primaryColor,
-                        width: 3,
-                      ),
-                    ),
-                    child: CircleAvatar(
-                      radius: 57,
-                      backgroundImage: _getProfileImage(),
+                  const Text(
+                    'Configuración de Perfil',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.primaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        size: 18,
-                        color: Colors.white,
-                      ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'CAMBIAR MODO DE USUARIO',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  ...UserMode.values.map((mode) => ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _currentMode == mode
+                                ? const Color(0xFF8E2DE2).withOpacity(0.1)
+                                : Colors.grey[100],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _getModeIcon(mode),
+                            color: _currentMode == mode
+                                ? const Color(0xFF8E2DE2)
+                                : Colors.grey,
+                          ),
+                        ),
+                        title: Text(_getModeDisplayName(mode)),
+                        trailing: _currentMode == mode
+                            ? const Icon(Icons.check_circle,
+                                color: Color(0xFF8E2DE2))
+                            : null,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _onSelectMode(mode);
+                        },
+                      )),
+                  const Divider(height: 32),
+                  ListTile(
+                    leading: const Icon(Icons.verified_user_outlined),
+                    title: const Text('Verificar Perfil'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleVerification();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: const Text('Editar Perfil'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _editProfile();
+                    },
+                  ),
+                  ListTile(
+                    leading:
+                        const Icon(Icons.delete_forever, color: Colors.red),
+                    title: const Text('Eliminar Cuenta',
+                        style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleDeleteAccount();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text('Cerrar Sesión',
+                        style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _handleLogout();
+                    },
                   ),
                 ],
               ),
-              const SizedBox(width: 20),
-
-              // Información del usuario - A la derecha de la foto
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Nombre y verificación
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            _getUserName(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                        if (_isUserVerified()) ...[
-                          const SizedBox(width: 8),
-                          _buildVerificationBadge(
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            textColor: Colors.white,
-                          )!,
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-
-                    Text(
-                      _getUserEmail(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _getUserPhone(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Botón Editar Perfil
-
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _handleVerification() async {
+    // TODO: Implement full verification flow with file upload
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Verificación de Perfil'),
+        content: const Text(
+            'Para verificar tu perfil, necesitamos validar tu identidad. Esta funcionalidad estará disponible pronto.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Cuenta'),
+        content: const Text(
+            '¿Estás seguro de que deseas eliminar tu cuenta? Esta acción programará la eliminación de tus datos.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final result = await _profileService.requestDeleteAccount();
+      if (mounted) {
+        if (result['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    result['message'] ?? 'Eliminación de cuenta programada')),
+          );
+          // Optionally logout or show more info
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text(result['error'] ?? 'Error al solicitar eliminación')),
+          );
+        }
+      }
+    }
   }
 
   // --- Cambio de modo con confirmación y creación de perfil ---
@@ -571,7 +805,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.black.withOpacity(0.85),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
             children: [
               Icon(
@@ -644,10 +879,12 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Perfil actualizado a ${_getModeDisplayName(mode)}')),
+        SnackBar(
+            content: Text('Perfil actualizado a ${_getModeDisplayName(mode)}')),
       );
     } else {
-      final errorMsg = result['error']?.toString() ?? 'Error al actualizar el perfil';
+      final errorMsg =
+          result['error']?.toString() ?? 'Error al actualizar el perfil';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMsg)),
       );
@@ -677,25 +914,13 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   }
 
   Widget _buildModeContent() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _getModeTitle(),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ..._buildModeItems(),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ..._buildModeItems(),
+        ],
       ),
     );
   }
@@ -728,73 +953,78 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     ];
 
     return alquileres.map((alquiler) {
-      return Container(
+      return _buildGlassContainer(
         margin: const EdgeInsets.only(bottom: 16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
-                ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                alquiler['imagen']!,
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.home, color: Colors.grey),
+                  );
+                },
               ),
-              child: Row(
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      alquiler['imagen']!,
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.home, color: Colors.grey),
-                        );
-                      },
+                  Text(
+                    alquiler['nombre']!,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          alquiler['nombre']!,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          alquiler['precio']!,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 4),
+                  Text(
+                    alquiler['precio']!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: alquiler['estado'] == 'Activo'
+                          ? Colors.green.withOpacity(0.2)
+                          : Colors.grey.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      alquiler['estado']!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: alquiler['estado'] == 'Activo'
+                            ? Colors.greenAccent
+                            : Colors.grey[300],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
       );
     }).toList();
@@ -820,14 +1050,14 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               Icon(
                 Icons.home_outlined,
                 size: 64,
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.grey[400],
               ),
               const SizedBox(height: 16),
               Text(
                 'No tienes propiedades registradas',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -842,92 +1072,79 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
       return GestureDetector(
         onTap: () {
-          if (property.id != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PropertyDetailPage(propertyId: property.id!),
-              ),
-            );
-          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PropertyDetailPage(propertyId: property.id),
+            ),
+          );
         },
-        child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
+        child: _buildGlassContainer(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: _buildPropertyImage(property),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      property.address ?? 'Propiedad sin dirección',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? Colors.green.withOpacity(0.2)
+                            : Colors.red.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Text(
+                        isActive ? 'Disponible' : 'No disponible',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              isActive ? Colors.greenAccent : Colors.redAccent,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _buildPropertyImage(property),
+              GestureDetector(
+                onTap: () => _navigateToPropertyPhotos(property),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          property.address ?? 'Propiedad sin dirección',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isActive ? AppTheme.primaryColor : Colors.red,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Text(
-                            isActive ? 'Disponible' : 'No disponible',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isActive ? Colors.black : Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+                  child: const Text(
+                    'Gestionar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => _navigateToPropertyPhotos(property),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'Gestionar',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ),
         ),
       );
     }).toList();
@@ -938,7 +1155,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       return [
         const Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
           ),
         ),
       ];
@@ -946,21 +1163,21 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
     if (_userProperties.isEmpty) {
       return [
-        Container(
+        _buildGlassContainer(
           padding: const EdgeInsets.all(32),
-          child: Column(
+          child: const Column(
             children: [
               Icon(
                 Icons.business_outlined,
                 size: 64,
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white70,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 'No tienes propiedades asignadas',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white70,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -975,92 +1192,79 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
       return GestureDetector(
         onTap: () {
-          if (property.id != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PropertyDetailPage(propertyId: property.id!),
-              ),
-            );
-          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PropertyDetailPage(propertyId: property.id),
+            ),
+          );
         },
-        child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
+        child: _buildGlassContainer(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: _buildPropertyImage(property),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      property.address ?? 'Propiedad sin dirección',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? Colors.green.withOpacity(0.2)
+                            : Colors.red.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Text(
+                        isActive ? 'Disponible' : 'No disponible',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              isActive ? Colors.greenAccent : Colors.redAccent,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _buildPropertyImage(property),
+              GestureDetector(
+                onTap: () => _navigateToPropertyPhotos(property),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          property.address ?? 'Propiedad sin dirección',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isActive ? AppTheme.primaryColor : Colors.red,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Text(
-                            isActive ? 'Disponible' : 'No disponible',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isActive ? Colors.black : Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+                  child: const Text(
+                    'Gestionar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => _navigateToPropertyPhotos(property),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'Gestionar',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ),
         ),
       );
     }).toList();
@@ -1077,15 +1281,12 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               Expanded(
                 child: GestureDetector(
                   onTap: () {},
-                  child: Container(
+                  child: _buildGlassContainer(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        color: const Color(0xFF7FFFD4),
-                        width: 1,
-                      ),
+                    borderRadius: 25,
+                    border: Border.all(
+                      color: const Color(0xFF7FFFD4),
+                      width: 1,
                     ),
                     child: const Text(
                       'Ver Reseñas',
@@ -1103,15 +1304,12 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               Expanded(
                 child: GestureDetector(
                   onTap: () {},
-                  child: Container(
+                  child: _buildGlassContainer(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        color: const Color(0xFF7FFFD4),
-                        width: 1,
-                      ),
+                    borderRadius: 25,
+                    border: Border.all(
+                      color: const Color(0xFF7FFFD4),
+                      width: 1,
                     ),
                     child: const Text(
                       'Incentivos',
@@ -1138,19 +1336,11 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                   (route) => false,
                 );
               },
-              child: Container(
+              child: _buildGlassContainer(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B6B),
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+                borderRadius: 25,
+                color: const Color(0xFFFF6B6B),
+                opacity: 0.8,
                 child: const Text(
                   'Cerrar Sesión',
                   textAlign: TextAlign.center,
@@ -1170,15 +1360,15 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   String _getUserName() {
     if (_currentUser != null) {
-      final firstName = _currentUser!.firstName.isNotEmpty ? _currentUser!.firstName : '';
-      final lastName = _currentUser!.lastName.isNotEmpty ? _currentUser!.lastName : '';
+      final firstName =
+          _currentUser!.firstName.isNotEmpty ? _currentUser!.firstName : '';
+      final lastName =
+          _currentUser!.lastName.isNotEmpty ? _currentUser!.lastName : '';
       final fullName = '$firstName $lastName'.trim();
       return fullName.isNotEmpty ? fullName : 'Usuario';
     }
     return 'Usuario';
   }
-
-
 
   String _getUserEmail() {
     if (_currentUser != null && _currentUser!.email.isNotEmpty) {
@@ -1212,7 +1402,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   ImageProvider _getProfileImage() {
     // Verificar si el usuario tiene una foto de perfil
-    if (_currentProfile?.profileImage != null && _currentProfile!.profileImage!.isNotEmpty) {
+    if (_currentProfile?.profileImage != null &&
+        _currentProfile!.profileImage!.isNotEmpty) {
       return NetworkImage(_currentProfile!.profileImage!);
     }
 
@@ -1236,7 +1427,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     return _currentProfile?.isVerified ?? false;
   }
 
-  Widget? _buildVerificationBadge({required Color backgroundColor, required Color textColor}) {
+  Widget? _buildVerificationBadge(
+      {required Color backgroundColor, required Color textColor}) {
     if (!_isUserVerified()) {
       return null;
     }
@@ -1265,321 +1457,15 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildModernProfileSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Foto de perfil - Alineada a la izquierda
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Stack(
-              children: [
-                Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: ClipOval(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: _getProfileImage(),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 10,
-                  right: 10,
-                  child: GestureDetector(
-                    onTap: _editProfile,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.edit,
-                        size: 20,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 30),
-
-          // Información del usuario - DEBAJO de la foto, alineada a la izquierda
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Nombre y verificación
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      _getUserName(),
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  if (_isUserVerified()) ...[
-                    const SizedBox(width: 8),
-                    _buildVerificationBadge(
-                      backgroundColor: AppTheme.primaryColor,
-                      textColor: Colors.black,
-                    )!,
-                  ],
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Información de contacto
-              Text(
-                _getUserType(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF7FFFD4),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-
-              const SizedBox(height: 4),
-              Text(
-                _getUserEmail(),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _getUserPhone(),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Botón Editar Perfil
-
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModernStatItem(IconData icon, String value, String label) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: const Color(0xFF7FFFD4),
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.white.withOpacity(0.7),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModernActionButtons() {
-    List<String> options = _getOptionsForCurrentMode();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: options.asMap().entries.map((entry) {
-          int index = entry.key;
-          String option = entry.value;
-          bool isActive = index == 0; // Primer elemento activo por defecto
-
-          return Expanded(
-            child: Container(
-              margin: EdgeInsets.only(right: index < options.length - 1 ? 12 : 0),
-              child: _buildModernActionButton(option, isActive),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  List<String> _getOptionsForCurrentMode() {
-    switch (_currentMode) {
+  String _getModeDisplayName(UserMode mode) {
+    switch (mode) {
       case UserMode.inquilino:
-        return ['Pagos', 'Contratos', 'Reportes', 'Historial'];
+        return 'Inquilino';
       case UserMode.propietario:
-        return ['Propiedades', 'Ingresos', 'Inquilinos', 'Mantenimiento'];
+        return 'Propietario';
       case UserMode.agente:
-        return ['Clientes', 'Ventas', 'Comisiones', 'Agenda'];
+        return 'Agente';
     }
-  }
-
-  Widget _buildModernActionButton(String text, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.white : Colors.black.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: isActive ? Colors.transparent : Colors.white.withOpacity(0.3),
-        ),
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          style: TextStyle(
-            color: isActive ? Colors.black : Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModernBottomButtons() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: const Color(0xFF7FFFD4),
-                      width: 1,
-                    ),
-                  ),
-                  child: const Text(
-                    'Ver Reseñas',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: const Color(0xFF7FFFD4),
-                      width: 1,
-                    ),
-                  ),
-                  child: const Text(
-                    'Incentivos',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: GestureDetector(
-              onTap: _handleLogout,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B6B),
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Text(
-                  'Cerrar Sesión',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildPropertyImage(Property property) {
@@ -1630,7 +1516,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       ),
     ).then((_) {
       // Recargar fotos después de regresar de la página de gestión
-      _loadPropertyPhotos(property.id!);
+      _loadPropertyPhotos(property.id);
     });
-    }
+  }
 }

@@ -85,8 +85,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     if (key.contains('wifi')) return Icons.wifi;
     if (key.contains('estacion')) return Icons.local_parking;
     if (key.contains('lavander')) return Icons.local_laundry_service;
-    if (key.contains('gym') || key.contains('gimnas'))
+    if (key.contains('gym') || key.contains('gimnas')) {
       return Icons.fitness_center;
+    }
     if (key.contains('piscina') || key.contains('pool')) return Icons.pool;
     if (key.contains('jard') || key.contains('garden')) return Icons.park;
     return Icons.check_circle_outline;
