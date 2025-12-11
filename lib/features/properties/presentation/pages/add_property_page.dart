@@ -11,7 +11,7 @@ import '../../../profile/data/services/profile_service.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/step_progress_indicator.dart';
 import '../../../../shared/theme/app_theme.dart';
-import 'property_photos_page.dart';
+import 'edit_property_page.dart';
 
 class AddPropertyPage extends StatefulWidget {
   const AddPropertyPage({super.key});
@@ -366,11 +366,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Cerrar diálogo
-                  // Navegar a la página de fotos
+                  // Navegar a la página de fotos (EditPropertyPage inicia en fotos)
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PropertyPhotosPage(
+                      builder: (context) => EditPropertyPage(
                         property: response['data'],
                       ),
                     ),

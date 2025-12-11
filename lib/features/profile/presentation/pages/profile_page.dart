@@ -16,6 +16,7 @@ import '../../../properties/presentation/pages/property_photos_page.dart';
 import '../../../properties/presentation/pages/property_detail_page.dart';
 import '../../../../core/services/api_service.dart';
 import 'edit_profile_page.dart';
+import '../../../properties/presentation/pages/edit_property_page.dart';
 
 enum UserMode { inquilino, propietario, agente }
 
@@ -1042,9 +1043,9 @@ class _ProfilePageState extends State<ProfilePage>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => PropertyDetailPage(propertyId: property.id),
+              builder: (_) => EditPropertyPage(property: property),
             ),
-          );
+          ).then((_) => _loadUserProperties());
         },
         child: _buildGlassContainer(
           margin: const EdgeInsets.only(bottom: 16),
@@ -1479,11 +1480,12 @@ class _ProfilePageState extends State<ProfilePage>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PropertyPhotosPage(property: property),
+        builder: (context) => EditPropertyPage(property: property),
       ),
     ).then((_) {
       // Recargar fotos después de regresar de la página de gestión
       _loadPropertyPhotos(property.id);
+      _loadUserProperties();
     });
   }
 }

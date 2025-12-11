@@ -7,6 +7,7 @@ import '../../../../core/services/api_service.dart';
 import 'package:habitto/config/app_config.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/theme/app_theme.dart';
+import 'edit_property_page.dart';
 
 class PropertiesListPage extends StatefulWidget {
   const PropertiesListPage({super.key});
@@ -193,111 +194,124 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
   }
 
   Widget _buildPropertyCard(Property property) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditPropertyPage(property: property),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.85),
-                  Colors.white.withOpacity(0.65),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.4),
-                width: 1.5,
-              ),
+        ).then((_) {
+          _loadProperties(); // Reload to reflect any changes
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        property.address,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: property.isActive
-                            ? const Color(0xFFE8F5E9)
-                            : const Color(0xFFFFEBEE),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: property.isActive
-                              ? Colors.green.withOpacity(0.5)
-                              : Colors.red.withOpacity(0.5),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        property.isActive ? 'ACTIVA' : 'INACTIVA',
-                        style: TextStyle(
-                          color: property.isActive
-                              ? Colors.green[700]
-                              : Colors.red[700],
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.85),
+                    Colors.white.withOpacity(0.65),
                   ],
                 ),
-                const SizedBox(height: 12),
-                FutureBuilder<Map<String, dynamic>>(
-                  future: _photoService.getPropertyPhotos(property.id),
-                  builder: (context, snapshot) {
-                    List<String> urls = [];
-                    const fallback = 'assets/images/empty.jpg';
-                    if (property.mainPhoto != null &&
-                        property.mainPhoto!.isNotEmpty) {
-                      urls.add(AppConfig.sanitizeUrl(property.mainPhoto!));
-                    }
-                    if (snapshot.hasData && snapshot.data!['success'] == true) {
-                      final photos =
-                          (snapshot.data!['data']['photos'] as List<dynamic>? ??
-                                  [])
-                              .map((p) => (p.image as String?) ?? '')
-                              .where((s) => s.isNotEmpty)
-                              .map((s) => AppConfig.sanitizeUrl(s))
-                              .toList();
-                      urls.addAll(photos);
-                    }
-                    while (urls.length < 6) {
-                      urls.add('');
-                    }
-                    return _buildAlbumCollage(urls, fallback);
-                  },
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppTheme.primaryColor.withOpacity(0.4),
+                  width: 1.5,
                 ),
-              ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          property.address,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: property.isActive
+                              ? const Color(0xFFE8F5E9)
+                              : const Color(0xFFFFEBEE),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: property.isActive
+                                ? Colors.green.withOpacity(0.5)
+                                : Colors.red.withOpacity(0.5),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          property.isActive ? 'ACTIVA' : 'INACTIVA',
+                          style: TextStyle(
+                            color: property.isActive
+                                ? Colors.green[700]
+                                : Colors.red[700],
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  FutureBuilder<Map<String, dynamic>>(
+                    future: _photoService.getPropertyPhotos(property.id),
+                    builder: (context, snapshot) {
+                      List<String> urls = [];
+                      const fallback = 'assets/images/empty.jpg';
+                      if (property.mainPhoto != null &&
+                          property.mainPhoto!.isNotEmpty) {
+                        urls.add(AppConfig.sanitizeUrl(property.mainPhoto!));
+                      }
+                      if (snapshot.hasData &&
+                          snapshot.data!['success'] == true) {
+                        final photos = (snapshot.data!['data']['photos']
+                                    as List<dynamic>? ??
+                                [])
+                            .map((p) => (p.image as String?) ?? '')
+                            .where((s) => s.isNotEmpty)
+                            .map((s) => AppConfig.sanitizeUrl(s))
+                            .toList();
+                        urls.addAll(photos);
+                      }
+                      while (urls.length < 6) {
+                        urls.add('');
+                      }
+                      return _buildAlbumCollage(urls, fallback);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
