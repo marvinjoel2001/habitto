@@ -214,29 +214,36 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.white.withOpacity(0.32),
-                                Colors.white.withOpacity(0.68),
-                                Colors.white.withOpacity(0.92),
+                                Colors.white.withOpacity(0.25),
+                                Colors.white.withOpacity(0.45),
+                                Colors.white.withOpacity(0.60),
                               ],
                               stops: const [0.0, 0.55, 1.0],
                             )
-                          : AppTheme.getCardGradient(opacity: 0.28),
+                          : LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withOpacity(0.25),
+                                Colors.white.withOpacity(0.05),
+                              ],
+                            ),
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: _isWhiteMode()
                             ? Colors.white.withOpacity(0.35)
-                            : AppTheme.darkGrayBase.withValues(alpha: 0.30),
+                            : Colors.white.withOpacity(0.25),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.18),
+                          color: Colors.black.withOpacity(0.10),
                           spreadRadius: 0,
                           blurRadius: 18,
                           offset: const Offset(0, 8),
                         ),
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
+                          color: Colors.black.withOpacity(0.05),
                           spreadRadius: 0,
                           blurRadius: 6,
                           offset: const Offset(0, 2),
