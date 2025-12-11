@@ -316,11 +316,18 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                                   ? 16.0
                                   : widget.overlayBottomSpace),
                           decoration: BoxDecoration(
-                            gradient: AppTheme.getCardGradient(opacity: 0.10),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withOpacity(0.25),
+                                Colors.white.withOpacity(0.05),
+                              ],
+                            ),
                             border: Border(
                               top: BorderSide(
-                                color: Colors.white.withOpacity(0.15),
-                                width: 0.8,
+                                color: Colors.white.withOpacity(0.25),
+                                width: 1,
                               ),
                             ),
                           ),
