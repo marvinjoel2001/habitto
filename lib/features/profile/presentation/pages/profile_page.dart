@@ -322,68 +322,35 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF8E2DE2), // Purple
-                Color(0xFFFF0080), // Pink/Magenta
-                Color(0xFFFF6600), // Orange
-              ],
-            ),
-          ),
-          child: const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
           ),
         ),
       );
     }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
-      body: Stack(
-        children: [
-          // Full screen background gradient
-          Container(
-            height: double.infinity,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8E2DE2), // Purple
-                  Color(0xFFFF0080), // Pink/Magenta
-                  Color(0xFFFF6600), // Orange
-                ],
-              ),
-            ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildNewHeader(),
+              const SizedBox(height: 24),
+              _buildStatsButtons(),
+              const SizedBox(height: 24),
+              _buildPropertiesTitle(),
+              const SizedBox(height: 16),
+              _buildModeContent(),
+              const SizedBox(height: 40),
+            ],
           ),
-
-          // Content
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                children: [
-                  _buildNewHeader(),
-                  const SizedBox(height: 24),
-                  _buildStatsButtons(),
-                  const SizedBox(height: 24),
-                  _buildPropertiesTitle(),
-                  const SizedBox(height: 16),
-                  _buildModeContent(),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

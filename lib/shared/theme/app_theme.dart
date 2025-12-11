@@ -146,21 +146,12 @@ class AppTheme {
   static ThemeData darkTheme = lightTheme;
 
   static BoxDecoration getProfileBackground({int variant = 1}) {
-    LinearGradient gradient;
-    switch (variant) {
-      case 1:
-        gradient = profileGradient;
-        break;
-      case 2:
-        gradient = profileGradientSoft;
-        break;
-      case 3:
-        gradient = profileGradientWarm;
-        break;
-      default:
-        gradient = profileGradient;
-    }
-    return BoxDecoration(gradient: gradient);
+    return const BoxDecoration(
+      image: DecorationImage(
+        image: AssetImage('assets/images/background.jpg'),
+        fit: BoxFit.cover,
+      ),
+    );
   }
 
   static BoxDecoration getGlassCard() {

@@ -304,99 +304,116 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration:
-          AppTheme.getProfileBackground(variant: _backgroundVariantForIndex()),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        extendBody: true,
-        body: Stack(
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              transitionBuilder: (child, anim) {
-                final bool isForward = _currentIndex >= _lastIndex;
-                final offsetTween = Tween<Offset>(
-                  begin: isForward
-                      ? const Offset(0.12, 0)
-                      : const Offset(-0.12, 0),
-                  end: Offset.zero,
-                ).chain(CurveTween(curve: Curves.easeOutCubic));
-                final scaleTween = Tween<double>(begin: 0.98, end: 1.0)
-                    .chain(CurveTween(curve: Curves.easeOutCubic));
-                return FadeTransition(
-                  opacity: anim,
-                  child: SlideTransition(
-                    position: anim.drive(offsetTween),
-                    child: ScaleTransition(
-                      scale: anim.drive(scaleTween),
-                      child: child,
+    return Stack(
+      children: [
+        // Background Image with Blur
+        ImageFiltered(
+          imageFilter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            height: double.infinity,
+            width: double.infinity,
+            decoration: AppTheme.getProfileBackground(
+                variant: _backgroundVariantForIndex()),
+          ),
+        ),
+        // Dark Overlay
+        Container(
+          height: double.infinity,
+          width: double.infinity,
+          color: Colors.black.withOpacity(0.5),
+        ),
+        // Content
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          extendBody: true,
+          body: Stack(
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, anim) {
+                  final bool isForward = _currentIndex >= _lastIndex;
+                  final offsetTween = Tween<Offset>(
+                    begin: isForward
+                        ? const Offset(0.12, 0)
+                        : const Offset(-0.12, 0),
+                    end: Offset.zero,
+                  ).chain(CurveTween(curve: Curves.easeOutCubic));
+                  final scaleTween = Tween<double>(begin: 0.98, end: 1.0)
+                      .chain(CurveTween(curve: Curves.easeOutCubic));
+                  return FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: anim.drive(offsetTween),
+                      child: ScaleTransition(
+                        scale: anim.drive(scaleTween),
+                        child: child,
+                      ),
                     ),
-                  ),
-                );
-              },
-              child: KeyedSubtree(
-                key: ValueKey<int>(_currentIndex),
-                child: _pages[_currentIndex],
-              ),
-            ),
-            if (_userMode == profile.UserMode.inquilino)
-              Positioned(
-                right: 16,
-                bottom: 100,
-                child: FloatingActionButton(
-                  heroTag: 'ai_chat_fab',
-                  onPressed: _openAiChat,
-                  backgroundColor: AppTheme.primaryColor,
-                  child: const Icon(Icons.chat_bubble_outline,
-                      color: Colors.white),
-                ),
-              ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: CustomBottomNavigation(
-                currentIndex: _currentIndex,
-                showAddButton: _showAddButton,
-                isOwnerOrAgent: _isOwnerOrAgent,
-                userMode: _userMode == profile.UserMode.inquilino
-                    ? 'inquilino'
-                    : (_userMode == profile.UserMode.propietario
-                        ? 'propietario'
-                        : 'agente'),
-                showTenantFloatingMenu: _showTenantFloatingMenu,
-                onTenantMenuClose: _closeTenantFloatingMenu,
-                onSwipeLeft: _handleSwipeLeft,
-                onSwipeRight: _handleSwipeRight,
-                onGoBack: _handleGoBack,
-                onAddFavorite: _handleAddFavorite,
-                onTap: (index) {
-                  setState(() {
-                    _lastIndex = _currentIndex;
-                    _currentIndex = index;
-                    _closeTenantFloatingMenu();
-                  });
-                },
-                onHomeTap: () {
-                  setState(() {
-                    _lastIndex = _currentIndex;
-                    _currentIndex = 0;
-                  });
-                },
-                onMoreTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MorePage()),
                   );
                 },
+                child: KeyedSubtree(
+                  key: ValueKey<int>(_currentIndex),
+                  child: _pages[_currentIndex],
+                ),
               ),
-            ),
-          ],
+              if (_userMode == profile.UserMode.inquilino)
+                Positioned(
+                  right: 16,
+                  bottom: 100,
+                  child: FloatingActionButton(
+                    heroTag: 'ai_chat_fab',
+                    onPressed: _openAiChat,
+                    backgroundColor: AppTheme.primaryColor,
+                    child: const Icon(Icons.chat_bubble_outline,
+                        color: Colors.white),
+                  ),
+                ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: CustomBottomNavigation(
+                  currentIndex: _currentIndex,
+                  showAddButton: _showAddButton,
+                  isOwnerOrAgent: _isOwnerOrAgent,
+                  userMode: _userMode == profile.UserMode.inquilino
+                      ? 'inquilino'
+                      : (_userMode == profile.UserMode.propietario
+                          ? 'propietario'
+                          : 'agente'),
+                  showTenantFloatingMenu: _showTenantFloatingMenu,
+                  onTenantMenuClose: _closeTenantFloatingMenu,
+                  onSwipeLeft: _handleSwipeLeft,
+                  onSwipeRight: _handleSwipeRight,
+                  onGoBack: _handleGoBack,
+                  onAddFavorite: _handleAddFavorite,
+                  onTap: (index) {
+                    setState(() {
+                      _lastIndex = _currentIndex;
+                      _currentIndex = index;
+                      _closeTenantFloatingMenu();
+                    });
+                  },
+                  onHomeTap: () {
+                    setState(() {
+                      _lastIndex = _currentIndex;
+                      _currentIndex = 0;
+                    });
+                  },
+                  onMoreTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const MorePage()),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -753,7 +770,7 @@ class _HomeContentState extends State<HomeContent> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: AppTheme.getProfileBackground(),
+      // decoration removed to allow parent background to show through
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

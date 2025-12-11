@@ -55,6 +55,15 @@ class _FullScreenMatchContent extends StatelessWidget {
               decoration: AppTheme.getProfileBackground(),
             ),
           ),
+          // Blur & Dark Overlay
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+              ),
+            ),
+          ),
           // Contenido
           Positioned.fill(
             child: SafeArea(
@@ -325,27 +334,27 @@ class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMi
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
-    
+
     // Animación de tap (presionar)
     _tapController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    
+
     _tapAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
       CurvedAnimation(parent: _tapController, curve: Curves.easeInOut),
     );
-    
+
     // Animación de deslizamiento
     _handController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     );
-    
+
     _handAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _handController, curve: Curves.easeInOut),
     );
-    
+
     // Iniciar secuencia de animación
     _startAnimationSequence();
   }
@@ -353,26 +362,26 @@ class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMi
   void _startAnimationSequence() async {
     await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted || !_showHandHint) return;
-    
+
     // Repetir 3 veces
     for (int i = 0; i < 3; i++) {
       if (!mounted || !_showHandHint) return;
-      
+
       // Animación de tap
       await _tapController.forward();
       await _tapController.reverse();
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       // Animación de deslizamiento
       await _handController.forward();
       await Future.delayed(const Duration(milliseconds: 300));
       _handController.reset();
-      
+
       if (i < 2) {
         await Future.delayed(const Duration(milliseconds: 800));
       }
     }
-    
+
     // Esperar 1 minuto y repetir
     await Future.delayed(const Duration(seconds: 60));
     if (mounted && _showHandHint) {
@@ -387,7 +396,7 @@ class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMi
     _tapController.dispose();
     super.dispose();
   }
-  
+
   void _hideHandHint() {
     if (_showHandHint) {
       setState(() => _showHandHint = false);
@@ -437,14 +446,14 @@ class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMi
                         final slideProgress = _handAnimation!.value;
                         final tapScale = _tapAnimation!.value;
                         final handPosition = 20 + (slideProgress * maxDrag * 0.65);
-                        
+
                         // Opacidad: aparece al inicio, se mantiene, desaparece al final
-                        final opacity = slideProgress < 0.05 
-                            ? slideProgress * 20 
-                            : slideProgress > 0.85 
-                                ? (1.0 - slideProgress) * 6.67 
+                        final opacity = slideProgress < 0.05
+                            ? slideProgress * 20
+                            : slideProgress > 0.85
+                                ? (1.0 - slideProgress) * 6.67
                                 : 1.0;
-                        
+
                         return Positioned(
                           left: handPosition,
                           child: Opacity(

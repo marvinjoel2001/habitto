@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../properties/data/services/property_service.dart';
@@ -38,7 +39,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
 
     try {
       final result = await _propertyService.getPaymentMethods();
-      
+
       if (result['success']) {
         final paymentMethodsData = result['payment_methods'] as List;
         setState(() {
@@ -48,7 +49,9 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error cargando métodos de pago: ${result['error']}')),
+          SnackBar(
+              content:
+                  Text('Error cargando métodos de pago: ${result['error']}')),
         );
       }
     } catch (e) {
@@ -65,7 +68,9 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
   Future<void> _createPaymentMethod() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa un nombre para el método de pago')),
+        const SnackBar(
+            content:
+                Text('Por favor ingresa un nombre para el método de pago')),
       );
       return;
     }
@@ -80,7 +85,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
         'name': _nameController.text.trim(),
       };
       final result = await _propertyService.createPaymentMethod(payload);
-      
+
       if (result['success']) {
         _nameController.clear();
         Navigator.of(context).pop(); // Cerrar el diálogo
@@ -90,7 +95,9 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creando método de pago: ${result['error']}')),
+          SnackBar(
+              content:
+                  Text('Error creando método de pago: ${result['error']}')),
         );
       }
     } catch (e) {
@@ -128,10 +135,12 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: _isCreating ? null : () {
-                    _nameController.clear();
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: _isCreating
+                      ? null
+                      : () {
+                          _nameController.clear();
+                          Navigator.of(context).pop();
+                        },
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
@@ -160,15 +169,31 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: Container(
-        decoration: AppTheme.getProfileBackground(),
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                ),
-              )
-            : _buildPaymentMethodsList(),
+      body: Stack(
+        children: [
+          // Background
+          Container(
+            decoration: AppTheme.getProfileBackground(),
+          ),
+          // Blur & Dark Overlay
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+              ),
+            ),
+          ),
+          // Content
+          _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  ),
+                )
+              : _buildPaymentMethodsList(),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreatePaymentMethodDialog,
@@ -261,13 +286,15 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
                   case 'edit':
                     // TODO: Implementar edición
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Función de edición próximamente')),
+                      const SnackBar(
+                          content: Text('Función de edición próximamente')),
                     );
                     break;
                   case 'delete':
                     // TODO: Implementar eliminación
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Función de eliminación próximamente')),
+                      const SnackBar(
+                          content: Text('Función de eliminación próximamente')),
                     );
                     break;
                 }
