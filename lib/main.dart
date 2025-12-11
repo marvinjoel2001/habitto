@@ -14,8 +14,11 @@ import 'features/auth/data/services/auth_service.dart';
 
 import 'features/auth/presentation/pages/auth_selection_page.dart';
 
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // Inicializar autenticación
   final authService = AuthService();

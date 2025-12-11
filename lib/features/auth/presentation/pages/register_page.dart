@@ -415,7 +415,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       const SnackBar(
                         content:
                             Text('Perfil de búsqueda creado exitosamente!'),
-                        backgroundColor: Colors.green,
+                        backgroundColor: AppTheme.primaryColor,
                       ),
                     );
                     Navigator.pushReplacementNamed(context, '/home');
@@ -425,7 +425,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Error: ${result['error']}'),
-                        backgroundColor: Colors.red,
+                        backgroundColor: AppTheme.errorColor,
                       ),
                     );
                     Navigator.pushReplacementNamed(context, '/home');
@@ -436,7 +436,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error: $e'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: AppTheme.errorColor,
                     ),
                   );
                   Navigator.pushReplacementNamed(context, '/home');

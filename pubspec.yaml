@@ -55,19 +55,6 @@ flutter:
         - asset: fonts/Inter-Bold.ttf
           weight: 700
 
-# Configuración del icono de la aplicación
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/images/logoHabitto.png"
-  min_sdk_android: 21
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/logoHabitto.png"
-  remove_alpha_ios: true
 
-flutter_native_splash:
-  color: "#FFFFFF"
-  image: "assets/images/logoHabitto.png"
-  android_12:
-    image: "assets/images/logoHabitto.png"
-    icon_background_color: "#FFFFFF"
+
+

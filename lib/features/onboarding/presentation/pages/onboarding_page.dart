@@ -4,6 +4,7 @@ import '../../../../core/services/token_storage.dart';
 import 'dart:ui';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/progress_indicator.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -12,7 +13,8 @@ class OnboardingPage extends StatefulWidget {
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStateMixin {
+class _OnboardingPageState extends State<OnboardingPage>
+    with TickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   VideoPlayerController? _videoController;
@@ -25,6 +27,9 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+    });
     Future.microtask(_guardEntry);
     _initializeVideo();
     _initializeAnimations();
@@ -120,7 +125,8 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
     // Controlar el sonido del video según la página
     if (_videoController != null && _videoController!.value.isInitialized) {
       if (index == 0) {
-        _videoController!.setVolume(1.0); // Sonido activado en la primera página
+        _videoController!
+            .setVolume(1.0); // Sonido activado en la primera página
       } else {
         _videoController!.setVolume(0.0); // Sonido silenciado en otras páginas
       }
@@ -175,7 +181,8 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
                               child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                filter:
+                                    ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                                 child: Container(
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
@@ -196,7 +203,8 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                                   child: CustomButton(
                                     text: 'Siguiente',
                                     onPressed: _nextPage,
-                                    backgroundColor: Theme.of(context).colorScheme.primary,
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.primary,
                                     textColor: Colors.white,
                                   ),
                                 ),
@@ -235,18 +243,23 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                                     CustomButton(
                                       text: 'Iniciar sesión',
                                       onPressed: () {
-                                        Navigator.pushReplacementNamed(context, '/login');
+                                        Navigator.pushReplacementNamed(
+                                            context, '/login');
                                       },
-                                      backgroundColor: Theme.of(context).colorScheme.primary,
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.primary,
                                       textColor: Colors.white,
                                     ),
                                     const SizedBox(height: 12),
                                     CustomButton(
                                       text: 'Registrarse',
                                       onPressed: () {
-                                        Navigator.pushReplacementNamed(context, '/register');
+                                        Navigator.pushReplacementNamed(
+                                            context, '/register');
                                       },
-                                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
                                       textColor: Colors.white,
                                     ),
                                   ],
@@ -254,7 +267,8 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                               : CustomButton(
                                   text: 'Siguiente',
                                   onPressed: _nextPage,
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.primary,
                                   textColor: Colors.white,
                                 ),
                         ),
@@ -307,7 +321,9 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Column(
                         children: [
-                          SizedBox(height: MediaQuery.of(context).size.height * 0.20),
+                          SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.20),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(25),
                             child: BackdropFilter(
@@ -333,7 +349,10 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                                   children: [
                                     Text(
                                       'Encuentra tu nuevo hogar fácilmente',
-                                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium
+                                          ?.copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                         fontSize: 32,
@@ -341,7 +360,8 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                                           Shadow(
                                             offset: const Offset(0, 2),
                                             blurRadius: 4,
-                                            color: Colors.black.withOpacity(0.3),
+                                            color:
+                                                Colors.black.withOpacity(0.3),
                                           ),
                                         ],
                                       ),
@@ -350,14 +370,18 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
                                     const SizedBox(height: 16),
                                     Text(
                                       'Alquileres y anticréticos verificados en un solo lugar.',
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
                                         color: Colors.white.withOpacity(0.9),
                                         fontSize: 18,
                                         shadows: [
                                           Shadow(
                                             offset: const Offset(0, 1),
                                             blurRadius: 2,
-                                            color: Colors.black.withOpacity(0.3),
+                                            color:
+                                                Colors.black.withOpacity(0.3),
                                           ),
                                         ],
                                       ),
@@ -402,7 +426,8 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
             const Spacer(flex: 2),
             _buildGlassmorphicTextContainer(
               title: 'Busca con filtros avanzados',
-              subtitle: 'Ubicación, precio, tipo de propiedad, habitaciones y más.',
+              subtitle:
+                  'Ubicación, precio, tipo de propiedad, habitaciones y más.',
             ),
             const SizedBox(height: 40),
             _buildGlassmorphicImageContainer('assets/images/mapa.png'),
@@ -477,7 +502,8 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
     );
   }
 
-  Widget _buildGlassmorphicTextContainer({required String title, required String subtitle}) {
+  Widget _buildGlassmorphicTextContainer(
+      {required String title, required String subtitle}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -504,19 +530,19 @@ class _OnboardingPageState extends State<OnboardingPage> with TickerProviderStat
               Text(
                 title,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                  fontSize: 28,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      fontSize: 28,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey[700],
-                  fontSize: 16,
-                ),
+                      color: Colors.grey[700],
+                      fontSize: 16,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ],

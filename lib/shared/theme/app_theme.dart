@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
+  // 🎨 Colores Base
   static const Color primaryColor = Color(0xFFEC4A7E);
   static const Color secondaryColor = Color(0xFF9C55CC);
   static const Color accentMint = Color(0xFFFFD06A);
@@ -19,6 +20,7 @@ class AppTheme {
   static const Color errorColor = Color(0xFFCF6679);
   static const Color backgroundColor = darkGrayBase;
 
+  // Typography
   static const TextStyle headlineSmall = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
@@ -31,26 +33,27 @@ class AppTheme {
     color: blackColor,
   );
 
+  // 🌈 NUEVO GRADIENT IGUAL A TU IMAGEN
   static const LinearGradient profileGradient = LinearGradient(
-    begin: Alignment.bottomLeft,
-    end: Alignment.topRight,
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
     colors: [
-      accentMint,
-      paleMint1,
-      primaryColor,
-      secondaryColor,
-      mintGreen,
+      Color(0xFFB03B6E), // Rosa profundo
+      Color(0xFFD86F77), // Salmón cálido
+      Color(0xFFA45BCB), // Morado suave
+      Color(0xFF6C3FA9), // Púrpura profundo
+      Color(0xFFF2A076), // Melocotón cálido
     ],
-    stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+    stops: [0.0, 0.25, 0.55, 0.75, 1.0],
   );
 
   static const LinearGradient profileGradientSoft = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [
-      mintGreen,
-      secondaryColor,
-      primaryColor,
+      Color(0xFF6C3FA9),
+      Color(0xFFA45BCB),
+      Color(0xFFD86F77),
     ],
   );
 
@@ -58,9 +61,9 @@ class AppTheme {
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [
-      accentMint,
-      paleMint1,
-      primaryColor,
+      Color(0xFFF2A076),
+      Color(0xFFD86F77),
+      Color(0xFFB03B6E),
     ],
   );
 

@@ -5,6 +5,8 @@ import '../../../profile/data/services/profile_service.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -14,10 +16,22 @@ class SplashPage extends StatefulWidget {
 
 class _SplashPageState extends State<SplashPage> {
   final ProfileService _profileService = ProfileService();
+  bool _showFakeSplash = true;
+  double _opacity = 1.0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          setState(() {
+            _opacity = 0.0;
+          });
+        }
+      });
+    });
     Future.microtask(_bootstrap);
   }
 
@@ -135,6 +149,30 @@ class _SplashPageState extends State<SplashPage> {
               ],
             ),
           ),
+          // Fake Splash Overlay
+          if (_showFakeSplash)
+            Positioned.fill(
+              child: AnimatedOpacity(
+                opacity: _opacity,
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOut,
+                onEnd: () {
+                  setState(() {
+                    _showFakeSplash = false;
+                  });
+                },
+                child: Container(
+                  color: Colors.white,
+                  child: Center(
+                    child: Image.asset(
+                      'assets/icons/app_icon.png',
+                      width: 120,
+                      height: 120,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

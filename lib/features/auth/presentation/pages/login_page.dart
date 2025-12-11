@@ -27,13 +27,15 @@ class _LoginPageState extends State<LoginPage> {
   bool _isPasswordFieldFocused = false;
   final double _originalPadding = 56;
 
-  void _showToast(String message) {
+  void _showToast(String message, {bool isError = false}) {
     Fluttertoast.showToast(
       msg: message,
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.BOTTOM,
-      backgroundColor: const Color(0xFF98FB98).withValues(alpha: 0.9),
-      textColor: Colors.black,
+      backgroundColor: isError
+          ? Theme.of(context).colorScheme.error
+          : Theme.of(context).colorScheme.primary,
+      textColor: Colors.white,
       fontSize: 14,
     );
   }
@@ -256,10 +258,11 @@ class _LoginPageState extends State<LoginPage> {
       if (response['success']) {
         navigator.pushReplacementNamed('/splash');
       } else {
-        _showToast(response['error'] ?? 'Error de autenticación');
+        _showToast(response['error'] ?? 'Error de autenticación',
+            isError: true);
       }
     } catch (e) {
-      _showToast('Error: ${e.toString()}');
+      _showToast('Error: ${e.toString()}', isError: true);
     } finally {
       setState(() {
         _isLoading = false;
