@@ -5,6 +5,7 @@ import 'dart:ui';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/progress_indicator.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import '../../../../generated/l10n.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -201,7 +202,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                                     ),
                                   ),
                                   child: CustomButton(
-                                    text: 'Siguiente',
+                                    text: S.of(context).nextButton,
                                     onPressed: _nextPage,
                                     backgroundColor:
                                         Theme.of(context).colorScheme.primary,
@@ -241,7 +242,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     CustomButton(
-                                      text: 'Iniciar sesión',
+                                      text: S.of(context).loginButton,
                                       onPressed: () {
                                         Navigator.pushReplacementNamed(
                                             context, '/login');
@@ -252,7 +253,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                                     ),
                                     const SizedBox(height: 12),
                                     CustomButton(
-                                      text: 'Registrarse',
+                                      text: S.of(context).registerButton,
                                       onPressed: () {
                                         Navigator.pushReplacementNamed(
                                             context, '/register');
@@ -265,7 +266,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                                   ],
                                 )
                               : CustomButton(
-                                  text: 'Siguiente',
+                                  text: S.of(context).nextButton,
                                   onPressed: _nextPage,
                                   backgroundColor:
                                       Theme.of(context).colorScheme.primary,
@@ -348,7 +349,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                                 child: Column(
                                   children: [
                                     Text(
-                                      'Encuentra tu nuevo hogar fácilmente',
+                                      S.of(context).onboardingTitle1,
                                       style: Theme.of(context)
                                           .textTheme
                                           .headlineMedium
@@ -369,7 +370,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      'Alquileres y anticréticos verificados en un solo lugar.',
+                                      S.of(context).onboardingSubtitle1,
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyLarge
@@ -425,9 +426,8 @@ class _OnboardingPageState extends State<OnboardingPage>
           children: [
             const Spacer(flex: 2),
             _buildGlassmorphicTextContainer(
-              title: 'Busca con filtros avanzados',
-              subtitle:
-                  'Ubicación, precio, tipo de propiedad, habitaciones y más.',
+              title: S.of(context).onboardingTitle2,
+              subtitle: S.of(context).onboardingSubtitle2,
             ),
             const SizedBox(height: 40),
             _buildGlassmorphicImageContainer('assets/images/mapa.png'),
@@ -458,8 +458,8 @@ class _OnboardingPageState extends State<OnboardingPage>
           children: [
             const Spacer(flex: 2),
             _buildGlassmorphicTextContainer(
-              title: 'Publicaciones verificadas',
-              subtitle: 'Inquilinos y propietarios con identidad confirmada.',
+              title: S.of(context).onboardingTitle3,
+              subtitle: S.of(context).onboardingSubtitle3,
             ),
             const SizedBox(height: 40),
             _buildGlassmorphicImageContainer('assets/images/seguridad.png'),
@@ -490,8 +490,8 @@ class _OnboardingPageState extends State<OnboardingPage>
           children: [
             const Spacer(flex: 2),
             _buildGlassmorphicTextContainer(
-              title: 'Conecta con propietarios y agentes',
-              subtitle: 'Chatea, agenda visitas y aplica desde la app.',
+              title: S.of(context).onboardingTitle4,
+              subtitle: S.of(context).onboardingSubtitle4,
             ),
             const SizedBox(height: 40),
             _buildGlassmorphicImageContainer('assets/images/conexion.png'),

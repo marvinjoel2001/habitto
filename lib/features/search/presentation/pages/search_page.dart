@@ -14,6 +14,7 @@ import 'package:habitto/features/properties/domain/entities/property.dart'
     as domain;
 import 'package:habitto/features/properties/presentation/pages/property_detail_page.dart';
 import 'package:habitto/config/app_config.dart';
+import '../../../../../generated/l10n.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -469,9 +470,9 @@ class _SearchPageState extends State<SearchPage> {
             .where((p) => p.latitude != null && p.longitude != null)
             .map((p) => PropertyData(
                   id: p.id.toString(),
-                  title: p.address.isNotEmpty ? p.address : 'Propiedad',
+                  title: p.address.isNotEmpty ? p.address : S.of(context).propertyTitleFallback,
                   price: p.price > 0
-                      ? 'Bs. ${p.price.toStringAsFixed(0)} / mes'
+                      ? S.of(context).rentPerMonth(p.price.toStringAsFixed(0))
                       : '—',
                   description: p.description,
                   location:
@@ -482,9 +483,9 @@ class _SearchPageState extends State<SearchPage> {
                       : 'assets/images/casa1.jpg',
                   address: p.address,
                   features: [
-                    '${p.bedrooms} hab',
-                    '${p.bathrooms} baños',
-                    '${p.size.toStringAsFixed(0)} m²'
+                    S.of(context).bedroomsShort(p.bedrooms.toString()),
+                    S.of(context).bathroomsShort(p.bathrooms.toString()),
+                    S.of(context).sizeShort(p.size.toStringAsFixed(0))
                   ],
                 ))
             .toList();
@@ -520,7 +521,7 @@ class _SearchPageState extends State<SearchPage> {
           ),
           child: TextField(
             decoration: InputDecoration(
-              hintText: 'Buscar por zona, precio o tipo',
+              hintText: S.of(context).searchPlaceholder,
               border: InputBorder.none,
               icon: Icon(Icons.search,
                   color: AppTheme.blackColor.withValues(alpha: 0.7)),
@@ -543,13 +544,13 @@ class _SearchPageState extends State<SearchPage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _buildFilterChip('Zona', true),
+          _buildFilterChip(S.of(context).filterZone, true),
           const SizedBox(width: 8),
-          _buildFilterChip('Precio', false),
+          _buildFilterChip(S.of(context).filterPrice, false),
           const SizedBox(width: 8),
-          _buildFilterChip('Tipo', false),
+          _buildFilterChip(S.of(context).filterType, false),
           const SizedBox(width: 8),
-          _buildFilterChip('Amenities', false),
+          _buildFilterChip(S.of(context).filterAmenities, false),
         ],
       ),
     );
@@ -937,9 +938,9 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                     elevation: 4,
                   ),
-                  child: const Text(
-                    'Ver Más Detalles',
-                    style: TextStyle(
+                  child: Text(
+                    S.of(context).viewMoreDetails,
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),

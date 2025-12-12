@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import '../theme/app_theme.dart';
+import '../../generated/l10n.dart';
 
 class MatchModal {
   static Future<void> show(
@@ -12,7 +13,7 @@ class MatchModal {
     await showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Cerrar',
+      barrierLabel: S.of(context).closeButton,
       barrierColor: Colors.black.withOpacity(0.6),
       transitionDuration: const Duration(milliseconds: 320),
       pageBuilder: (context, anim1, anim2) {
@@ -23,7 +24,8 @@ class MatchModal {
         );
       },
       transitionBuilder: (context, anim, secondary, child) {
-        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+        final curved =
+            CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
         return FadeTransition(opacity: curved, child: child);
       },
     );
@@ -77,9 +79,9 @@ class _FullScreenMatchContent extends StatelessWidget {
                     children: [
                       const SizedBox(width: 48),
                       // Título superior pequeño
-                      const Text(
-                        'Match',
-                        style: TextStyle(
+                      Text(
+                        S.of(context).matchTitle,
+                        style: const TextStyle(
                           color: AppTheme.blackColor,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -150,13 +152,15 @@ class _FullScreenMatchContent extends StatelessWidget {
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppTheme.accentMint.withOpacity(0.45),
+                                      color:
+                                          AppTheme.accentMint.withOpacity(0.45),
                                       blurRadius: 20,
                                       offset: const Offset(0, 8),
                                     ),
                                   ],
                                 ),
-                                child: const Icon(Icons.favorite, color: Colors.white, size: 30),
+                                child: const Icon(Icons.favorite,
+                                    color: Colors.white, size: 30),
                               ),
                             ),
                           ],
@@ -172,33 +176,33 @@ class _FullScreenMatchContent extends StatelessWidget {
                       textAlign: TextAlign.center,
                       text: TextSpan(
                         children: [
-                          const TextSpan(
-                            text: '¡Es un ',
-                            style: TextStyle(
+                          TextSpan(
+                            text: S.of(context).matchPrefix,
+                            style: const TextStyle(
                               color: AppTheme.whiteColor,
                               fontSize: 32,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           TextSpan(
-                            text: 'Match',
+                            text: S.of(context).matchWord,
                             style: TextStyle(
                               color: cs.secondary,
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const TextSpan(
-                            text: '!\n',
-                            style: TextStyle(
+                          TextSpan(
+                            text: '${S.of(context).matchSuffix}\n',
+                            style: const TextStyle(
                               color: AppTheme.whiteColor,
                               fontSize: 32,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const TextSpan(
-                            text: 'Con ',
-                            style: TextStyle(
+                          TextSpan(
+                            text: S.of(context).matchWith,
+                            style: const TextStyle(
                               color: AppTheme.whiteColor,
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -207,7 +211,7 @@ class _FullScreenMatchContent extends StatelessWidget {
                           TextSpan(
                             text: propertyTitle?.isNotEmpty == true
                                 ? propertyTitle!
-                                : 'esta propiedad',
+                                : S.of(context).thisProperty,
                             style: TextStyle(
                               color: cs.secondary,
                               fontSize: 20,
@@ -220,12 +224,12 @@ class _FullScreenMatchContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   // Subtítulo contextual
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Text(
-                      'Comunícate con el propietario y da el siguiente paso. \nEste hogar parece perfecto para ti.',
+                      S.of(context).matchSubtitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -235,7 +239,8 @@ class _FullScreenMatchContent extends StatelessWidget {
                   const SizedBox(height: 22),
                   // CTA deslizable con glassmorphism
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
                     child: _DraggableCta(
                       onComplete: () => Navigator.of(context).maybePop(),
                     ),
@@ -321,7 +326,8 @@ class _DraggableCta extends StatefulWidget {
   State<_DraggableCta> createState() => _DraggableCtaState();
 }
 
-class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMixin {
+class _DraggableCtaState extends State<_DraggableCta>
+    with TickerProviderStateMixin {
   double _drag = 0.0;
   late AnimationController _controller;
   late AnimationController _handController;
@@ -333,7 +339,8 @@ class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMi
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 220));
 
     // Animación de tap (presionar)
     _tapController = AnimationController(
@@ -423,29 +430,38 @@ class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMi
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final double maxDrag = constraints.maxWidth - knobSize - 24; // padding lateral
+              final double maxDrag =
+                  constraints.maxWidth - knobSize - 24; // padding lateral
               final double progress = (_drag / maxDrag).clamp(0.0, 1.0);
               return Stack(
                 alignment: Alignment.center,
                 children: [
                   // Texto centrado
-                  const Text(
-                    'Enviar mensaje',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                  Text(
+                    S.of(context).sendMessageButton,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700),
                   ),
                   // Flechas a la derecha
                   const Positioned(
                     right: 18,
-                    child: Icon(Icons.keyboard_double_arrow_right, color: Colors.white70, size: 28),
+                    child: Icon(Icons.keyboard_double_arrow_right,
+                        color: Colors.white70, size: 28),
                   ),
                   // Animación de mano deslizando (hint)
-                  if (_showHandHint && _handAnimation != null && _tapAnimation != null)
+                  if (_showHandHint &&
+                      _handAnimation != null &&
+                      _tapAnimation != null)
                     AnimatedBuilder(
-                      animation: Listenable.merge([_handAnimation!, _tapAnimation!]),
+                      animation:
+                          Listenable.merge([_handAnimation!, _tapAnimation!]),
                       builder: (context, child) {
                         final slideProgress = _handAnimation!.value;
                         final tapScale = _tapAnimation!.value;
-                        final handPosition = 20 + (slideProgress * maxDrag * 0.65);
+                        final handPosition =
+                            20 + (slideProgress * maxDrag * 0.65);
 
                         // Opacidad: aparece al inicio, se mantiene, desaparece al final
                         final opacity = slideProgress < 0.05
@@ -491,7 +507,8 @@ class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMi
                       onHorizontalDragUpdate: (details) {
                         _hideHandHint();
                         setState(() {
-                          _drag = (_drag + details.delta.dx).clamp(0.0, maxDrag);
+                          _drag =
+                              (_drag + details.delta.dx).clamp(0.0, maxDrag);
                         });
                       },
                       onHorizontalDragEnd: (details) {
@@ -500,7 +517,8 @@ class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMi
                           widget.onComplete();
                         } else {
                           // Animar de vuelta
-                          final tween = Tween<double>(begin: _drag, end: 0.0).animate(_controller);
+                          final tween = Tween<double>(begin: _drag, end: 0.0)
+                              .animate(_controller);
                           _controller
                             ..reset()
                             ..addListener(() {
@@ -522,9 +540,11 @@ class _DraggableCtaState extends State<_DraggableCta> with TickerProviderStateMi
                               offset: const Offset(0, 8),
                             ),
                           ],
-                          border: Border.all(color: Colors.white.withOpacity(0.35), width: 1),
+                          border: Border.all(
+                              color: Colors.white.withOpacity(0.35), width: 1),
                         ),
-                        child: const Icon(Icons.chat_bubble, color: Colors.white, size: 22),
+                        child: const Icon(Icons.chat_bubble,
+                            color: Colors.white, size: 22),
                       ),
                     ),
                   ),

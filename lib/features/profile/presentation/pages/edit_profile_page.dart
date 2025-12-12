@@ -5,6 +5,7 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../data/services/profile_service.dart';
 import '../../domain/entities/profile.dart';
 import '../../../auth/domain/entities/user.dart';
+import '../../../../../generated/l10n.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Profile profile;
@@ -71,7 +72,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al seleccionar imagen: $e')),
+        SnackBar(
+            content: Text(S.of(context).imageSelectionError(e.toString()))),
       );
     }
   }
@@ -102,14 +104,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perfil actualizado correctamente')),
+          SnackBar(content: Text(S.of(context).profileUpdatedSuccess)),
         );
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al actualizar perfil: $e')),
+          SnackBar(
+              content: Text(S.of(context).profileUpdateError(e.toString()))),
         );
       }
     } finally {
@@ -145,7 +148,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 20),
                 child: Text(
-                  'Editar Perfil',
+                  S.of(context).editProfileTitle,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
@@ -183,31 +186,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         children: [
                           _buildMinimalTextField(
                             controller: _firstNameController,
-                            label: 'Nombre',
+                            label: S.of(context).firstNameLabel,
                             enabled: false,
                           ),
                           const SizedBox(height: 24),
                           _buildMinimalTextField(
                             controller: _lastNameController,
-                            label: 'Apellido',
+                            label: S.of(context).lastNameLabel,
                             enabled: false,
                           ),
                           const SizedBox(height: 24),
                           _buildMinimalTextField(
                             controller: _emailController,
-                            label: 'Email',
+                            label: S.of(context).emailLabel,
                             enabled: false,
                           ),
                           const SizedBox(height: 24),
                           _buildMinimalTextField(
                             controller: _phoneController,
-                            label: 'Teléfono',
+                            label: S.of(context).phoneLabel,
                             icon: Icons.phone,
                             enabled: true,
                             isEditable: true,
                           ),
                           const SizedBox(height: 32),
-                          _buildActionRow('Cambiar Contraseña', hasArrow: true),
+                          _buildActionRow(S.of(context).changePasswordLabel,
+                              hasArrow: true),
                           const SizedBox(height: 24),
                           _buildNotificationSwitch(),
                           const SizedBox(height: 40),
@@ -237,7 +241,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: Container(
                         padding: const EdgeInsets.only(
                           left: 20,
-                          right: 50, // Extra padding on right to slide under avatar
+                          right:
+                              50, // Extra padding on right to slide under avatar
                           top: 8,
                           bottom: 8,
                         ),
@@ -334,7 +339,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     // Edit Icon (Pencil)
                     Positioned(
                       bottom: 5,
-                      right: 90, // Positioned relative to the stack center/width
+                      right:
+                          90, // Positioned relative to the stack center/width
                       child: GestureDetector(
                         onTap: _pickImage,
                         child: Container(
@@ -363,7 +369,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ),
           ),
-          
+
           // Back Button
           Positioned(
             top: 50,
@@ -419,8 +425,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
             ),
-            if (isEditable)
-              Icon(Icons.edit, color: Colors.grey[400], size: 18),
+            if (isEditable) Icon(Icons.edit, color: Colors.grey[400], size: 18),
           ],
         ),
         const SizedBox(height: 8),
@@ -457,9 +462,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          'Notificaciones',
-          style: TextStyle(
+        Text(
+          S.of(context).notificationsLabel,
+          style: const TextStyle(
             fontSize: 16,
             color: Colors.black87,
             fontWeight: FontWeight.w400,
@@ -472,7 +477,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               _notificationsEnabled = value;
             });
           },
-          activeColor: const Color(0xFF8E2DE2),
+          activeThumbColor: const Color(0xFF8E2DE2),
         ),
       ],
     );
@@ -508,9 +513,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   borderRadius: BorderRadius.circular(25),
                 ),
               ),
-              child: const Text(
-                'GUARDAR CAMBIOS',
-                style: TextStyle(
+              child: Text(
+                S.of(context).saveChangesButton,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -532,7 +537,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
               child: Text(
-                'CANCELAR',
+                S.of(context).cancelButtonCaps,
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontWeight: FontWeight.bold,

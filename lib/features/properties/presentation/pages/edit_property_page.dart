@@ -6,6 +6,7 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../config/app_config.dart';
+import '../../../../../generated/l10n.dart';
 import '../../data/services/property_service.dart';
 import '../../data/services/photo_service.dart';
 import '../../../matching/data/services/matching_service.dart';
@@ -104,7 +105,8 @@ class _EditPropertyPageState extends State<EditPropertyPage>
       if (mounted) {
         setState(() => _isLoadingPhotos = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar fotos: ${result['error']}')),
+          SnackBar(
+              content: Text(S.of(context).loadPhotosError(result['error']))),
         );
       }
     }
@@ -155,7 +157,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
     } catch (e) {
       print('Error picking image: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al seleccionar imagen: $e')),
+        SnackBar(content: Text(S.of(context).pickImageError(e.toString()))),
       );
     }
   }
@@ -188,15 +190,14 @@ class _EditPropertyPageState extends State<EditPropertyPage>
       if (failCount > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text('Subida: $successCount exitosas, $failCount fallidas'),
+            content: Text(S.of(context).uploadSummary(successCount, failCount)),
             backgroundColor: Colors.orange,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fotos subidas exitosamente'),
+          SnackBar(
+            content: Text(S.of(context).photosUploadedSuccess),
             backgroundColor: Colors.green,
           ),
         );
@@ -208,16 +209,17 @@ class _EditPropertyPageState extends State<EditPropertyPage>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar foto'),
-        content: const Text('¿Estás seguro de eliminar esta foto?'),
+        title: Text(S.of(context).deletePhotoTitle),
+        content: Text(S.of(context).deletePhotoConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: Text(S.of(context).cancelButton),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+            child: Text(S.of(context).deleteButton,
+                style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -232,13 +234,13 @@ class _EditPropertyPageState extends State<EditPropertyPage>
       await _loadPhotos();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto eliminada')),
+          SnackBar(content: Text(S.of(context).photoDeletedSuccess)),
         );
       }
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${result['error']}')),
+          SnackBar(content: Text(S.of(context).genericError(result['error']))),
         );
       }
     }
@@ -268,8 +270,8 @@ class _EditPropertyPageState extends State<EditPropertyPage>
     if (result['success']) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Propiedad actualizada correctamente'),
+          SnackBar(
+            content: Text(S.of(context).propertyUpdatedSuccess),
             backgroundColor: Colors.green,
           ),
         );
@@ -302,7 +304,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al actualizar: ${result['error']}'),
+            content: Text(S.of(context).updatePropertyError(result['error'])),
             backgroundColor: Colors.red,
           ),
         );
@@ -344,9 +346,9 @@ class _EditPropertyPageState extends State<EditPropertyPage>
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Editar Propiedad',
-          style: TextStyle(
+        title: Text(
+          S.of(context).editPropertyTitle,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -485,10 +487,13 @@ class _EditPropertyPageState extends State<EditPropertyPage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem('Precio', '${_property.price.toInt()}'),
-              _buildStatItem('Hab.', '${_property.bedrooms}'),
-              _buildStatItem('Baños', '${_property.bathrooms}'),
-              _buildStatItem('Match', '$_matchCount'),
+              _buildStatItem(
+                  S.of(context).priceLabel, '${_property.price.toInt()}'),
+              _buildStatItem(
+                  S.of(context).bedroomsShortLabel, '${_property.bedrooms}'),
+              _buildStatItem(
+                  S.of(context).bathroomsLabel, '${_property.bathrooms}'),
+              _buildStatItem(S.of(context).matchLabel, '$_matchCount'),
             ],
           ),
         ),
@@ -566,13 +571,13 @@ class _EditPropertyPageState extends State<EditPropertyPage>
             const Icon(Icons.photo_library_outlined,
                 size: 64, color: Colors.white54),
             const SizedBox(height: 16),
-            const Text(
-              'No hay fotos aún',
-              style: TextStyle(color: Colors.white70),
+            Text(
+              S.of(context).noPhotosYet,
+              style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 16),
             CustomButton(
-              text: 'Subir Fotos',
+              text: S.of(context).uploadPhotosButton,
               onPressed: () => _pickImage(ImageSource.gallery),
               width: 200,
             ),
@@ -641,15 +646,15 @@ class _EditPropertyPageState extends State<EditPropertyPage>
     }
 
     if (_interestedUsers.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.favorite_border, size: 64, color: Colors.white54),
-            SizedBox(height: 16),
+            const Icon(Icons.favorite_border, size: 64, color: Colors.white54),
+            const SizedBox(height: 16),
             Text(
-              'Aún no hay interesados',
-              style: TextStyle(color: Colors.white70),
+              S.of(context).noInterestsYet,
+              style: const TextStyle(color: Colors.white70),
             ),
           ],
         ),
@@ -707,7 +712,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Match Score: ${match['score'] ?? '0'}%',
+                      S.of(context).matchScore(match['score'] ?? '0'),
                       style: TextStyle(
                         color: AppTheme.primaryColor.withOpacity(0.9),
                         fontSize: 12,
@@ -757,8 +762,8 @@ class _EditPropertyPageState extends State<EditPropertyPage>
     if (result['success']) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Solicitud aceptada. ¡Ahora pueden chatear!'),
+          SnackBar(
+              content: Text(S.of(context).matchAcceptedMessage),
               backgroundColor: Colors.green),
         );
         _loadMatches(); // Reload list
@@ -767,7 +772,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
       if (mounted) {
         setState(() => _isLoadingMatches = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${result['error']}')),
+          SnackBar(content: Text(S.of(context).genericError(result['error']))),
         );
       }
     }
@@ -782,21 +787,21 @@ class _EditPropertyPageState extends State<EditPropertyPage>
           children: [
             _buildGlassTextField(
               controller: _priceController,
-              label: 'Precio (Bs)',
+              label: S.of(context).priceBsLabel,
               icon: Icons.attach_money,
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
             _buildGlassTextField(
               controller: _guaranteeController,
-              label: 'Garantía (Bs)',
+              label: S.of(context).guaranteeBsLabel,
               icon: Icons.shield_outlined,
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
             _buildGlassTextField(
               controller: _addressController,
-              label: 'Dirección',
+              label: S.of(context).addressLabel,
               icon: Icons.location_on_outlined,
             ),
             const SizedBox(height: 16),
@@ -805,7 +810,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
                 Expanded(
                   child: _buildGlassTextField(
                     controller: _bedroomsController,
-                    label: 'Habitaciones',
+                    label: S.of(context).bedroomsLabel,
                     icon: Icons.bed_outlined,
                     keyboardType: TextInputType.number,
                   ),
@@ -814,7 +819,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
                 Expanded(
                   child: _buildGlassTextField(
                     controller: _bathroomsController,
-                    label: 'Baños',
+                    label: S.of(context).bathroomsLabel,
                     icon: Icons.bathtub_outlined,
                     keyboardType: TextInputType.number,
                   ),
@@ -824,20 +829,20 @@ class _EditPropertyPageState extends State<EditPropertyPage>
             const SizedBox(height: 16),
             _buildGlassTextField(
               controller: _sizeController,
-              label: 'Tamaño (m²)',
+              label: S.of(context).sizeLabel,
               icon: Icons.square_foot,
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
             _buildGlassTextField(
               controller: _descriptionController,
-              label: 'Descripción',
+              label: S.of(context).descriptionLabel,
               icon: Icons.description_outlined,
               maxLines: 4,
             ),
             const SizedBox(height: 32),
             CustomButton(
-              text: 'Guardar Cambios',
+              text: S.of(context).saveChangesButton,
               onPressed: _savePropertyDetails,
               textColor: Colors.white,
             ),
@@ -872,7 +877,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Este campo es requerido';
+            return S.of(context).requiredField;
           }
           return null;
         },
@@ -890,9 +895,9 @@ class _EditPropertyPageState extends State<EditPropertyPage>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Subir Fotos',
-            style: TextStyle(
+          Text(
+            S.of(context).uploadPhotosTitle,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -903,7 +908,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
             children: [
               _buildPickerOption(
                 icon: Icons.camera_alt,
-                label: 'Cámara',
+                label: S.of(context).cameraOption,
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.camera);
@@ -911,7 +916,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
               ),
               _buildPickerOption(
                 icon: Icons.photo_library,
-                label: 'Galería',
+                label: S.of(context).galleryOption,
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.gallery);

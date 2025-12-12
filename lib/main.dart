@@ -13,6 +13,8 @@ import 'features/alerts/presentation/pages/alert_history_page.dart';
 import 'features/auth/data/services/auth_service.dart';
 
 import 'features/auth/presentation/pages/auth_selection_page.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'generated/l10n.dart';
 
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
@@ -50,6 +52,8 @@ class HabittoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Habitto',
+      localizationsDelegates: S.localizationsDelegates,
+      supportedLocales: S.supportedLocales,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

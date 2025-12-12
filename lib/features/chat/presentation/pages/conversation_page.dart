@@ -8,6 +8,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:habitto/shared/theme/app_theme.dart';
 import '../../../profile/data/services/profile_service.dart';
 import '../../../profile/domain/entities/profile.dart';
+import '../../../../../generated/l10n.dart';
 
 class ConversationPage extends StatefulWidget {
   final String title;
@@ -15,7 +16,7 @@ class ConversationPage extends StatefulWidget {
   final String? avatarUrl;
 
   const ConversationPage({
-    super.key, 
+    super.key,
     required this.title,
     this.otherUserId,
     this.avatarUrl,
@@ -72,11 +73,12 @@ class _ConversationPageState extends State<ConversationPage> {
 
       // Obtener el ID del usuario actual
       final currentUserIdStr = await _tokenStorage.getCurrentUserId();
-      final currentUserId = currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
-      
+      final currentUserId =
+          currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
+
       if (currentUserId == null) {
         setState(() {
-          _error = 'Error: No se pudo obtener el ID del usuario actual';
+          _error = S.of(context).errorGetCurrentUser;
           _isLoading = false;
           _messages = _getHardcodedMessages(); // Fallback
         });
@@ -90,7 +92,8 @@ class _ConversationPageState extends State<ConversationPage> {
       _loadCounterpartAvatar();
       _openWebSocket();
 
-      final result = await _messageService.getThread(widget.otherUserId!, page: 1, pageSize: 50);
+      final result = await _messageService.getThread(widget.otherUserId!,
+          page: 1, pageSize: 50);
 
       if (result['success']) {
         final allMessages = result['data'] as List<MessageModel>;
@@ -119,13 +122,13 @@ class _ConversationPageState extends State<ConversationPage> {
         });
       } else {
         setState(() {
-          _error = 'Error: ${result['error']}';
+          _error = S.of(context).errorMessage(result['error']);
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Error cargando conversación: $e';
+        _error = S.of(context).errorMessage(e.toString());
         _isLoading = false;
       });
     }
@@ -161,27 +164,41 @@ class _ConversationPageState extends State<ConversationPage> {
 
       final accessToken = await _tokenStorage.getAccessToken();
 
-      final wsUri1 = AppConfig.buildWsUri('${AppConfig.wsChatPath}$roomId/', token: accessToken);
+      final wsUri1 = AppConfig.buildWsUri('${AppConfig.wsChatPath}$roomId/',
+          token: accessToken);
 
       WebSocketChannel? ch;
-      try { ch = WebSocketChannel.connect(wsUri1); } catch (_) {}
+      try {
+        ch = WebSocketChannel.connect(wsUri1);
+      } catch (_) {}
       if (ch == null) {
-        final wsUri2 = AppConfig.buildWsUri(AppConfig.wsChatPath + roomId, token: accessToken);
-        try { ch = WebSocketChannel.connect(wsUri2); } catch (_) {}
+        final wsUri2 = AppConfig.buildWsUri(AppConfig.wsChatPath + roomId,
+            token: accessToken);
+        try {
+          ch = WebSocketChannel.connect(wsUri2);
+        } catch (_) {}
       }
       if (ch == null) {
         final roomRev = '${widget.otherUserId!}-${_currentUserId!}';
-        final wsUri3 = AppConfig.buildWsUri('${AppConfig.wsChatPath}$roomRev/', token: accessToken);
-        try { ch = WebSocketChannel.connect(wsUri3); } catch (_) {}
+        final wsUri3 = AppConfig.buildWsUri('${AppConfig.wsChatPath}$roomRev/',
+            token: accessToken);
+        try {
+          ch = WebSocketChannel.connect(wsUri3);
+        } catch (_) {}
         if (ch == null) {
-          final wsUri4 = AppConfig.buildWsUri(AppConfig.wsChatPath + roomRev, token: accessToken);
-          try { ch = WebSocketChannel.connect(wsUri4); } catch (_) {}
+          final wsUri4 = AppConfig.buildWsUri(AppConfig.wsChatPath + roomRev,
+              token: accessToken);
+          try {
+            ch = WebSocketChannel.connect(wsUri4);
+          } catch (_) {}
         }
       }
       if (ch == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('WS 404: ruta /ws/chat/<room_id> no encontrada'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text(S.of(context).wsRouteNotFound),
+                backgroundColor: Colors.red),
           );
         }
         return;
@@ -215,7 +232,8 @@ class _ConversationPageState extends State<ConversationPage> {
 
               if (mounted) {
                 if (fromMe) {
-                  final idx = _messages.lastIndexWhere((m) => m.fromMe && m.text == content && m.status == 'sent');
+                  final idx = _messages.lastIndexWhere((m) =>
+                      m.fromMe && m.text == content && m.status == 'sent');
                   if (idx != -1) {
                     setState(() {
                       _messages[idx] = msg;
@@ -248,14 +266,18 @@ class _ConversationPageState extends State<ConversationPage> {
         onError: (err) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error de WebSocket: $err'), backgroundColor: Colors.red),
+              SnackBar(
+                  content: Text(S.of(context).wsError(err.toString())),
+                  backgroundColor: Colors.red),
             );
           }
         },
         onDone: () {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Conexión WebSocket cerrada'), backgroundColor: Colors.orange),
+              SnackBar(
+                  content: Text(S.of(context).wsConnectionClosed),
+                  backgroundColor: Colors.orange),
             );
           }
         },
@@ -286,12 +308,42 @@ class _ConversationPageState extends State<ConversationPage> {
 
   List<ConvMessage> _getHardcodedMessages() {
     return [
-      ConvMessage(text: 'Hola, ¿sigues disponible?', fromMe: false, time: '10:40', status: 'delivered', isRead: false),
-      ConvMessage(text: 'Sí, claro. ¿Qué te interesa saber?', fromMe: true, time: '10:41', status: 'delivered', isRead: true),
-      ConvMessage(text: '¿Incluye garaje y está cerca del centro?', fromMe: false, time: '10:42', status: 'delivered', isRead: false),
-      ConvMessage(text: 'Incluye garaje y está a 10 min del centro.', fromMe: true, time: '10:43', status: 'delivered', isRead: true),
-      ConvMessage(text: 'Perfecto, ¿podemos agendar una visita?', fromMe: false, time: '10:44', status: 'delivered', isRead: false),
-      ConvMessage(text: 'Mañana a las 15:00 te sirve.', fromMe: true, time: '10:45', status: 'delivered', isRead: true),
+      ConvMessage(
+          text: S.of(context).chatExampleMessage1,
+          fromMe: false,
+          time: '10:40',
+          status: 'delivered',
+          isRead: false),
+      ConvMessage(
+          text: S.of(context).chatExampleMessage2,
+          fromMe: true,
+          time: '10:41',
+          status: 'delivered',
+          isRead: true),
+      ConvMessage(
+          text: S.of(context).chatExampleMessage3,
+          fromMe: false,
+          time: '10:42',
+          status: 'delivered',
+          isRead: false),
+      ConvMessage(
+          text: S.of(context).chatExampleMessage4,
+          fromMe: true,
+          time: '10:43',
+          status: 'delivered',
+          isRead: true),
+      ConvMessage(
+          text: S.of(context).chatExampleMessage5,
+          fromMe: false,
+          time: '10:44',
+          status: 'delivered',
+          isRead: false),
+      ConvMessage(
+          text: S.of(context).chatExampleMessage6,
+          fromMe: true,
+          time: '10:45',
+          status: 'delivered',
+          isRead: true),
     ];
   }
 
@@ -302,7 +354,12 @@ class _ConversationPageState extends State<ConversationPage> {
     if (widget.otherUserId == null) {
       // Modo offline - solo agregar localmente
       setState(() {
-        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Ahora', status: 'delivered', isRead: true));
+        _messages.add(ConvMessage(
+            text: text,
+            fromMe: true,
+            time: S.of(context).nowLabel,
+            status: 'delivered',
+            isRead: true));
         _controller.clear();
       });
       return;
@@ -310,7 +367,12 @@ class _ConversationPageState extends State<ConversationPage> {
 
     try {
       setState(() {
-        _messages.add(ConvMessage(text: text, fromMe: true, time: 'Enviando...', status: 'sent', isRead: true));
+        _messages.add(ConvMessage(
+            text: text,
+            fromMe: true,
+            time: S.of(context).sendingMessage,
+            status: 'sent',
+            isRead: true));
         _controller.clear();
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -330,14 +392,22 @@ class _ConversationPageState extends State<ConversationPage> {
       };
 
       if (_wsChannel == null) {
-        final idx = _messages.lastIndexWhere((m) => m.fromMe && m.text == text && m.status == 'sent');
+        final idx = _messages.lastIndexWhere(
+            (m) => m.fromMe && m.text == text && m.status == 'sent');
         if (idx != -1) {
           setState(() {
-            _messages[idx] = ConvMessage(text: text, fromMe: true, time: 'Error al enviar', status: 'sent', isRead: true);
+            _messages[idx] = ConvMessage(
+                text: text,
+                fromMe: true,
+                time: S.of(context).errorSendingMessage,
+                status: 'sent',
+                isRead: true);
           });
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Conexión WebSocket no disponible'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(S.of(context).wsConnectionUnavailable),
+              backgroundColor: Colors.red),
         );
         return;
       }
@@ -346,13 +416,21 @@ class _ConversationPageState extends State<ConversationPage> {
 
       Future.delayed(const Duration(seconds: 5), () {
         if (!mounted) return;
-        final idx = _messages.lastIndexWhere((m) => m.fromMe && m.text == text && m.status == 'sent');
+        final idx = _messages.lastIndexWhere(
+            (m) => m.fromMe && m.text == text && m.status == 'sent');
         if (idx != -1) {
           setState(() {
-            _messages[idx] = ConvMessage(text: text, fromMe: true, time: 'Error al enviar', status: 'sent', isRead: true);
+            _messages[idx] = ConvMessage(
+                text: text,
+                fromMe: true,
+                time: S.of(context).errorSendingMessage,
+                status: 'sent',
+                isRead: true);
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No se recibió confirmación del servidor'), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text(S.of(context).serverNoConfirmation),
+                backgroundColor: Colors.red),
           );
         }
       });
@@ -365,7 +443,7 @@ class _ConversationPageState extends State<ConversationPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-  appBar: AppBar(
+      appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         leading: IconButton(
@@ -398,9 +476,9 @@ class _ConversationPageState extends State<ConversationPage> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'clear',
-                child: Text('Vaciar chat'),
+                child: Text(S.of(context).clearChatTitle),
               ),
             ],
           ),
@@ -423,38 +501,43 @@ class _ConversationPageState extends State<ConversationPage> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Column(
                 children: [
-                  const Text('Today', style: TextStyle(color: Colors.black54, fontSize: 13)),
+                  Text(S.of(context).todayLabel,
+                      style:
+                          const TextStyle(color: Colors.black54, fontSize: 13)),
                   const SizedBox(height: 10),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.black12,
-                  backgroundImage: (_counterpartAvatarUrl ?? '').isNotEmpty
-                      ? NetworkImage(_counterpartAvatarUrl!)
-                      : null,
-                  child: (_counterpartAvatarUrl ?? '').isEmpty
-                      ? const Icon(Icons.person, color: Colors.black54)
-                      : null,
-                ),
-                Positioned(
-                  right: 6,
-                  bottom: 6,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.black12,
+                        backgroundImage:
+                            (_counterpartAvatarUrl ?? '').isNotEmpty
+                                ? NetworkImage(_counterpartAvatarUrl!)
+                                : null,
+                        child: (_counterpartAvatarUrl ?? '').isEmpty
+                            ? const Icon(Icons.person, color: Colors.black54)
+                            : null,
+                      ),
+                      Positioned(
+                        right: 6,
+                        bottom: 6,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
                   const SizedBox(height: 8),
-                  Text('Your matched with ${widget.title} today.', style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                  Text(S.of(context).matchedWithUser(widget.title),
+                      style:
+                          const TextStyle(color: Colors.black54, fontSize: 13)),
                 ],
               ),
             ),
@@ -465,7 +548,8 @@ class _ConversationPageState extends State<ConversationPage> {
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
                   final m = _messages[index];
-                  final align = m.fromMe ? Alignment.centerRight : Alignment.centerLeft;
+                  final align =
+                      m.fromMe ? Alignment.centerRight : Alignment.centerLeft;
                   final cs = Theme.of(context).colorScheme;
 
                   return KeyedSubtree(
@@ -473,47 +557,58 @@ class _ConversationPageState extends State<ConversationPage> {
                     child: Align(
                       alignment: align,
                       child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         child: Column(
-                        crossAxisAlignment: m.fromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          crossAxisAlignment: m.fromMe
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
                           children: [
-                          Container(
-                            constraints: const BoxConstraints(maxWidth: 280),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: m.fromMe ? cs.primary : AppTheme.grayColor,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: const [
-                                BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
-                              ],
-                            ),
-                            child: Text(
-                              m.text,
-                              style: TextStyle(
-                                color: m.fromMe ? cs.onPrimary : Colors.black87,
-                                fontSize: 14,
-                                height: 1.35,
+                            Container(
+                              constraints: const BoxConstraints(maxWidth: 280),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color:
+                                    m.fromMe ? cs.primary : AppTheme.grayColor,
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: const [
+                                  BoxShadow(
+                                      color: Color(0x11000000),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 4)),
+                                ],
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                m.time,
-                                style: const TextStyle(fontSize: 11, color: Colors.black45),
-                              ),
-                              if (m.fromMe) ...[
-                                const SizedBox(width: 6),
-                                Icon(
-                                  m.status == 'delivered' ? Icons.done_all : Icons.check,
-                                  size: 16,
-                                  color: Colors.black54,
+                              child: Text(
+                                m.text,
+                                style: TextStyle(
+                                  color:
+                                      m.fromMe ? cs.onPrimary : Colors.black87,
+                                  fontSize: 14,
+                                  height: 1.35,
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  m.time,
+                                  style: const TextStyle(
+                                      fontSize: 11, color: Colors.black45),
+                                ),
+                                if (m.fromMe) ...[
+                                  const SizedBox(width: 6),
+                                  Icon(
+                                    m.status == 'delivered'
+                                        ? Icons.done_all
+                                        : Icons.check,
+                                    size: 16,
+                                    color: Colors.black54,
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
+                            ),
                           ],
                         ),
                       ),
@@ -522,54 +617,56 @@ class _ConversationPageState extends State<ConversationPage> {
                 },
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.add, color: Colors.black54),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            decoration: const InputDecoration(
-                              hintText: 'Typing here...',
-                              border: InputBorder.none,
-                              hintStyle: TextStyle(color: Colors.black38),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.add, color: Colors.black54),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _controller,
+                              decoration: InputDecoration(
+                                hintText: S.of(context).typingPlaceholder,
+                                border: InputBorder.none,
+                                hintStyle:
+                                    const TextStyle(color: Colors.black38),
+                              ),
+                              style: const TextStyle(color: Colors.black),
                             ),
-                            style: const TextStyle(color: Colors.black),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Icon(Icons.schedule, color: Colors.black54),
-                      ],
+                          const SizedBox(width: 10),
+                          const Icon(Icons.schedule, color: Colors.black54),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: AppTheme.getMintButtonDecoration(),
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_upward, color: Colors.black),
-                    onPressed: () async {
-                      await _sendMessage();
-                    },
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: AppTheme.getMintButtonDecoration(),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_upward, color: Colors.black),
+                      onPressed: () async {
+                        await _sendMessage();
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           ],
         ),
       ),
@@ -581,11 +678,15 @@ class _ConversationPageState extends State<ConversationPage> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Vaciar chat'),
-          content: const Text('Esta acción vacía el chat solo para tu cuenta. ¿Continuar?'),
+          title: Text(S.of(context).clearChatTitle),
+          content: Text(S.of(context).clearChatConfirmation),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-            TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Vaciar')),
+            TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(S.of(context).cancelButton)),
+            TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text(S.of(context).clearButton)),
           ],
         );
       },
@@ -597,7 +698,7 @@ class _ConversationPageState extends State<ConversationPage> {
         _messages = [];
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chat vaciado localmente')),
+        SnackBar(content: Text(S.of(context).chatClearedLocally)),
       );
       return;
     }
@@ -609,11 +710,13 @@ class _ConversationPageState extends State<ConversationPage> {
         _itemKeys = [];
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chat vaciado para tu cuenta')),
+        SnackBar(content: Text(S.of(context).chatClearedForAccount)),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${res['error']}'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text(S.of(context).errorMessage(res['error'])),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -631,11 +734,11 @@ class _ConversationPageState extends State<ConversationPage> {
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inMinutes < 1) {
-      return 'Ahora';
+      return S.of(context).nowLabel;
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m';
+      return S.of(context).minutesAgo(difference.inMinutes);
     } else if (difference.inDays < 1) {
       return '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else {
@@ -664,7 +767,8 @@ class _ConversationPageState extends State<ConversationPage> {
       Scrollable.ensureVisible(
         ctx,
         duration: Duration.zero,
-        alignment: 1.0, // Posicionar el objetivo hacia la parte inferior del viewport
+        alignment:
+            1.0, // Posicionar el objetivo hacia la parte inferior del viewport
       );
     }
     // Si no se encontró el contexto, intentar después de un pequeño delay
@@ -676,7 +780,8 @@ class _ConversationPageState extends State<ConversationPage> {
             Scrollable.ensureVisible(
               retryCtx,
               duration: Duration.zero,
-              alignment: 1.0, // Posicionar el objetivo hacia la parte inferior del viewport
+              alignment:
+                  1.0, // Posicionar el objetivo hacia la parte inferior del viewport
             );
           }
         }

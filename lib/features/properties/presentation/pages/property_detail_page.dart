@@ -8,6 +8,7 @@ import 'package:habitto/features/properties/domain/entities/photo.dart'
     as domain_photo;
 import 'package:habitto/config/app_config.dart';
 import 'package:habitto/shared/theme/app_theme.dart';
+import '../../../../../generated/l10n.dart';
 
 class PropertyDetailPage extends StatefulWidget {
   final int propertyId;
@@ -65,7 +66,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _property == null
-                ? const Center(child: Text('Propiedad no encontrada'))
+                ? Center(child: Text(S.of(context).propertyNotFound))
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                     children: [
@@ -142,7 +143,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
                       Text(
                         _property!.address.isNotEmpty
                             ? _property!.address
-                            : 'Propiedad',
+                            : S.of(context).propertyTitleFallback,
                         style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -151,7 +152,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
                       const SizedBox(height: 6),
                       Text(
                         _property!.price > 0
-                            ? 'Bs. ${_property!.price.toStringAsFixed(0)}/mes'
+                            ? S.of(context).rentPerMonth(_property!.price.toStringAsFixed(0))
                             : '—',
                         style: const TextStyle(
                             fontSize: 18,
@@ -161,11 +162,11 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          _tag('${_property!.bedrooms} Dorm.'),
+                          _tag(S.of(context).bedroomsShort(_property!.bedrooms.toString())),
                           const SizedBox(width: 8),
-                          _tag('${_property!.bathrooms} Baños'),
+                          _tag(S.of(context).bathroomsShort(_property!.bathrooms.toString())),
                           const SizedBox(width: 8),
-                          _tag('${_property!.size.toStringAsFixed(0)} m²'),
+                          _tag(S.of(context).sizeShort(_property!.size.toStringAsFixed(0))),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -185,15 +186,15 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Comodidades',
-                                style: TextStyle(
+                            Text(S.of(context).amenitiesLabel,
+                                style: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 12),
                             Wrap(
                               spacing: 12,
                               runSpacing: 12,
                               children: _property!.amenities
-                                  .map((_) => _amenityChip())
+                                  .map((a) => _amenityChip(a))
                                   .toList(),
                             ),
                           ],
@@ -203,7 +204,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
                       Row(
                         children: [
                           Expanded(
-                              child: _primaryButton('Swipe para Match',
+                              child: _primaryButton(S.of(context).swipeForMatchButton,
                                   cs.primary, Colors.black, () {})),
                         ],
                       ),
@@ -212,22 +213,22 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
                         children: [
                           Expanded(
                               child:
-                                  _secondaryButton('Solicitar Roomie', () {})),
+                                  _secondaryButton(S.of(context).requestRoomieButton, () {})),
                           const SizedBox(width: 12),
                           Expanded(
-                              child: _secondaryButton('Agendar Vista', () {})),
+                              child: _secondaryButton(S.of(context).scheduleViewButton, () {})),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      const Text('Reseñas',
-                          style: TextStyle(
+                      Text(S.of(context).reviewsLabel,
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
-                      _reviewTile('Juan Perez',
-                          '¡El departamento es increíble! Muy bien ubicado y con todas las comodidades. 100% recomendado.'),
+                      _reviewTile(S.of(context).mockReviewer1,
+                          S.of(context).mockReview1),
                       const SizedBox(height: 10),
-                      _reviewTile('María García',
-                          'Buena ubicación, aunque un poco ruidoso por la noche. El anfitrión fue muy amable.'),
+                      _reviewTile(S.of(context).mockReviewer2,
+                          S.of(context).mockReview2),
                     ],
                   ),
       ),
@@ -272,7 +273,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
     );
   }
 
-  Widget _amenityChip() {
+  Widget _amenityChip(int id) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -286,10 +287,10 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
               offset: const Offset(0, 4))
         ],
       ),
-      child: const Row(children: [
-        Icon(Icons.check_circle, size: 16),
-        SizedBox(width: 6),
-        Text('Amenidad')
+      child: Row(children: [
+        const Icon(Icons.check_circle, size: 16),
+        const SizedBox(width: 6),
+        Text(S.of(context).amenityDefaultLabel)
       ]),
     );
   }

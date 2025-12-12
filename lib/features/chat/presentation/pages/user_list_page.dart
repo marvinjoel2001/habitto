@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import '../../data/services/user_service.dart';
 import 'package:habitto/core/services/token_storage.dart';
 import 'conversation_page.dart';
+import '../../../../../generated/l10n.dart';
 
 class UserListPage extends StatefulWidget {
   const UserListPage({super.key});
@@ -34,12 +35,14 @@ class _UserListPageState extends State<UserListPage> {
       });
 
       final result = await _userService.getAllUsers();
-      
+
       if (result['success']) {
         final List<dynamic> all = (result['data'] as List<dynamic>?) ?? [];
         final currentId = await TokenStorage().getCurrentUserId();
         final filtered = currentId != null
-            ? all.where((u) => (u['id']?.toString() ?? '') != currentId).toList()
+            ? all
+                .where((u) => (u['id']?.toString() ?? '') != currentId)
+                .toList()
             : all;
         setState(() {
           _users = filtered;
@@ -48,13 +51,13 @@ class _UserListPageState extends State<UserListPage> {
         });
       } else {
         setState(() {
-          _error = 'Error: ${result['error']}';
+          _error = S.of(context).errorMessage(result['error']);
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Error al cargar usuarios: $e';
+        _error = S.of(context).errorMessage(e.toString());
         _isLoading = false;
       });
     }
@@ -68,11 +71,11 @@ class _UserListPageState extends State<UserListPage> {
         final firstName = user['first_name']?.toString().toLowerCase() ?? '';
         final lastName = user['last_name']?.toString().toLowerCase() ?? '';
         final fullName = '$firstName $lastName'.trim();
-        
-        return username.contains(query) || 
-               firstName.contains(query) || 
-               lastName.contains(query) ||
-               fullName.contains(query);
+
+        return username.contains(query) ||
+            firstName.contains(query) ||
+            lastName.contains(query) ||
+            fullName.contains(query);
       }).toList();
     });
   }
@@ -88,9 +91,9 @@ class _UserListPageState extends State<UserListPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Seleccionar Usuario',
-          style: TextStyle(
+        title: Text(
+          S.of(context).selectUserTitle,
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -133,7 +136,7 @@ class _UserListPageState extends State<UserListPage> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Buscar usuarios...',
+                      hintText: S.of(context).searchUsersPlaceholder,
                       border: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -141,8 +144,10 @@ class _UserListPageState extends State<UserListPage> {
                       disabledBorder: InputBorder.none,
                       fillColor: Colors.transparent,
                       filled: true,
-                      icon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
-                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                      icon: Icon(Icons.search,
+                          color: Colors.white.withValues(alpha: 0.7)),
+                      hintStyle:
+                          TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                     ),
                     style: const TextStyle(color: Colors.white),
                   ),
@@ -177,7 +182,7 @@ class _UserListPageState extends State<UserListPage> {
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _loadUsers,
-                              child: const Text('Reintentar'),
+                              child: Text(S.of(context).retryButton),
                             ),
                           ],
                         ),
@@ -195,8 +200,8 @@ class _UserListPageState extends State<UserListPage> {
                                 const SizedBox(height: 16),
                                 Text(
                                   _searchController.text.isEmpty
-                                      ? 'No hay usuarios disponibles'
-                                      : 'No se encontraron usuarios',
+                                      ? S.of(context).noUsersAvailable
+                                      : S.of(context).noUsersFound,
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: 18,
@@ -205,8 +210,8 @@ class _UserListPageState extends State<UserListPage> {
                                 const SizedBox(height: 8),
                                 Text(
                                   _searchController.text.isEmpty
-                                      ? 'Intenta actualizar la lista'
-                                      : 'Intenta con otra búsqueda',
+                                      ? S.of(context).tryRefreshList
+                                      : S.of(context).tryAnotherSearch,
                                   style: TextStyle(
                                     color: Colors.grey[500],
                                     fontSize: 14,
@@ -218,7 +223,8 @@ class _UserListPageState extends State<UserListPage> {
                         : RefreshIndicator(
                             onRefresh: _loadUsers,
                             child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
                               itemCount: _filteredUsers.length,
                               itemBuilder: (context, index) {
                                 final user = _filteredUsers[index];
@@ -233,7 +239,7 @@ class _UserListPageState extends State<UserListPage> {
   }
 
   Widget _buildUserTile(Map<String, dynamic> user) {
-    final username = user['username'] ?? 'Usuario';
+    final username = user['username'] ?? S.of(context).userLabel;
     final firstName = user['first_name'] ?? '';
     final lastName = user['last_name'] ?? '';
     final fullName = '$firstName $lastName'.trim();
@@ -262,10 +268,14 @@ class _UserListPageState extends State<UserListPage> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.18),
+              color:
+                  Theme.of(context).colorScheme.surface.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.25),
                 width: 1,
               ),
               boxShadow: [
@@ -281,7 +291,10 @@ class _UserListPageState extends State<UserListPage> {
                 // Avatar
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.3),
                   child: Text(
                     displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
                     style: TextStyle(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../properties/data/services/property_service.dart';
 import '../../../properties/domain/entities/property.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../../generated/l10n.dart';
 
 class AgentPortfolioPage extends StatefulWidget {
   const AgentPortfolioPage({super.key});
@@ -36,7 +37,7 @@ class _AgentPortfolioPageState extends State<AgentPortfolioPage> {
       });
     } else {
       setState(() {
-        _error = resp['error'] ?? 'Error cargando portafolio';
+        _error = resp['error'] ?? S.of(context).loadPortfolioError;
         _loading = false;
       });
     }
@@ -50,8 +51,8 @@ class _AgentPortfolioPageState extends State<AgentPortfolioPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false, // Removed back button
-        title: const Text('Portafolio',
-            style: TextStyle(
+        title: Text(S.of(context).portfolioTitle,
+            style: const TextStyle(
                 color: Colors.black,
                 fontSize: 20,
                 fontWeight: FontWeight.w600)),
@@ -91,8 +92,9 @@ class _AgentPortfolioPageState extends State<AgentPortfolioPage> {
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           title: Text(p.address),
-                          subtitle: Text(
-                              'Bs. ${p.price.toStringAsFixed(0)}/mes · ${p.size.toInt()}m²'),
+                          subtitle: Text(S.of(context).portfolioItemSubtitle(
+                              p.price.toStringAsFixed(0),
+                              p.size.toInt().toString())),
                           trailing: Icon(
                               p.isActive ? Icons.toggle_on : Icons.toggle_off,
                               color: p.isActive ? Colors.green : Colors.grey),

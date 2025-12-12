@@ -1,0 +1,270 @@
+{
+  "appTitle": "Habitto",
+  "loginButton": "Iniciar Sesión",
+  "registerButton": "Registrarse",
+  "welcomeMessage": "¡Hola {name}!",
+  "@welcomeMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadMultipleHint": "Puedes subir varias fotos a la vez",
+  "noPhotosYet": "Aún no hay fotos",
+  "addPhotosHint": "Agrega fotos de tu propiedad",
+  "propertyNotFound": "Propiedad no encontrada",
+  "propertyTitleFallback": "Sin título",
+  "rentPerMonth": "Bs. {price}/mes",
+  "@rentPerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "bedroomsShort": "{count} hab.",
+  "@bedroomsShort": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "bathroomsShort": "{count} baños",
+  "@bathroomsShort": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeShort": "{size} m²",
+  "@sizeShort": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "amenitiesLabel": "Comodidades",
+  "swipeForMatchButton": "Desliza para Match",
+  "requestRoomieButton": "Solicitar Roomie",
+  "scheduleViewButton": "Agendar Visita",
+  "reviewsLabel": "Reseñas",
+  "mockReviewer1": "Ana García",
+  "mockReview1": "Excelente lugar, muy iluminado y seguro.",
+  "mockReviewer2": "Carlos Ruiz",
+  "mockReview2": "El propietario es muy amable, recomendado.",
+  "amenityDefaultLabel": "Comodidad",
+  "propertyTypeHouse": "Casa",
+  "propertyTypeApartment": "Departamento",
+  "propertyTypeRoom": "Habitación",
+  "propertyTypeAnticretico": "Anticrético",
+  "amenityWifi": "WiFi",
+  "amenityParking": "Parqueo",
+  "amenityLaundry": "Lavandería",
+  "amenityGym": "Gimnasio",
+  "amenityPool": "Piscina",
+  "amenityGarden": "Jardín",
+  "loadDataError": "Error al cargar datos: {error}",
+  "@loadDataError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "userFetchError": "Error al obtener usuario",
+  "propertyCreatedTitle": "Propiedad Creada",
+  "propertyCreatedMessage": "La propiedad se ha creado exitosamente.",
+  "laterButton": "Más tarde",
+  "addPhotosButton": "Agregar fotos",
+  "genericError": "Error: {error}",
+  "@genericError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "enterAddressError": "Ingresa una dirección",
+  "enterPriceError": "Ingresa un precio",
+  "enterGuaranteeError": "Ingresa una garantía",
+  "enterDescriptionError": "Ingresa una descripción",
+  "enterAreaError": "Ingresa el área",
+  "invalidPriceError": "Precio inválido",
+  "invalidGuaranteeError": "Garantía inválida",
+  "invalidAreaError": "Área inválida",
+  "propertyDetailsTitle": "Detalles de la propiedad",
+  "saveAndExit": "Guardar y Salir",
+  "stepBasic": "Básico",
+  "stepDetails": "Detalles",
+  "stepLocation": "Ubicación",
+  "stepBasicDescription": "Información principal",
+  "bedroomsLabel": "Dormitorios",
+  "bathroomsLabel": "Baños",
+  "areaLabel": "Área (m²)",
+  "stepDetailsDescription": "Características y precios",
+  "rentPriceLabel": "Precio de Alquiler",
+  "adjustPriceLabel": "Ajustar precio",
+  "guaranteeLabel": "Garantía",
+  "adjustGuaranteeLabel": "Ajustar garantía",
+  "descriptionLabel": "Descripción",
+  "propertyDescriptionHint": "Describe tu propiedad...",
+  "acceptedPaymentMethodsLabel": "Métodos de pago aceptados",
+  "confirmLocation": "Confirmar Ubicación",
+  "stepLocationDescription": "Ubicación exacta",
+  "addressLabel": "Dirección",
+  "addressHint": "Ej. Av. Principal #123",
+  "mapLocationLabel": "Ubicación en el mapa",
+  "tapToSelectLocation": "Toca para seleccionar ubicación",
+  "availabilityDateLabel": "Fecha de disponibilidad",
+  "dateHint": "Seleccionar fecha",
+  "propertyTypeLabel": "Tipo de Propiedad",
+  "previousButton": "Anterior",
+  "finishButton": "Finalizar",
+  "nextButton": "Siguiente",
+  "loadPhotosError": "Error al cargar fotos: {error}",
+  "@loadPhotosError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pickImageError": "Error al seleccionar imagen: {error}",
+  "@pickImageError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadSummary": "{success} subidas, {fail} fallidas",
+  "@uploadSummary": {
+    "placeholders": {
+      "success": {
+        "type": "Object"
+      },
+      "fail": {
+        "type": "Object"
+      }
+    }
+  },
+  "photosUploadedSuccess": "Fotos subidas correctamente",
+  "deletePhotoTitle": "Eliminar foto",
+  "deletePhotoConfirmation": "¿Estás seguro de eliminar esta foto?",
+  "cancelButton": "Cancelar",
+  "deleteButton": "Eliminar",
+  "photoDeletedSuccess": "Foto eliminada",
+  "propertyUpdatedSuccess": "Propiedad actualizada",
+  "updatePropertyError": "Error al actualizar: {error}",
+  "@updatePropertyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "editPropertyTitle": "Editar Propiedad",
+  "priceLabel": "Precio",
+  "bedroomsShortLabel": "Hab.",
+  "matchLabel": "Match",
+  "uploadPhotosButton": "Subir Fotos",
+  "noInterestsYet": "Aún no hay interesados",
+  "matchScore": "Match: {score}%",
+  "@matchScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "matchAcceptedMessage": "Match aceptado",
+  "priceBsLabel": "Precio (Bs)",
+  "guaranteeBsLabel": "Garantía (Bs)",
+  "sizeLabel": "Tamaño (m²)",
+  "saveChangesButton": "Guardar Cambios",
+  "requiredField": "Campo requerido",
+  "uploadPhotosTitle": "Subir Fotos",
+  "cameraOption": "Cámara",
+  "galleryOption": "Galería",
+  "socialAreasTitle": "Áreas Sociales",
+  "socialAreasComingSoon": "Próximamente: Áreas Sociales",
+  "onboardingTitle1": "Encuentra tu hogar ideal",
+  "onboardingSubtitle1": "Explora miles de opciones...",
+  "onboardingTitle2": "Conecta con propietarios",
+  "onboardingSubtitle2": "Chat directo y seguro...",
+  "onboardingTitle3": "Gestiona tus propiedades",
+  "onboardingSubtitle3": "Publica y administra...",
+  "onboardingTitle4": "Todo en un solo lugar",
+  "onboardingSubtitle4": "La mejor experiencia inmobiliaria",
+  "actionUndo": "Deshacer",
+  "actionReject": "Rechazar",
+  "actionLike": "Me gusta",
+  "actionFavorite": "Favorito",
+  "closeButton": "Cerrar",
+  "matchTitle": "¡Es un Match!",
+  "matchPrefix": "Te gusta ",
+  "matchWord": "esta propiedad",
+  "matchSuffix": "!",
+  "matchWith": "con",
+  "thisProperty": "esta propiedad",
+  "matchSubtitle": "Ahora pueden chatear...",
+  "sendMessageButton": "Enviar Mensaje",
+  "searchApartmentSuggestion": "Busco departamento en...",
+  "searchRoomieSuggestion": "Busco roomie...",
+  "createProfileSuggestion": "Crear perfil...",
+  "aiAssistantGreeting": "¡Hola {name}! Soy tu asistente...",
+  "@aiAssistantGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "micPermissionRequired": "Se requiere permiso de micrófono",
+  "micPermissionTitle": "Permiso de micrófono",
+  "micPermissionContent": "Necesitamos acceso al micrófono...",
+  "openSettingsButton": "Abrir Configuración",
+  "profileCreatedSuccess": "Perfil creado exitosamente",
+  "aiProcessingError": "Error al procesar...",
+  "aiTypingIndicator": "Escribiendo...",
+  "listeningIndicator": "Escuchando...",
+  "aiChatPlaceholder": "Escribe un mensaje...",
+  "navExplore": "Explorar",
+  "navCandidates": "Candidatos",
+  "navLeads": "Prospectos",
+  "navMap": "Mapa",
+  "navProperties": "Propiedades",
+  "navPortfolio": "Portafolio",
+  "navInbox": "Buzón",
+  "navChat": "Chat",
+  "navProfProfile": "Perfil Pro",
+  "navProfile": "Perfil",
+  "closeMenu": "Cerrar menú",
+  "openMenu": "Abrir menú",
+  "navItemActive": "{label} activo",
+  "@navItemActive": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "noImagePlaceholder": "Sin imagen",
+  "menuMatchs": "Matches",
+  "menuAddProperty": "Agregar Propiedad",
+  "tenantRole": "Inquilino",
+  "landlordRole": "Propietario",
+  "agentRole": "Agente",
+  "likeSent": "¡Like enviado! El propietario será notificado.",
+  "likeError": "Error al dar like",
+  "rejectError": "Error al rechazar",
+  "noMoreProperties": "No hay más propiedades",
+  "noImageLabel": "Sin imagen",
+  "retryButton": "Reintentar",
+  "noPendingMatchRequests": "No tienes solicitudes de match pendientes",
+  "newMatchRequestsWillAppearHere": "Las nuevas solicitudes aparecerán aquí"
+}

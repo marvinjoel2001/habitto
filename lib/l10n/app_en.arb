@@ -1,0 +1,270 @@
+{
+  "appTitle": "Habitto",
+  "loginButton": "Login",
+  "registerButton": "Register",
+  "welcomeMessage": "Hello {name}!",
+  "@welcomeMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadMultipleHint": "You can upload multiple photos at once",
+  "noPhotosYet": "No photos yet",
+  "addPhotosHint": "Add photos of your property",
+  "propertyNotFound": "Property not found",
+  "propertyTitleFallback": "No title",
+  "rentPerMonth": "Bs. {price}/month",
+  "@rentPerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "bedroomsShort": "{count} bed.",
+  "@bedroomsShort": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "bathroomsShort": "{count} bath.",
+  "@bathroomsShort": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeShort": "{size} m²",
+  "@sizeShort": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "amenitiesLabel": "Amenities",
+  "swipeForMatchButton": "Swipe for Match",
+  "requestRoomieButton": "Request Roomie",
+  "scheduleViewButton": "Schedule View",
+  "reviewsLabel": "Reviews",
+  "mockReviewer1": "Ana García",
+  "mockReview1": "Excellent place, very bright and safe.",
+  "mockReviewer2": "Carlos Ruiz",
+  "mockReview2": "The landlord is very kind, recommended.",
+  "amenityDefaultLabel": "Amenity",
+  "propertyTypeHouse": "House",
+  "propertyTypeApartment": "Apartment",
+  "propertyTypeRoom": "Room",
+  "propertyTypeAnticretico": "Anticretico",
+  "amenityWifi": "WiFi",
+  "amenityParking": "Parking",
+  "amenityLaundry": "Laundry",
+  "amenityGym": "Gym",
+  "amenityPool": "Pool",
+  "amenityGarden": "Garden",
+  "loadDataError": "Error loading data: {error}",
+  "@loadDataError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "userFetchError": "Error fetching user",
+  "propertyCreatedTitle": "Property Created",
+  "propertyCreatedMessage": "The property has been created successfully.",
+  "laterButton": "Later",
+  "addPhotosButton": "Add photos",
+  "genericError": "Error: {error}",
+  "@genericError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "enterAddressError": "Enter an address",
+  "enterPriceError": "Enter a price",
+  "enterGuaranteeError": "Enter a guarantee",
+  "enterDescriptionError": "Enter a description",
+  "enterAreaError": "Enter the area",
+  "invalidPriceError": "Invalid price",
+  "invalidGuaranteeError": "Invalid guarantee",
+  "invalidAreaError": "Invalid area",
+  "propertyDetailsTitle": "Property Details",
+  "saveAndExit": "Save and Exit",
+  "stepBasic": "Basic",
+  "stepDetails": "Details",
+  "stepLocation": "Location",
+  "stepBasicDescription": "Main information",
+  "bedroomsLabel": "Bedrooms",
+  "bathroomsLabel": "Bathrooms",
+  "areaLabel": "Area (m²)",
+  "stepDetailsDescription": "Features and prices",
+  "rentPriceLabel": "Rent Price",
+  "adjustPriceLabel": "Adjust price",
+  "guaranteeLabel": "Guarantee",
+  "adjustGuaranteeLabel": "Adjust guarantee",
+  "descriptionLabel": "Description",
+  "propertyDescriptionHint": "Describe your property...",
+  "acceptedPaymentMethodsLabel": "Accepted payment methods",
+  "confirmLocation": "Confirm Location",
+  "stepLocationDescription": "Exact location",
+  "addressLabel": "Address",
+  "addressHint": "Ex. Main St #123",
+  "mapLocationLabel": "Location on map",
+  "tapToSelectLocation": "Tap to select location",
+  "availabilityDateLabel": "Availability Date",
+  "dateHint": "Select date",
+  "propertyTypeLabel": "Property Type",
+  "previousButton": "Previous",
+  "finishButton": "Finish",
+  "nextButton": "Next",
+  "loadPhotosError": "Error loading photos: {error}",
+  "@loadPhotosError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pickImageError": "Error selecting image: {error}",
+  "@pickImageError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadSummary": "{success} uploaded, {fail} failed",
+  "@uploadSummary": {
+    "placeholders": {
+      "success": {
+        "type": "Object"
+      },
+      "fail": {
+        "type": "Object"
+      }
+    }
+  },
+  "photosUploadedSuccess": "Photos uploaded successfully",
+  "deletePhotoTitle": "Delete photo",
+  "deletePhotoConfirmation": "Are you sure you want to delete this photo?",
+  "cancelButton": "Cancel",
+  "deleteButton": "Delete",
+  "photoDeletedSuccess": "Photo deleted",
+  "propertyUpdatedSuccess": "Property updated",
+  "updatePropertyError": "Error updating: {error}",
+  "@updatePropertyError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "editPropertyTitle": "Edit Property",
+  "priceLabel": "Price",
+  "bedroomsShortLabel": "Bed.",
+  "matchLabel": "Match",
+  "uploadPhotosButton": "Upload Photos",
+  "noInterestsYet": "No interests yet",
+  "matchScore": "Match: {score}%",
+  "@matchScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "matchAcceptedMessage": "Match accepted",
+  "priceBsLabel": "Price (Bs)",
+  "guaranteeBsLabel": "Guarantee (Bs)",
+  "sizeLabel": "Size (m²)",
+  "saveChangesButton": "Save Changes",
+  "requiredField": "Required field",
+  "uploadPhotosTitle": "Upload Photos",
+  "cameraOption": "Camera",
+  "galleryOption": "Gallery",
+  "socialAreasTitle": "Social Areas",
+  "socialAreasComingSoon": "Coming Soon: Social Areas",
+  "onboardingTitle1": "Find your ideal home",
+  "onboardingSubtitle1": "Explore thousands of options...",
+  "onboardingTitle2": "Connect with landlords",
+  "onboardingSubtitle2": "Direct and safe chat...",
+  "onboardingTitle3": "Manage your properties",
+  "onboardingSubtitle3": "Publish and manage...",
+  "onboardingTitle4": "All in one place",
+  "onboardingSubtitle4": "The best real estate experience",
+  "actionUndo": "Undo",
+  "actionReject": "Reject",
+  "actionLike": "Like",
+  "actionFavorite": "Favorite",
+  "closeButton": "Close",
+  "matchTitle": "It's a Match!",
+  "matchPrefix": "You like ",
+  "matchWord": "this property",
+  "matchSuffix": "!",
+  "matchWith": "with",
+  "thisProperty": "this property",
+  "matchSubtitle": "Now you can chat...",
+  "sendMessageButton": "Send Message",
+  "searchApartmentSuggestion": "Looking for apartment in...",
+  "searchRoomieSuggestion": "Looking for roomie...",
+  "createProfileSuggestion": "Create profile...",
+  "aiAssistantGreeting": "Hello {name}! I am your assistant...",
+  "@aiAssistantGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "micPermissionRequired": "Microphone permission required",
+  "micPermissionTitle": "Microphone Permission",
+  "micPermissionContent": "We need access to the microphone...",
+  "openSettingsButton": "Open Settings",
+  "profileCreatedSuccess": "Profile created successfully",
+  "aiProcessingError": "Error processing...",
+  "aiTypingIndicator": "Typing...",
+  "listeningIndicator": "Listening...",
+  "aiChatPlaceholder": "Type a message...",
+  "navExplore": "Explore",
+  "navCandidates": "Candidates",
+  "navLeads": "Leads",
+  "navMap": "Map",
+  "navProperties": "Properties",
+  "navPortfolio": "Portfolio",
+  "navInbox": "Inbox",
+  "navChat": "Chat",
+  "navProfProfile": "Pro Profile",
+  "navProfile": "Profile",
+  "closeMenu": "Close menu",
+  "openMenu": "Open menu",
+  "navItemActive": "{label} active",
+  "@navItemActive": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "noImagePlaceholder": "No image",
+  "menuMatchs": "Matches",
+  "menuAddProperty": "Add Property",
+  "tenantRole": "Tenant",
+  "landlordRole": "Landlord",
+  "agentRole": "Agent",
+  "likeSent": "Like sent! The landlord will be notified.",
+  "likeError": "Error sending like",
+  "rejectError": "Error rejecting",
+  "noMoreProperties": "No more properties",
+  "noImageLabel": "No image",
+  "retryButton": "Retry",
+  "noPendingMatchRequests": "No pending match requests",
+  "newMatchRequestsWillAppearHere": "New requests will appear here"
+}

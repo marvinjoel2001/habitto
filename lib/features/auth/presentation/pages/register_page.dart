@@ -11,6 +11,7 @@ import '../../../../shared/widgets/ai_chat_widget.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../profile/data/services/profile_service.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
+import '../../../../generated/l10n.dart';
 
 import 'dart:ui' as ui;
 
@@ -59,7 +60,8 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al seleccionar imagen: $e')),
+        SnackBar(
+            content: Text(S.of(context).imageSelectionError(e.toString()))),
       );
     }
   }
@@ -180,12 +182,12 @@ class _RegisterPageState extends State<RegisterPage> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             CustomButton(
-              text: 'Tomar foto',
+              text: S.of(context).takePhotoButton,
               onPressed: _captureSelfie,
               backgroundColor: Theme.of(context).colorScheme.primary,
             ),
             CustomButton(
-              text: 'Galería',
+              text: S.of(context).galleryButton,
               onPressed: _pickImage,
               backgroundColor: Theme.of(context).colorScheme.secondary,
             ),
@@ -193,8 +195,8 @@ class _RegisterPageState extends State<RegisterPage> {
               onPressed: () {
                 setState(() => _step = 2);
               },
-              child:
-                  const Text('Omitir', style: TextStyle(color: Colors.white)),
+              child: Text(S.of(context).skipButton,
+                  style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -258,7 +260,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Las contraseñas no coinciden')),
+        SnackBar(content: Text(S.of(context).passwordsDoNotMatch)),
       );
       return;
     }
@@ -315,14 +317,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('Crea tu perfil de búsqueda',
-                          style: TextStyle(
+                      Text(S.of(context).createSearchProfileTitle,
+                          style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18,
                               fontWeight: FontWeight.w700)),
                       const SizedBox(height: 8),
-                      Text(
-                          'Esto nos ayuda a encontrar opciones que se ajusten a tu presupuesto, ubicación y preferencias.',
+                      Text(S.of(context).createSearchProfileDescription,
                           style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.85))),
                       const SizedBox(height: 16),
@@ -337,7 +338,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   Navigator.pop(ctx);
                                   _showAiChatProfileCreation();
                                 },
-                                child: const Text('Crear con IA'))),
+                                child: Text(S.of(context).createWithAIButton))),
                         const SizedBox(width: 12),
                         Expanded(
                             child: OutlinedButton(
@@ -346,7 +347,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   Navigator.pushReplacementNamed(
                                       context, '/home');
                                 },
-                                child: const Text('Omitir'))),
+                                child: Text(S.of(context).skipButton))),
                       ])
                     ],
                   ),
@@ -355,22 +356,24 @@ class _RegisterPageState extends State<RegisterPage> {
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Registro exitoso')));
+                SnackBar(content: Text(S.of(context).registrationSuccess)));
             Navigator.pushReplacementNamed(context, '/home');
           }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Registro exitoso. Por favor, inicia sesión.')));
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(S.of(context).registrationSuccessLogin)));
           Navigator.pushReplacementNamed(context, '/login');
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['error'] ?? 'Error en el registro')),
+          SnackBar(
+              content:
+                  Text(response['error'] ?? S.of(context).registrationError)),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(content: Text(S.of(context).errorMessage(e.toString()))),
       );
     } finally {
       setState(() {
@@ -402,8 +405,8 @@ class _RegisterPageState extends State<RegisterPage> {
             onProfileCreated: (data) async {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Procesando perfil...'),
+                SnackBar(
+                  content: Text(S.of(context).processingProfile),
                   backgroundColor: AppTheme.primaryColor,
                 ),
               );
@@ -412,9 +415,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 if (result['success']) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content:
-                            Text('Perfil de búsqueda creado exitosamente!'),
+                            Text(S.of(context).searchProfileCreatedSuccess),
                         backgroundColor: AppTheme.primaryColor,
                       ),
                     );
@@ -424,7 +427,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Error: ${result['error']}'),
+                        content:
+                            Text(S.of(context).errorMessage(result['error'])),
                         backgroundColor: AppTheme.errorColor,
                       ),
                     );
@@ -435,7 +439,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error: $e'),
+                      content: Text(S.of(context).errorMessage(e.toString())),
                       backgroundColor: AppTheme.errorColor,
                     ),
                   );
@@ -506,8 +510,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16)),
                                 ),
-                                child: const Text('Atrás',
-                                    style: TextStyle(
+                                child: Text(S.of(context).backButton,
+                                    style: const TextStyle(
                                         color: Colors.black,
                                         fontWeight: FontWeight.w600)),
                               ),
@@ -515,7 +519,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           if (_step > 0) const SizedBox(width: 12),
                           Expanded(
                             child: CustomButton(
-                              text: _step < 3 ? 'Continuar' : 'Registrarse',
+                              text: _step < 3
+                                  ? S.of(context).continueButton
+                                  : S.of(context).registerButton,
                               onPressed: _step < 3
                                   ? () {
                                       setState(() => _step++);
@@ -578,8 +584,8 @@ class _RegisterPageState extends State<RegisterPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Tu nombre',
-                style: TextStyle(
+            Text(S.of(context).yourNameTitle,
+                style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.black)),
@@ -588,16 +594,18 @@ class _RegisterPageState extends State<RegisterPage> {
               Expanded(
                   child: CustomTextField(
                       controller: _firstNameController,
-                      hintText: 'Nombre',
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Requerido' : null)),
+                      hintText: S.of(context).firstNamePlaceholder,
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? S.of(context).requiredField
+                          : null)),
               const SizedBox(width: 12),
               Expanded(
                   child: CustomTextField(
                       controller: _lastNameController,
-                      hintText: 'Apellido',
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Requerido' : null)),
+                      hintText: S.of(context).lastNamePlaceholder,
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? S.of(context).requiredField
+                          : null)),
             ]),
             const SizedBox(height: 12),
           ],
@@ -607,33 +615,33 @@ class _RegisterPageState extends State<RegisterPage> {
         return Form(
           key: _formKey,
           child: Column(children: [
-            const Text('Contacto',
-                style: TextStyle(
+            Text(S.of(context).contactTitle,
+                style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.black)),
             const SizedBox(height: 24),
             CustomTextField(
                 controller: _emailController,
-                hintText: 'Email',
+                hintText: S.of(context).emailPlaceholder,
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) {
                   if (v == null || v.isEmpty) {
-                    return 'Por favor ingresa tu email';
+                    return S.of(context).enterEmailError;
                   }
                   if (!v.contains('@')) {
-                    return 'Por favor ingresa un email válido';
+                    return S.of(context).enterValidEmailError;
                   }
                   return null;
                 }),
             const SizedBox(height: 16),
             CustomTextField(
                 controller: _phoneController,
-                hintText: 'Teléfono',
+                hintText: S.of(context).phonePlaceholder,
                 keyboardType: TextInputType.phone,
                 validator: (v) {
                   if (v == null || v.isEmpty) {
-                    return 'Por favor ingresa tu teléfono';
+                    return S.of(context).enterPhoneError;
                   }
                   return null;
                 }),
@@ -652,12 +660,15 @@ class _RegisterPageState extends State<RegisterPage> {
                   isExpanded: true,
                   dropdownColor: Colors.white,
                   style: const TextStyle(color: Colors.black),
-                  items: const [
+                  items: [
                     DropdownMenuItem(
-                        value: 'inquilino', child: Text('Inquilino')),
+                        value: 'inquilino',
+                        child: Text(S.of(context).tenantRole)),
                     DropdownMenuItem(
-                        value: 'propietario', child: Text('Propietario')),
-                    DropdownMenuItem(value: 'agente', child: Text('Agente'))
+                        value: 'propietario',
+                        child: Text(S.of(context).landlordRole)),
+                    DropdownMenuItem(
+                        value: 'agente', child: Text(S.of(context).agentRole))
                   ],
                   onChanged: (v) {
                     setState(() => _selectedUserType = v!);
@@ -670,43 +681,43 @@ class _RegisterPageState extends State<RegisterPage> {
         return Form(
             key: _formKey,
             child: Column(children: [
-              const Text('Cuenta',
-                  style: TextStyle(
+              Text(S.of(context).accountTitle,
+                  style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.black)),
               const SizedBox(height: 24),
               CustomTextField(
                   controller: _usernameController,
-                  hintText: 'Nombre de usuario',
+                  hintText: S.of(context).usernamePlaceholder,
                   validator: (v) {
                     if (v == null || v.isEmpty) {
-                      return 'Por favor ingresa un nombre de usuario';
+                      return S.of(context).enterUsernameError;
                     }
                     return null;
                   }),
               const SizedBox(height: 16),
               CustomTextField(
                   controller: _passwordController,
-                  hintText: 'Contraseña',
+                  hintText: S.of(context).passwordPlaceholder,
                   isPassword: true,
                   validator: (v) {
                     if (v == null || v.isEmpty) {
-                      return 'Por favor ingresa una contraseña';
+                      return S.of(context).enterPasswordError;
                     }
                     if (v.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
+                      return S.of(context).passwordLengthError;
                     }
                     return null;
                   }),
               const SizedBox(height: 16),
               CustomTextField(
                   controller: _confirmPasswordController,
-                  hintText: 'Confirmar contraseña',
+                  hintText: S.of(context).confirmPasswordPlaceholder,
                   isPassword: true,
                   validator: (v) {
                     if (v == null || v.isEmpty) {
-                      return 'Por favor confirma tu contraseña';
+                      return S.of(context).confirmPasswordError;
                     }
                     return null;
                   }),

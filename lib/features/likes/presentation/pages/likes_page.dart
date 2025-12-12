@@ -7,6 +7,7 @@ import '../../../../config/app_config.dart';
 import '../../../properties/data/services/property_service.dart';
 import '../../../properties/domain/entities/property.dart';
 import '../../../profile/domain/entities/profile.dart' as profile_entity;
+import '../../../../../generated/l10n.dart';
 
 /// Página de Likes para mostrar propiedades favoritas del usuario
 class LikesPage extends StatefulWidget {
@@ -19,7 +20,7 @@ class LikesPage extends StatefulWidget {
 class _LikesPageState extends State<LikesPage> {
   final ProfileService _profileService = ProfileService();
   final PropertyService _propertyService = PropertyService();
-  
+
   List<Property> _favoriteProperties = [];
   Map<int, profile_entity.Profile> _ownerProfiles = {};
   bool _isLoading = true;
@@ -42,7 +43,7 @@ class _LikesPageState extends State<LikesPage> {
       final currentProfileData = await _profileService.getCurrentProfile();
       final profileData = currentProfileData['data'];
       if (profileData == null || profileData['profile'] == null) {
-        throw Exception('No se pudo obtener el perfil del usuario');
+        throw Exception(S.of(context).fetchProfileError);
       }
       final profile = profileData['profile'] as profile_entity.Profile;
       final favoriteIds = profile.favorites;
@@ -58,10 +59,11 @@ class _LikesPageState extends State<LikesPage> {
       // Cargar las propiedades favoritas
       final properties = <Property>[];
       final ownerIds = <int>{};
-      
+
       for (final propertyId in favoriteIds) {
         try {
-          final propertyData = await _propertyService.getPropertyById(propertyId);
+          final propertyData =
+              await _propertyService.getPropertyById(propertyId);
           final property = propertyData['data'] as Property;
           properties.add(property);
           ownerIds.add(property.agent ?? property.owner);
@@ -74,8 +76,10 @@ class _LikesPageState extends State<LikesPage> {
       final ownerProfiles = <int, profile_entity.Profile>{};
       for (final ownerId in ownerIds) {
         try {
-          final ownerProfileData = await _profileService.getProfileByUserId(ownerId);
-          final ownerProfile = ownerProfileData['data'] as profile_entity.Profile;
+          final ownerProfileData =
+              await _profileService.getProfileByUserId(ownerId);
+          final ownerProfile =
+              ownerProfileData['data'] as profile_entity.Profile;
           ownerProfiles[ownerId] = ownerProfile;
         } catch (e) {
           print('Error al cargar perfil del propietario $ownerId: $e');
@@ -89,7 +93,7 @@ class _LikesPageState extends State<LikesPage> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Error al cargar propiedades favoritas';
+        _error = S.of(context).loadFavoritesError;
         _isLoading = false;
       });
       print('Error al cargar favoritos: $e');
@@ -99,19 +103,21 @@ class _LikesPageState extends State<LikesPage> {
   Future<void> _removeFavorite(Property property) async {
     try {
       HapticFeedback.lightImpact();
-      
+
       await _profileService.removeFavoriteViaApi(property.id);
-      
+
       // Actualizar la lista local
       setState(() {
         _favoriteProperties.remove(property);
       });
-      
+
       // Mostrar feedback
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${property.type} en ${property.address} eliminado de favoritos'),
+            content: Text(S
+                .of(context)
+                .removedFromFavorites(property.type, property.address)),
             backgroundColor: AppTheme.secondaryColor,
             duration: const Duration(seconds: 2),
           ),
@@ -120,8 +126,8 @@ class _LikesPageState extends State<LikesPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al eliminar de favoritos'),
+          SnackBar(
+            content: Text(S.of(context).removeFavoriteError),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -148,9 +154,9 @@ class _LikesPageState extends State<LikesPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 20),
-                      const Text(
-                        'Tus Likes',
-                        style: TextStyle(
+                      Text(
+                        S.of(context).yourLikesTitle,
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.whiteColor,
@@ -158,7 +164,7 @@ class _LikesPageState extends State<LikesPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Propiedades que te han gustado',
+                        S.of(context).yourLikesSubtitle,
                         style: TextStyle(
                           fontSize: 16,
                           color: AppTheme.whiteColor.withValues(alpha: 0.6),
@@ -206,7 +212,7 @@ class _LikesPageState extends State<LikesPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Reintentar'),
+                          child: Text(S.of(context).retryButton),
                         ),
                       ],
                     ),
@@ -225,7 +231,7 @@ class _LikesPageState extends State<LikesPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Aún no has dado like a ninguna propiedad',
+                          S.of(context).noLikesYet,
                           style: TextStyle(
                             fontSize: 16,
                             color: AppTheme.whiteColor.withValues(alpha: 0.6),
@@ -234,7 +240,7 @@ class _LikesPageState extends State<LikesPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Explora y descubre tu próximo hogar',
+                          S.of(context).explorePropertiesHint,
                           style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.whiteColor.withValues(alpha: 0.4),
@@ -252,8 +258,9 @@ class _LikesPageState extends State<LikesPage> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final property = _favoriteProperties[index];
-                        final ownerProfile = _ownerProfiles[property.agent ?? property.owner];
-                        
+                        final ownerProfile =
+                            _ownerProfiles[property.agent ?? property.owner];
+
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: GestureDetector(
@@ -261,7 +268,8 @@ class _LikesPageState extends State<LikesPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => PropertyDetailPage(propertyId: property.id),
+                                  builder: (_) => PropertyDetailPage(
+                                      propertyId: property.id),
                                 ),
                               );
                             },
@@ -280,7 +288,8 @@ class _LikesPageState extends State<LikesPage> {
     );
   }
 
-  Widget _buildPropertyCard(Property property, profile_entity.Profile? ownerProfile) {
+  Widget _buildPropertyCard(
+      Property property, profile_entity.Profile? ownerProfile) {
     return Container(
       decoration: AppTheme.getGlassCard(),
       child: ClipRRect(
@@ -313,7 +322,7 @@ class _LikesPageState extends State<LikesPage> {
                       ),
                     ),
             ),
-            
+
             // Degradado superior para el avatar
             Positioned(
               top: 0,
@@ -333,7 +342,7 @@ class _LikesPageState extends State<LikesPage> {
                 ),
               ),
             ),
-            
+
             // Avatar del agente/propietario
             if (ownerProfile != null)
               Positioned(
@@ -371,7 +380,7 @@ class _LikesPageState extends State<LikesPage> {
                   ),
                 ),
               ),
-            
+
             // Contenido inferior
             Positioned(
               bottom: 0,
@@ -426,7 +435,7 @@ class _LikesPageState extends State<LikesPage> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Dirección
                     Text(
                       property.address,
@@ -438,7 +447,7 @@ class _LikesPageState extends State<LikesPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Detalles
                     Row(
                       children: [
@@ -449,7 +458,9 @@ class _LikesPageState extends State<LikesPage> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${property.bedrooms} hab',
+                          S
+                              .of(context)
+                              .bedroomsShort(property.bedrooms.toString()),
                           style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.whiteColor.withValues(alpha: 0.7),
@@ -463,7 +474,9 @@ class _LikesPageState extends State<LikesPage> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${property.bathrooms} baños',
+                          S
+                              .of(context)
+                              .bathroomsShort(property.bathrooms.toString()),
                           style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.whiteColor.withValues(alpha: 0.7),
@@ -477,7 +490,9 @@ class _LikesPageState extends State<LikesPage> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${property.size.toStringAsFixed(0)}m²',
+                          S
+                              .of(context)
+                              .sizeShort(property.size.toStringAsFixed(0)),
                           style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.whiteColor.withValues(alpha: 0.7),
@@ -489,7 +504,7 @@ class _LikesPageState extends State<LikesPage> {
                 ),
               ),
             ),
-            
+
             // Botón de eliminar favorito
             Positioned(
               top: 16,

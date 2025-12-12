@@ -17,6 +17,7 @@ import '../../../properties/presentation/pages/property_detail_page.dart';
 import '../../../../core/services/api_service.dart';
 import 'edit_profile_page.dart';
 import '../../../properties/presentation/pages/edit_property_page.dart';
+import '../../../../generated/l10n.dart';
 
 enum UserMode { inquilino, propietario, agente }
 
@@ -138,13 +139,13 @@ class _ProfilePageState extends State<ProfilePage>
         print('Error cargando perfil: ${response['error']}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error cargando perfil: ${response['error']}')),
+              content: Text(S.of(context).profileLoadError(response['error']))),
         );
       }
     } catch (e) {
       print('Error cargando perfil: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cargando perfil: ${e.toString()}')),
+        SnackBar(content: Text(S.of(context).profileLoadError(e.toString()))),
       );
     } finally {
       setState(() {
@@ -161,16 +162,16 @@ class _ProfilePageState extends State<ProfilePage>
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('Cerrar Sesión'),
-            content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+            title: Text(S.of(context).logoutTitle),
+            content: Text(S.of(context).logoutConfirmation),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancelar'),
+                child: Text(S.of(context).cancelButton),
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Cerrar Sesión'),
+                child: Text(S.of(context).logoutTitle),
               ),
             ],
           );
@@ -206,7 +207,7 @@ class _ProfilePageState extends State<ProfilePage>
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cerrar sesión: ${e.toString()}')),
+        SnackBar(content: Text(S.of(context).logoutError(e.toString()))),
       );
     }
   }
@@ -251,8 +252,7 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _editProfile() async {
     if (_currentProfile == null || _currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('No se pudo cargar la información del perfil')),
+        SnackBar(content: Text(S.of(context).profileInfoLoadError)),
       );
       return;
     }
@@ -539,7 +539,12 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildStatsButtons() {
-    final buttons = ['CLIENTES', 'VENTAS', 'COMISIONES', 'AGENDA'];
+    final buttons = [
+      S.of(context).clientsButton,
+      S.of(context).salesButton,
+      S.of(context).commissionsButton,
+      S.of(context).agendaButton
+    ];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -573,8 +578,8 @@ class _ProfilePageState extends State<ProfilePage>
         children: [
           Text(
             _currentMode == UserMode.inquilino
-                ? 'MIS ALQUILERES'
-                : 'PROPIEDADES ASIGNADAS',
+                ? S.of(context).myRentalsTitle
+                : S.of(context).assignedPropertiesTitle,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -608,17 +613,17 @@ class _ProfilePageState extends State<ProfilePage>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Configuración de Perfil',
-                    style: TextStyle(
+                  Text(
+                    S.of(context).profileSettingsTitle,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'CAMBIAR MODO DE USUARIO',
-                    style: TextStyle(
+                  Text(
+                    S.of(context).changeUserModeLabel,
+                    style: const TextStyle(
                       fontSize: 12,
                       color: Colors.grey,
                       fontWeight: FontWeight.bold,
@@ -654,7 +659,7 @@ class _ProfilePageState extends State<ProfilePage>
                   const Divider(height: 32),
                   ListTile(
                     leading: const Icon(Icons.verified_user_outlined),
-                    title: const Text('Verificar Perfil'),
+                    title: Text(S.of(context).verifyProfileLabel),
                     onTap: () {
                       Navigator.pop(context);
                       _handleVerification();
@@ -662,7 +667,7 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                   ListTile(
                     leading: const Icon(Icons.edit_outlined),
-                    title: const Text('Editar Perfil'),
+                    title: Text(S.of(context).editProfileLabel),
                     onTap: () {
                       Navigator.pop(context);
                       _editProfile();
@@ -671,8 +676,8 @@ class _ProfilePageState extends State<ProfilePage>
                   ListTile(
                     leading:
                         const Icon(Icons.delete_forever, color: Colors.red),
-                    title: const Text('Eliminar Cuenta',
-                        style: TextStyle(color: Colors.red)),
+                    title: Text(S.of(context).deleteAccountLabel,
+                        style: const TextStyle(color: Colors.red)),
                     onTap: () {
                       Navigator.pop(context);
                       _handleDeleteAccount();
@@ -680,8 +685,8 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text('Cerrar Sesión',
-                        style: TextStyle(color: Colors.red)),
+                    title: Text(S.of(context).logoutTitle,
+                        style: const TextStyle(color: Colors.red)),
                     onTap: () {
                       Navigator.pop(context);
                       _handleLogout();
@@ -701,13 +706,12 @@ class _ProfilePageState extends State<ProfilePage>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Verificación de Perfil'),
-        content: const Text(
-            'Para verificar tu perfil, necesitamos validar tu identidad. Esta funcionalidad estará disponible pronto.'),
+        title: Text(S.of(context).profileVerificationTitle),
+        content: Text(S.of(context).profileVerificationMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Entendido'),
+            child: Text(S.of(context).understoodButton),
           ),
         ],
       ),
@@ -718,18 +722,17 @@ class _ProfilePageState extends State<ProfilePage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar Cuenta'),
-        content: const Text(
-            '¿Estás seguro de que deseas eliminar tu cuenta? Esta acción programará la eliminación de tus datos.'),
+        title: Text(S.of(context).deleteAccountLabel),
+        content: Text(S.of(context).deleteAccountConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(S.of(context).cancelButton),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
+            child: Text(S.of(context).deleteButton),
           ),
         ],
       ),
@@ -741,15 +744,15 @@ class _ProfilePageState extends State<ProfilePage>
         if (result['success']) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(
-                    result['message'] ?? 'Eliminación de cuenta programada')),
+                content: Text(result['message'] ??
+                    S.of(context).accountDeletionScheduled)),
           );
           // Optionally logout or show more info
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content:
-                    Text(result['error'] ?? 'Error al solicitar eliminación')),
+                    Text(result['error'] ?? S.of(context).deleteAccountError)),
           );
         }
       }
@@ -788,7 +791,7 @@ class _ProfilePageState extends State<ProfilePage>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Confirmar cambio a ${_getModeDisplayName(mode)}',
+                  S.of(context).confirmModeChange(_getModeDisplayName(mode)),
                   style: const TextStyle(color: Colors.white),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -806,7 +809,7 @@ class _ProfilePageState extends State<ProfilePage>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
+              child: Text(S.of(context).cancelButton),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -814,7 +817,7 @@ class _ProfilePageState extends State<ProfilePage>
                 foregroundColor: Colors.black,
               ),
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Aceptar'),
+              child: Text(S.of(context).acceptButton),
             ),
           ],
         );
@@ -825,7 +828,7 @@ class _ProfilePageState extends State<ProfilePage>
 
     // Ejecutar cambio en backend: PATCH /api/profiles/update_me/ { user_type }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Actualizando perfil...')),
+      SnackBar(content: Text(S.of(context).updatingProfile)),
     );
 
     final result = await _profileService.updateCurrentProfile({
@@ -848,11 +851,12 @@ class _ProfilePageState extends State<ProfilePage>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Perfil actualizado a ${_getModeDisplayName(mode)}')),
+            content: Text(
+                S.of(context).profileModeUpdated(_getModeDisplayName(mode)))),
       );
     } else {
-      final errorMsg =
-          result['error']?.toString() ?? 'Error al actualizar el perfil';
+      final errorMsg = result['error']?.toString() ??
+          S.of(context).profileUpdateGenericError;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMsg)),
       );
@@ -873,11 +877,11 @@ class _ProfilePageState extends State<ProfilePage>
   String _getModeConfirmationText(UserMode mode) {
     switch (mode) {
       case UserMode.inquilino:
-        return 'Como Inquilino podrás gestionar pagos, contratos y reportes de tus alquileres.';
+        return S.of(context).tenantModeDescription;
       case UserMode.propietario:
-        return 'Como Propietario ahora podrás crear y administrar propiedades, ver ingresos y gestionar inquilinos.';
+        return S.of(context).landlordModeDescription;
       case UserMode.agente:
-        return 'Como Agente podrás subir propiedades, recibir pagos y gestionar clientes y comisiones.';
+        return S.of(context).agentModeDescription;
     }
   }
 
@@ -1022,7 +1026,7 @@ class _ProfilePageState extends State<ProfilePage>
               ),
               const SizedBox(height: 16),
               Text(
-                'No tienes propiedades registradas',
+                S.of(context).noRegisteredProperties,
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[600],
@@ -1062,7 +1066,7 @@ class _ProfilePageState extends State<ProfilePage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      property.address ?? 'Propiedad sin dirección',
+                      property.address ?? S.of(context).propertyNoAddress,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -1080,7 +1084,9 @@ class _ProfilePageState extends State<ProfilePage>
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
-                        isActive ? 'Disponible' : 'No disponible',
+                        isActive
+                            ? S.of(context).availableStatus
+                            : S.of(context).unavailableStatus,
                         style: TextStyle(
                           fontSize: 12,
                           color:
@@ -1101,9 +1107,9 @@ class _ProfilePageState extends State<ProfilePage>
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Gestionar',
-                    style: TextStyle(
+                  child: Text(
+                    S.of(context).manageButton,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -1133,17 +1139,17 @@ class _ProfilePageState extends State<ProfilePage>
       return [
         _buildGlassContainer(
           padding: const EdgeInsets.all(32),
-          child: const Column(
+          child: Column(
             children: [
-              Icon(
+              const Icon(
                 Icons.business_outlined,
                 size: 64,
                 color: Colors.white70,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
-                'No tienes propiedades asignadas',
-                style: TextStyle(
+                S.of(context).noAssignedProperties,
+                style: const TextStyle(
                   fontSize: 16,
                   color: Colors.white70,
                 ),
@@ -1182,7 +1188,7 @@ class _ProfilePageState extends State<ProfilePage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      property.address ?? 'Propiedad sin dirección',
+                      property.address ?? S.of(context).propertyNoAddress,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -1200,7 +1206,9 @@ class _ProfilePageState extends State<ProfilePage>
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
-                        isActive ? 'Disponible' : 'No disponible',
+                        isActive
+                            ? S.of(context).availableStatus
+                            : S.of(context).unavailableStatus,
                         style: TextStyle(
                           fontSize: 12,
                           color:
@@ -1221,9 +1229,9 @@ class _ProfilePageState extends State<ProfilePage>
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Gestionar',
-                    style: TextStyle(
+                  child: Text(
+                    S.of(context).manageButton,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -1256,10 +1264,10 @@ class _ProfilePageState extends State<ProfilePage>
                       color: const Color(0xFF7FFFD4),
                       width: 1,
                     ),
-                    child: const Text(
-                      'Ver Reseñas',
+                    child: Text(
+                      S.of(context).viewReviewsButton,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Color(0xFF7FFFD4),
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
@@ -1279,10 +1287,10 @@ class _ProfilePageState extends State<ProfilePage>
                       color: const Color(0xFF7FFFD4),
                       width: 1,
                     ),
-                    child: const Text(
-                      'Incentivos',
+                    child: Text(
+                      S.of(context).incentivesButton,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Color(0xFF7FFFD4),
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
@@ -1309,10 +1317,10 @@ class _ProfilePageState extends State<ProfilePage>
                 borderRadius: 25,
                 color: const Color(0xFFFF6B6B),
                 opacity: 0.8,
-                child: const Text(
-                  'Cerrar Sesión',
+                child: Text(
+                  S.of(context).logoutTitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -1333,9 +1341,9 @@ class _ProfilePageState extends State<ProfilePage>
       final lastName =
           _currentUser!.lastName.isNotEmpty ? _currentUser!.lastName : '';
       final fullName = '$firstName $lastName'.trim();
-      return fullName.isNotEmpty ? fullName : 'Usuario';
+      return fullName.isNotEmpty ? fullName : S.of(context).userLabel;
     }
-    return 'Usuario';
+    return S.of(context).userLabel;
   }
 
   String _getUserEmail() {
@@ -1356,16 +1364,16 @@ class _ProfilePageState extends State<ProfilePage>
     if (_currentProfile != null) {
       switch (_currentProfile!.userType) {
         case 'inquilino':
-          return 'Inquilino';
+          return S.of(context).tenantRole;
         case 'propietario':
-          return 'Propietario';
+          return S.of(context).landlordRole;
         case 'agente':
-          return 'Agente';
+          return S.of(context).agentRole;
         default:
-          return 'Usuario';
+          return S.of(context).userLabel;
       }
     }
-    return 'Usuario';
+    return S.of(context).userLabel;
   }
 
   ImageProvider _getProfileImage() {
@@ -1383,11 +1391,11 @@ class _ProfilePageState extends State<ProfilePage>
   String _getModeTitle() {
     switch (_currentMode) {
       case UserMode.inquilino:
-        return 'Mis Alquileres';
+        return S.of(context).myRentalsTitleMixed;
       case UserMode.propietario:
-        return 'Mis Propiedades';
+        return S.of(context).myPropertiesTitle;
       case UserMode.agente:
-        return 'Propiedades Asignadas';
+        return S.of(context).assignedPropertiesTitleMixed;
     }
   }
 
@@ -1413,7 +1421,7 @@ class _ProfilePageState extends State<ProfilePage>
           Icon(Icons.check, size: 12, color: textColor),
           const SizedBox(width: 4),
           Text(
-            'Verificado',
+            S.of(context).verifiedLabel,
             style: TextStyle(
               fontSize: 10,
               color: textColor,
@@ -1428,11 +1436,11 @@ class _ProfilePageState extends State<ProfilePage>
   String _getModeDisplayName(UserMode mode) {
     switch (mode) {
       case UserMode.inquilino:
-        return 'Inquilino';
+        return S.of(context).tenantRole;
       case UserMode.propietario:
-        return 'Propietario';
+        return S.of(context).landlordRole;
       case UserMode.agente:
-        return 'Agente';
+        return S.of(context).agentRole;
     }
   }
 

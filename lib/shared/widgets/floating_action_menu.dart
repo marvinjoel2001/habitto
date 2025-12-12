@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../../generated/l10n.dart';
 
 class FloatingActionMenu extends StatefulWidget {
   final bool isVisible;
@@ -121,7 +122,7 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
                               children: [
                                 _buildActionButton(
                                   icon: Icons.favorite,
-                                  label: 'Matchs',
+                                  label: S.of(context).menuMatchs,
                                   color: AppTheme.secondaryColor,
                                   onTap: widget.onHomeTap,
                                   buttonSize: buttonSize,
@@ -130,7 +131,7 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
                                 ),
                                 _buildActionButton(
                                   icon: Icons.add_circle,
-                                  label: 'Agregar propiedad',
+                                  label: S.of(context).menuAddProperty,
                                   color: AppTheme.primaryColor,
                                   onTap: widget.onMoreTap,
                                   buttonSize: buttonSize,

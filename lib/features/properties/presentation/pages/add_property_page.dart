@@ -12,6 +12,7 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/step_progress_indicator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import 'edit_property_page.dart';
+import '../../../../../generated/l10n.dart';
 
 class AddPropertyPage extends StatefulWidget {
   const AddPropertyPage({super.key});
@@ -73,12 +74,12 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     'Anticrético': 'anticretico',
   };
 
-  final Map<String, String> _propertyTypeDisplayMapping = {
-    'casa': 'Casa',
-    'departamento': 'Departamento',
-    'habitacion': 'Habitación',
-    'anticretico': 'Anticrético',
-  };
+  Map<String, String> get _propertyTypeDisplayMapping => {
+        'casa': S.of(context).propertyTypeHouse,
+        'departamento': S.of(context).propertyTypeApartment,
+        'habitacion': S.of(context).propertyTypeRoom,
+        'anticretico': S.of(context).propertyTypeAnticretico,
+      };
 
   IconData _iconForAmenityName(String name) {
     final key = name.toLowerCase();
@@ -94,18 +95,22 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   }
 
   // Amenidades canónicas iguales a CreateSearchProfilePage
-  final List<Map<String, dynamic>> _canonicalAmenities = const [
-    {'id': 'wifi', 'name': 'WiFi', 'icon': Icons.wifi},
-    {'id': 'parking', 'name': 'Estacionamiento', 'icon': Icons.local_parking},
-    {
-      'id': 'laundry',
-      'name': 'Lavandería',
-      'icon': Icons.local_laundry_service
-    },
-    {'id': 'gym', 'name': 'Gimnasio', 'icon': Icons.fitness_center},
-    {'id': 'pool', 'name': 'Piscina', 'icon': Icons.pool},
-    {'id': 'garden', 'name': 'Jardín', 'icon': Icons.park},
-  ];
+  List<Map<String, dynamic>> get _canonicalAmenities => [
+        {'id': 'wifi', 'name': S.of(context).amenityWifi, 'icon': Icons.wifi},
+        {
+          'id': 'parking',
+          'name': S.of(context).amenityParking,
+          'icon': Icons.local_parking
+        },
+        {
+          'id': 'laundry',
+          'name': S.of(context).amenityLaundry,
+          'icon': Icons.local_laundry_service
+        },
+        {'id': 'gym', 'name': S.of(context).amenityGym, 'icon': Icons.fitness_center},
+        {'id': 'pool', 'name': S.of(context).amenityPool, 'icon': Icons.pool},
+        {'id': 'garden', 'name': S.of(context).amenityGarden, 'icon': Icons.park},
+      ];
 
   @override
   void initState() {
@@ -261,7 +266,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     } catch (e) {
       print('AddPropertyPage: Error cargando datos: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cargando datos: ${e.toString()}')),
+        SnackBar(content: Text(S.of(context).loadDataError(e.toString()))),
       );
     } finally {
       setState(() {
@@ -301,9 +306,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
     if (_currentUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
             content:
-                Text('Error: No se pudo obtener la información del usuario')),
+                Text(S.of(context).userFetchError)),
       );
       return;
     }
@@ -352,16 +357,16 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('¡Propiedad creada!'),
-            content: const Text(
-                'Tu propiedad ha sido creada exitosamente. ¿Quieres agregar fotos ahora?'),
+            title: Text(S.of(context).propertyCreatedTitle),
+            content: Text(
+                S.of(context).propertyCreatedMessage),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Cerrar diálogo
                   Navigator.of(context).pop(); // Volver a la página anterior
                 },
-                child: const Text('Más tarde'),
+                child: Text(S.of(context).laterButton),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -376,7 +381,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                     ),
                   );
                 },
-                child: const Text('Agregar fotos'),
+                child: Text(S.of(context).addPhotosButton),
               ),
             ],
           ),
@@ -386,7 +391,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(content: Text(S.of(context).genericError(e.toString()))),
       );
     } finally {
       setState(() {
@@ -398,40 +403,40 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   bool _validateForm() {
     if (_addressController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor ingresa la dirección de la propiedad')),
+        SnackBar(
+            content: Text(S.of(context).enterAddressError)),
       );
       return false;
     }
 
     if (_priceController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor ingresa el precio de alquiler')),
+        SnackBar(
+            content: Text(S.of(context).enterPriceError)),
       );
       return false;
     }
 
     if (_guaranteeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor ingresa el monto de la garantía')),
+        SnackBar(
+            content: Text(S.of(context).enterGuaranteeError)),
       );
       return false;
     }
 
     if (_descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor ingresa una descripción de la propiedad')),
+        SnackBar(
+            content: Text(S.of(context).enterDescriptionError)),
       );
       return false;
     }
 
     if (_areaController.text.isEmpty && _sizeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor ingresa el área de la propiedad')),
+        SnackBar(
+            content: Text(S.of(context).enterAreaError)),
       );
       return false;
     }
@@ -439,14 +444,14 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     // Validate numeric fields
     if (double.tryParse(_priceController.text) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El precio debe ser un número válido')),
+        SnackBar(content: Text(S.of(context).invalidPriceError)),
       );
       return false;
     }
 
     if (double.tryParse(_guaranteeController.text) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('La garantía debe ser un número válido')),
+        SnackBar(content: Text(S.of(context).invalidGuaranteeError)),
       );
       return false;
     }
@@ -456,7 +461,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         : _sizeController.text;
     if (double.tryParse(areaText) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El área debe ser un número válido')),
+        SnackBar(content: Text(S.of(context).invalidAreaError)),
       );
       return false;
     }
@@ -511,10 +516,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () => Navigator.pop(context),
               ),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Detalles de la Propiedad',
-                  style: TextStyle(
+                  S.of(context).propertyDetailsTitle,
+                  style: const TextStyle(
                     color: Colors.black,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -526,9 +531,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 onPressed: () {
                   // Guardar y salir
                 },
-                child: const Text(
-                  'Guardar y salir',
-                  style: TextStyle(
+                child: Text(
+                  S.of(context).saveAndExit,
+                  style: const TextStyle(
                     color: Colors.black,
                     fontSize: 14,
                   ),
@@ -547,7 +552,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: StepProgressIndicator(
         currentStep: _currentStep,
         totalSteps: 3,
-        stepTitles: const ['Básico', 'Detalles', 'Ubicación'],
+        stepTitles: [
+          S.of(context).stepBasic,
+          S.of(context).stepDetails,
+          S.of(context).stepLocation
+        ],
       ),
     );
   }
@@ -558,16 +567,16 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Comencemos con lo básico. Proporcione los detalles esenciales de su propiedad.',
-            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+          Text(
+            S.of(context).stepBasicDescription,
+            style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
           _buildPropertyTypeDropdown(),
           const SizedBox(height: 24),
-          const Text(
-            'Habitaciones',
-            style: TextStyle(
+          Text(
+            S.of(context).bedroomsLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -634,9 +643,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ],
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Baños',
-            style: TextStyle(
+          Text(
+            S.of(context).bathroomsLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -703,9 +712,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ],
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Área (m²) *',
-            style: TextStyle(
+          Text(
+            S.of(context).areaLabel,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Colors.black,
@@ -729,14 +738,14 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Ahora agreguemos los detalles financieros y características especiales.',
-            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+          Text(
+            S.of(context).stepDetailsDescription,
+            style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
-          const Text(
-            'Precio de Alquiler (COP) *',
-            style: TextStyle(
+          Text(
+            S.of(context).rentPriceLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -749,12 +758,12 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.attach_money, color: AppTheme.primaryColor),
-                        SizedBox(width: 8),
-                        Text('Ajusta el precio',
-                            style: TextStyle(color: Colors.black87)),
+                        const Icon(Icons.attach_money, color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        Text(S.of(context).adjustPriceLabel,
+                            style: const TextStyle(color: Colors.black87)),
                       ],
                     ),
                     Text('COP ${_priceValue.round()}',
@@ -781,9 +790,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Garantía (COP)',
-            style: TextStyle(
+          Text(
+            S.of(context).guaranteeLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -796,12 +805,12 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.lock_outline, color: AppTheme.primaryColor),
-                        SizedBox(width: 8),
-                        Text('Ajusta la garantía',
-                            style: TextStyle(color: Colors.black87)),
+                        const Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        Text(S.of(context).adjustGuaranteeLabel,
+                            style: const TextStyle(color: Colors.black87)),
                       ],
                     ),
                     Text('COP ${_guaranteeValue.round()}',
@@ -829,22 +838,22 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Descripción',
-            style: TextStyle(
+          Text(
+            S.of(context).descriptionLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           _buildProfileStyledField(
             controller: _descriptionController,
-            hintText: 'Describe tu propiedad...',
+            hintText: S.of(context).propertyDescriptionHint,
             icon: Icons.description,
             maxLines: 3,
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Comodidades',
-            style: TextStyle(
+          Text(
+            S.of(context).amenitiesLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -898,9 +907,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             }).toList(),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Métodos de Pago Aceptados',
-            style: TextStyle(
+          Text(
+            S.of(context).acceptedPaymentMethodsLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -1099,7 +1108,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                             child: Container(
                               decoration: AppTheme.getMintButtonDecoration(),
                               child: CustomButton(
-                                text: 'Confirmar ubicación',
+                                text: S.of(context).confirmLocation,
                                 backgroundColor: Colors.transparent,
                                 textColor: AppTheme.darkGrayBase,
                                 onPressed: () {
@@ -1147,28 +1156,28 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Ubicación y disponibilidad de la propiedad',
-            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+          Text(
+            S.of(context).stepLocationDescription,
+            style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
-          const Text(
-            'Dirección *',
-            style: TextStyle(
+          Text(
+            S.of(context).addressLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           _buildProfileStyledField(
             controller: _addressController,
-            hintText: 'Ej: Calle Principal 123, Zona Sur, La Paz',
+            hintText: S.of(context).addressHint,
             icon: Icons.location_on,
           ),
           const SizedBox(height: 24),
 
           // Mapa para seleccionar ubicación
-          const Text(
-            'Ubicación en el mapa',
-            style: TextStyle(
+          Text(
+            S.of(context).mapLocationLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -1215,14 +1224,14 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                                   blurRadius: 8),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.open_in_full,
+                              const Icon(Icons.open_in_full,
                                   color: AppTheme.primaryColor),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Text(
-                                  'Toca para seleccionar ubicación en pantalla completa'),
+                                  S.of(context).tapToSelectLocation),
                             ],
                           ),
                         ),
@@ -1238,15 +1247,15 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           // Las coordenadas se manejan internamente; no se muestran los campos de lat/long
 
           const SizedBox(height: 24),
-          const Text(
-            'Fecha de Disponibilidad',
-            style: TextStyle(
+          Text(
+            S.of(context).availabilityDateLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           _buildProfileStyledField(
             controller: _availabilityDateController,
-            hintText: 'YYYY-MM-DD (opcional)',
+            hintText: S.of(context).dateHint,
             icon: Icons.calendar_today,
             readOnly: true,
             onTap: () async {
@@ -1347,7 +1356,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       child: DropdownButtonFormField<String>(
         initialValue: _selectedPropertyType,
         decoration: InputDecoration(
-          hintText: 'Tipo de propiedad',
+          hintText: S.of(context).propertyTypeLabel,
           floatingLabelBehavior: FloatingLabelBehavior.never,
           labelStyle: const TextStyle(color: AppTheme.darkGrayBase),
           prefixIcon: const Icon(Icons.home_work, color: AppTheme.primaryColor),
@@ -1364,10 +1373,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         ),
         dropdownColor: Colors.white,
         style: const TextStyle(color: AppTheme.darkGrayBase),
-        items: _propertyTypeMapping.entries.map((entry) {
+        items: _propertyTypeDisplayMapping.entries.map((entry) {
           return DropdownMenuItem<String>(
-            value: entry.value,
-            child: Text(entry.key,
+            value: entry.key,
+            child: Text(entry.value,
                 style: const TextStyle(color: AppTheme.darkGrayBase)),
           );
         }).toList(),
@@ -1412,9 +1421,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  child: const Text(
-                    'Anterior',
-                    style: TextStyle(
+                  child: Text(
+                    S.of(context).previousButton,
+                    style: const TextStyle(
                       color: AppTheme.whiteColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -1429,7 +1438,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             child: Container(
               decoration: AppTheme.getMintButtonDecoration(),
               child: CustomButton(
-                text: _currentStep == 2 ? 'Finalizar' : 'Siguiente',
+                text: _currentStep == 2 ? S.of(context).finishButton : S.of(context).nextButton,
                 onPressed: _isLoading ? null : _nextStep,
                 backgroundColor: Colors.transparent,
                 textColor: AppTheme.darkGrayBase,

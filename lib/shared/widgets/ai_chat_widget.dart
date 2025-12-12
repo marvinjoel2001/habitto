@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:habitto/core/services/ai_service.dart';
 import 'package:habitto/shared/theme/app_theme.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import '../../generated/l10n.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 
@@ -48,13 +49,24 @@ class _AiChatWidgetState extends State<AiChatWidget> {
   void initState() {
     super.initState();
     _initSpeech();
-    _currentSuggestions = _defaultSuggestions;
+
     // Initial greeting if history is empty
     if (_messages.isEmpty) {
-      _messages.add({
-        'role': 'assistant',
-        'content':
-            '¡Hola ${widget.userName}! Soy tu asistente de Habitto. ¿En qué puedo ayudarte hoy?'
+      // Defer greeting until we have context for localization
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _currentSuggestions = [
+          S.of(context).searchApartmentSuggestion,
+          S.of(context).searchRoomieSuggestion,
+          S.of(context).createProfileSuggestion,
+        ];
+        if (mounted && _messages.isEmpty) {
+          setState(() {
+            _messages.add({
+              'role': 'assistant',
+              'content': S.of(context).aiAssistantGreeting(widget.userName)
+            });
+          });
+        }
       });
     }
   }
@@ -82,9 +94,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
       // If denied (not permanently), do nothing or show a small hint
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Se requiere permiso de micrófono para usar esta función.')),
+          SnackBar(content: Text(S.of(context).micPermissionRequired)),
         );
       }
     }
@@ -94,22 +104,19 @@ class _AiChatWidgetState extends State<AiChatWidget> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Permiso de Micrófono'),
-        content: const Text(
-          'Para usar el chat de voz, Habitto necesita acceso a tu micrófono. '
-          'Por favor, habilítalo en la configuración de la aplicación.',
-        ),
+        title: Text(S.of(context).micPermissionTitle),
+        content: Text(S.of(context).micPermissionContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(S.of(context).cancelButton),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               openAppSettings();
             },
-            child: const Text('Abrir Configuración'),
+            child: Text(S.of(context).openSettingsButton),
           ),
         ],
       ),
@@ -184,8 +191,9 @@ class _AiChatWidgetState extends State<AiChatWidget> {
               .trim();
           _messages.add({
             'role': 'assistant',
-            'content':
-                cleanResponse.isNotEmpty ? cleanResponse : '¡Perfil creado!'
+            'content': cleanResponse.isNotEmpty
+                ? cleanResponse
+                : S.of(context).profileCreatedSuccess
           });
         } else {
           _messages.add({'role': 'assistant', 'content': response});
@@ -194,11 +202,8 @@ class _AiChatWidgetState extends State<AiChatWidget> {
         // Update suggestions based on context (simple heuristic or parsed from AI)
         // For now, reset to default or empty
       } else {
-        _messages.add({
-          'role': 'assistant',
-          'content':
-              'Lo siento, tuve un problema al procesar tu mensaje. ¿Podrías intentarlo de nuevo?'
-        });
+        _messages.add(
+            {'role': 'assistant', 'content': S.of(context).aiProcessingError});
       }
     });
     _scrollToBottom();
@@ -323,7 +328,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Asistente Habitto',
+                              'Habitto Assistant',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -331,7 +336,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                               ),
                             ),
                             Text(
-                              'En línea ahora',
+                              'Online',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
@@ -464,7 +469,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Escribiendo...',
+                              S.of(context).aiTypingIndicator,
                               style: TextStyle(
                                 color:
                                     AppTheme.blackColor.withValues(alpha: 0.6),
@@ -553,8 +558,8 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                           onChanged: (value) => setState(() {}),
                           decoration: InputDecoration(
                             hintText: _isListening
-                                ? 'Escuchando...'
-                                : 'Escribe tu consulta aquí...',
+                                ? S.of(context).listeningIndicator
+                                : S.of(context).aiChatPlaceholder,
                             hintStyle: TextStyle(
                               color: _isListening
                                   ? AppTheme.primaryColor

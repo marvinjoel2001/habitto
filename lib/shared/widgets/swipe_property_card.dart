@@ -3,6 +3,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../../generated/l10n.dart';
 
 class SwipePropertyCard extends StatefulWidget {
   final List<String> images;
@@ -63,14 +64,15 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
     return Container(
       color: Colors.grey[300],
       alignment: Alignment.center,
-      child: const Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.image_not_supported, size: 56, color: Colors.black54),
-          SizedBox(height: 8),
+          const Icon(Icons.image_not_supported,
+              size: 56, color: Colors.black54),
+          const SizedBox(height: 8),
           Text(
-            'Sin imagen',
-            style: TextStyle(color: Colors.black54, fontSize: 16),
+            S.of(context).noImagePlaceholder,
+            style: const TextStyle(color: Colors.black54, fontSize: 16),
           ),
         ],
       ),

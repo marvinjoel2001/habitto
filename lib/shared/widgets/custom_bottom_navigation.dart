@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import '../theme/app_theme.dart';
+import '../../generated/l10n.dart';
 
 import 'floating_action_menu.dart';
 import 'tenant_floating_menu.dart';
@@ -293,10 +294,10 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                                                 ? Icons.groups
                                                 : Icons.leaderboard,
                                         widget.userMode == 'inquilino'
-                                            ? 'Explorar'
+                                            ? S.of(context).navExplore
                                             : widget.userMode == 'propietario'
-                                                ? 'Candidatos'
-                                                : 'Leads'),
+                                                ? S.of(context).navCandidates
+                                                : S.of(context).navLeads),
                                   ),
                                 ),
                                 const SizedBox(width: spacing),
@@ -322,10 +323,10 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                                                 ? Icons.home_work
                                                 : Icons.domain,
                                         widget.userMode == 'inquilino'
-                                            ? 'Mapa'
+                                            ? S.of(context).navMap
                                             : widget.userMode == 'propietario'
-                                                ? 'Propiedades'
-                                                : 'Portafolio'),
+                                                ? S.of(context).navProperties
+                                                : S.of(context).navPortfolio),
                                   ),
                                 ),
                                 const SizedBox(width: spacing),
@@ -343,8 +344,8 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                                         Icons.chat_bubble_outline,
                                         Icons.chat_bubble,
                                         widget.userMode == 'agente'
-                                            ? 'Buzón'
-                                            : 'Chat'),
+                                            ? S.of(context).navInbox
+                                            : S.of(context).navChat),
                                   ),
                                 ),
                                 const SizedBox(width: spacing),
@@ -362,8 +363,8 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                                         Icons.person_outline,
                                         Icons.person,
                                         widget.userMode == 'agente'
-                                            ? 'Perfil Prof.'
-                                            : 'Perfil'),
+                                            ? S.of(context).navProfProfile
+                                            : S.of(context).navProfile),
                                   ),
                                 ),
                               ],
@@ -387,7 +388,9 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
 
     return Semantics(
       button: true,
-      label: _isFloatingMenuVisible ? 'Cerrar menú' : 'Abrir menú',
+      label: _isFloatingMenuVisible
+          ? S.of(context).closeMenu
+          : S.of(context).openMenu,
       child: InkWell(
         onTap: () {
           if (_isFloatingMenuVisible) {
@@ -466,7 +469,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
     if (isSelected) {
       return Semantics(
         button: true,
-        label: '$label activo',
+        label: S.of(context).navItemActive(label),
         selected: true,
         child: InkWell(
           onTap: () {

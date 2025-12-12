@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:habitto/config/app_config.dart';
 import 'package:habitto/features/matching/data/services/matching_service.dart';
+import '../../../../generated/l10n.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -124,7 +125,7 @@ class _ChatPageState extends State<ChatPage> {
                 ? counterpartName
                 : (counterpartUsername != null && counterpartUsername.isNotEmpty
                     ? counterpartUsername
-                    : 'Usuario $otherUserId');
+                    : S.of(context).userDefaultName(otherUserId));
             final avatar = _resolveAvatar(
                 (c['counterpart_profile_picture'] as String?) ?? '');
             final chatMessage = lastMsg.toChatMessage(
@@ -164,14 +165,14 @@ class _ChatPageState extends State<ChatPage> {
       } else {
         // Manejar error
         setState(() {
-          _error = 'Error: ${result['error']}';
+          _error = S.of(context).errorMessage(result['error']);
           _isLoading = false;
           _messages = [];
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Error al cargar mensajes: $e';
+        _error = S.of(context).errorMessage(e.toString());
         _isLoading = false;
         _messages = [];
       });
@@ -256,7 +257,7 @@ class _ChatPageState extends State<ChatPage> {
               ? nameRaw
               : (usernameRaw != null && usernameRaw.isNotEmpty
                   ? usernameRaw
-                  : 'Usuario $other');
+                  : S.of(context).userDefaultName(other));
           final avatar = _resolveAvatar(
               ((data['counterpart_profile_picture'] as String?) ?? '').trim());
           final timeStr = _formatTime(createdAt);
@@ -383,11 +384,11 @@ class _ChatPageState extends State<ChatPage> {
     if (diff.inDays > 0) {
       return '${dateTime.day}/${dateTime.month}';
     } else if (diff.inHours > 0) {
-      return '${diff.inHours}h';
+      return S.of(context).hoursAgo(diff.inHours);
     } else if (diff.inMinutes > 0) {
-      return '${diff.inMinutes}m';
+      return S.of(context).minutesAgo(diff.inMinutes);
     } else {
-      return 'Ahora';
+      return S.of(context).nowLabel;
     }
   }
 
@@ -499,9 +500,9 @@ class _ChatPageState extends State<ChatPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
         ),
-        title: const Text(
-          'Mensajes',
-          style: TextStyle(
+        title: Text(
+          S.of(context).messagesTitle,
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -527,7 +528,7 @@ class _ChatPageState extends State<ChatPage> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Buscar conversaciones...',
+                hintText: S.of(context).searchConversationsPlaceholder,
                 hintStyle: const TextStyle(color: Colors.black45),
                 prefixIcon: const Icon(Icons.search, color: Colors.black54),
                 filled: true,
@@ -573,7 +574,7 @@ class _ChatPageState extends State<ChatPage> {
                                     await _loadMessages();
                                     await _loadPendingMatchRequests();
                                   },
-                                  child: const Text('Reintentar')),
+                                  child: Text(S.of(context).retryButton)),
                             ],
                           ),
                         )
@@ -772,9 +773,9 @@ class _ChatPageState extends State<ChatPage> {
                     children: [
                       Row(
                         children: [
-                          const Text(
-                            'Solicitudes de Match',
-                            style: TextStyle(
+                          Text(
+                            S.of(context).matchRequestsTitle,
+                            style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black),
@@ -802,8 +803,8 @@ class _ChatPageState extends State<ChatPage> {
                   const SizedBox(height: 4),
                   Text(
                     _pendingMatchRequestsCount > 0
-                        ? 'Toca para revisar y aceptar'
-                        : 'Por el momento no tienes solicitudes',
+                        ? S.of(context).matchRequestsAction
+                        : S.of(context).noMatchRequests,
                     style: const TextStyle(fontSize: 14, color: Colors.black54),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -850,18 +851,19 @@ class _ChatPageState extends State<ChatPage> {
                   color: Colors.white, size: 24),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Notificaciones',
-                      style: TextStyle(
+                  Text(S.of(context).notificationsTitle,
+                      style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.black)),
-                  SizedBox(height: 4),
-                  Text('Revisa tus avisos recientes',
-                      style: TextStyle(fontSize: 14, color: Colors.black54)),
+                  const SizedBox(height: 4),
+                  Text(S.of(context).notificationsSubtitle,
+                      style:
+                          const TextStyle(fontSize: 14, color: Colors.black54)),
                 ],
               ),
             ),
@@ -940,7 +942,7 @@ class _NotificationsPageState extends State<_NotificationsPage> {
       });
     } else {
       setState(() {
-        _error = resp['error'] ?? 'Error obteniendo notificaciones';
+        _error = resp['error'] ?? S.of(context).notificationsLoadError;
         _isLoading = false;
       });
     }
@@ -955,9 +957,9 @@ class _NotificationsPageState extends State<_NotificationsPage> {
           _items[idx]['is_read'] = true;
         }
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Notificación marcada como leída'),
-          duration: Duration(seconds: 2)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(S.of(context).notificationMarkedRead),
+          duration: const Duration(seconds: 2)));
     }
   }
 
@@ -971,8 +973,8 @@ class _NotificationsPageState extends State<_NotificationsPage> {
         leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context)),
-        title: const Text('Notificaciones',
-            style: TextStyle(
+        title: Text(S.of(context).notificationsTitle,
+            style: const TextStyle(
                 color: Colors.black,
                 fontSize: 20,
                 fontWeight: FontWeight.w600)),
@@ -998,20 +1000,21 @@ class _NotificationsPageState extends State<_NotificationsPage> {
                               color: Colors.black54, fontSize: 16)),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                          onPressed: _load, child: const Text('Reintentar')),
+                          onPressed: _load,
+                          child: Text(S.of(context).retryButton)),
                     ],
                   ),
                 )
               : _items.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.notifications_off,
+                          const Icon(Icons.notifications_off,
                               size: 64, color: Colors.black26),
-                          SizedBox(height: 16),
-                          Text('Por el momento no tienes notificaciones',
-                              style: TextStyle(
+                          const SizedBox(height: 16),
+                          Text(S.of(context).noNotifications,
+                              style: const TextStyle(
                                   color: Colors.black54, fontSize: 18)),
                         ],
                       ),
@@ -1024,8 +1027,8 @@ class _NotificationsPageState extends State<_NotificationsPage> {
                         itemCount: _items.length,
                         itemBuilder: (context, index) {
                           final n = _items[index];
-                          final title =
-                              (n['title'] as String?) ?? 'Notificación';
+                          final title = (n['title'] as String?) ??
+                              S.of(context).notificationDefaultTitle;
                           final message = (n['message'] as String?) ??
                               (n['content'] as String?) ??
                               '';
@@ -1095,8 +1098,8 @@ class _NotificationsPageState extends State<_NotificationsPage> {
                                                 (n['id'] as int?) ?? 0),
                                             icon: const Icon(Icons.done,
                                                 size: 16),
-                                            label:
-                                                const Text('Marcar como leída'),
+                                            label: Text(
+                                                S.of(context).markAsReadButton),
                                           ),
                                         ),
                                     ],
@@ -1139,13 +1142,13 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
         });
       } else {
         setState(() {
-          _error = 'Error: ${result['error']}';
+          _error = S.of(context).errorMessage(result['error']);
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Error al cargar solicitudes: $e';
+        _error = S.of(context).errorMessage(e.toString());
         _isLoading = false;
       });
     }
@@ -1174,16 +1177,16 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
               (request) => (request['match'] as Map?)?['id'] == matchId);
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Solicitud de match aceptada'),
+          SnackBar(
+            content: Text(S.of(context).matchRequestAccepted),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${result['error']}'),
+            content: Text(S.of(context).errorMessage(result['error'])),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -1192,7 +1195,7 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al aceptar: $e'),
+          content: Text(S.of(context).acceptError(e.toString())),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 2),
         ),
@@ -1209,16 +1212,16 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
               (request) => (request['match'] as Map?)?['id'] == matchId);
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Solicitud de match rechazada'),
+          SnackBar(
+            content: Text(S.of(context).matchRequestRejected),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${result['error']}'),
+            content: Text(S.of(context).errorMessage(result['error'])),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -1227,7 +1230,7 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al rechazar: $e'),
+          content: Text(S.of(context).rejectError(e.toString())),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 2),
         ),
@@ -1246,9 +1249,9 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Solicitudes de Match',
-          style: TextStyle(
+        title: Text(
+          S.of(context).matchRequestsTitle,
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -1281,7 +1284,7 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
                             const SizedBox(height: 16),
                             ElevatedButton(
                                 onPressed: _loadMatchRequests,
-                                child: const Text('Reintentar')),
+                                child: Text(S.of(context).retryButton)),
                           ],
                         ),
                       )
@@ -1293,12 +1296,14 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
                                 Icon(Icons.favorite_border,
                                     size: 64, color: Colors.grey[400]),
                                 const SizedBox(height: 16),
-                                Text(
-                                    'No tienes solicitudes de match pendientes',
+                                Text(S.of(context).noPendingMatchRequests,
                                     style: TextStyle(
                                         color: Colors.grey[600], fontSize: 18)),
                                 const SizedBox(height: 8),
-                                Text('Las nuevas solicitudes aparecerán aquí',
+                                Text(
+                                    S
+                                        .of(context)
+                                        .newMatchRequestsWillAppearHere,
                                     style: TextStyle(
                                         color: Colors.grey[500], fontSize: 14)),
                               ],
@@ -1330,13 +1335,14 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
         request['interested_user'] as Map<String, dynamic>? ?? {};
     final matchId = match['id'] is num ? (match['id'] as num).toInt() : 0;
     final propertyTitle =
-        property['title'] as String? ?? 'Propiedad sin título';
+        property['title'] as String? ?? S.of(context).untitledProperty;
     final propertyAddress =
-        property['address'] as String? ?? 'Dirección no especificada';
+        property['address'] as String? ?? S.of(context).unspecifiedAddress;
     final userName =
         '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'
             .trim();
-    final userUsername = interestedUser['username'] as String? ?? 'Usuario';
+    final userUsername =
+        interestedUser['username'] as String? ?? S.of(context).defaultUser;
     final displayName = userName.isNotEmpty ? userName : userUsername;
     final avatar =
         _resolveAvatar((interestedUser['profile_picture'] as String?) ?? '');
@@ -1440,9 +1446,9 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Rechazar',
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  child: Text(S.of(context).rejectButton,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1460,9 +1466,9 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Aceptar',
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  child: Text(S.of(context).acceptButton,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

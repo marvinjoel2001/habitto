@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../../generated/l10n.dart';
 
 class TenantFloatingMenu extends StatefulWidget {
   final bool isVisible;
@@ -105,7 +106,8 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                     child: Center(
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 24),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 20),
                         decoration: BoxDecoration(
                           gradient: AppTheme.getCardGradient(opacity: 0.95),
                           borderRadius: BorderRadius.circular(24),
@@ -128,7 +130,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                             final buttonSize = isSmallScreen ? 48.0 : 64.0;
                             final iconSize = isSmallScreen ? 24.0 : 28.0;
                             final spacing = isSmallScreen ? 8.0 : 12.0;
-                            
+
                             return Wrap(
                               spacing: spacing,
                               alignment: WrapAlignment.center,
@@ -137,7 +139,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                                   icon: Icons.rotate_left,
                                   color: Colors.amber,
                                   onTap: widget.onGoBack,
-                                  label: 'Deshacer',
+                                  label: S.of(context).actionUndo,
                                   buttonSize: buttonSize,
                                   iconSize: iconSize,
                                 ),
@@ -145,7 +147,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                                   icon: Icons.close,
                                   color: Colors.redAccent,
                                   onTap: widget.onSwipeLeft,
-                                  label: 'Rechazar',
+                                  label: S.of(context).actionReject,
                                   buttonSize: buttonSize,
                                   iconSize: iconSize,
                                 ),
@@ -153,7 +155,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                                   icon: Icons.favorite,
                                   color: AppTheme.secondaryColor,
                                   onTap: widget.onSwipeRight,
-                                  label: 'Like',
+                                  label: S.of(context).actionLike,
                                   buttonSize: buttonSize,
                                   iconSize: iconSize,
                                 ),
@@ -161,7 +163,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                                   icon: Icons.star,
                                   color: Colors.blueAccent,
                                   onTap: widget.onAddFavorite,
-                                  label: 'Favorito',
+                                  label: S.of(context).actionFavorite,
                                   buttonSize: buttonSize,
                                   iconSize: iconSize,
                                 ),

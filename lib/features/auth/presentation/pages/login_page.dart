@@ -3,6 +3,7 @@ import '../../data/services/auth_service.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
+import '../../../../generated/l10n.dart';
 import 'dart:ui' as ui;
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -258,11 +259,11 @@ class _LoginPageState extends State<LoginPage> {
       if (response['success']) {
         navigator.pushReplacementNamed('/splash');
       } else {
-        _showToast(response['error'] ?? 'Error de autenticación',
+        _showToast(response['error'] ?? S.of(context).authErrorDefault,
             isError: true);
       }
     } catch (e) {
-      _showToast('Error: ${e.toString()}', isError: true);
+      _showToast(S.of(context).errorMessage(e.toString()), isError: true);
     } finally {
       setState(() {
         _isLoading = false;
@@ -387,7 +388,7 @@ class _LoginPageState extends State<LoginPage> {
                                   const SizedBox(height: 8),
                                   Center(
                                     child: Text(
-                                      'Bienvenido a\nHabitto',
+                                      S.of(context).welcomeToHabitto,
                                       style: TextStyle(
                                         // título más pequeño para ocupar menos vertical
                                         fontSize: 24,
@@ -411,7 +412,9 @@ class _LoginPageState extends State<LoginPage> {
                                   CustomTextField(
                                     controller: _emailController,
                                     focusNode: _emailFocusNode,
-                                    hintText: 'Email o nombre de usuario',
+                                    hintText: S
+                                        .of(context)
+                                        .emailOrUsernamePlaceholder,
                                     keyboardType: TextInputType.emailAddress,
                                     textInputAction: TextInputAction.next,
                                     textColor: Colors.white,
@@ -423,7 +426,9 @@ class _LoginPageState extends State<LoginPage> {
                                     },
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return 'Por favor ingresa tu email o nombre de usuario';
+                                        return S
+                                            .of(context)
+                                            .enterEmailOrUsernameError;
                                       }
                                       return null;
                                     },
@@ -433,7 +438,7 @@ class _LoginPageState extends State<LoginPage> {
                                   CustomTextField(
                                     controller: _passwordController,
                                     focusNode: _passwordFocusNode,
-                                    hintText: 'Contraseña',
+                                    hintText: S.of(context).passwordPlaceholder,
                                     isPassword: true,
                                     textInputAction: TextInputAction.done,
                                     textColor: Colors.white,
@@ -447,7 +452,7 @@ class _LoginPageState extends State<LoginPage> {
                                     },
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return 'Por favor ingresa tu contraseña';
+                                        return S.of(context).enterPasswordError;
                                       }
                                       return null;
                                     },
@@ -460,7 +465,7 @@ class _LoginPageState extends State<LoginPage> {
                                         // Navegar a recuperar contraseña
                                       },
                                       child: Text(
-                                        '¿Olvidaste tu contraseña?',
+                                        S.of(context).forgotPasswordButton,
                                         style: TextStyle(
                                           color: Colors.white
                                               .withValues(alpha: 0.9),
@@ -472,7 +477,7 @@ class _LoginPageState extends State<LoginPage> {
                                   const SizedBox(height: 16),
                                   // Botón de iniciar sesión
                                   CustomButton(
-                                    text: 'Iniciar Sesión',
+                                    text: S.of(context).loginButton,
                                     textColor: Colors.white,
                                     onPressed: _handleLogin,
                                     isLoading: _isLoading,
@@ -486,7 +491,7 @@ class _LoginPageState extends State<LoginPage> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          '¿No tienes una cuenta? ',
+                                          S.of(context).noAccountLabel,
                                           style: TextStyle(
                                             color: Colors.white
                                                 .withValues(alpha: 0.9),
@@ -499,7 +504,7 @@ class _LoginPageState extends State<LoginPage> {
                                                 context, '/register');
                                           },
                                           child: Text(
-                                            'Regístrate',
+                                            S.of(context).registerLink,
                                             style: TextStyle(
                                               color: Theme.of(context)
                                                   .colorScheme

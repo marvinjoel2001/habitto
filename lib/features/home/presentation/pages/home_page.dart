@@ -26,6 +26,7 @@ import '../../../properties/domain/entities/photo.dart' as domain_photo;
 import '../../../../core/services/api_service.dart';
 import '../../../../config/app_config.dart';
 import 'more_page.dart';
+import '../../../../generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -82,7 +83,7 @@ class _HomePageState extends State<HomePage> {
             ? currentProfile.user.firstName
             : (currentProfile.user.username.isNotEmpty
                 ? currentProfile.user.username
-                : 'Usuario');
+                : S.of(context).defaultUser);
         if (mounted) {
           setState(() {
             _userMode = mode;
@@ -184,8 +185,8 @@ class _HomePageState extends State<HomePage> {
             onProfileCreated: (data) async {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Procesando perfil...'),
+                SnackBar(
+                  content: Text(S.of(context).processingProfile),
                   backgroundColor: AppTheme.primaryColor,
                 ),
               );
@@ -194,9 +195,9 @@ class _HomePageState extends State<HomePage> {
                 if (result['success']) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content:
-                            Text('Perfil de búsqueda creado exitosamente!'),
+                            Text(S.of(context).searchProfileCreatedSuccess),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -205,7 +206,8 @@ class _HomePageState extends State<HomePage> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Error: ${result['error']}'),
+                        content:
+                            Text(S.of(context).errorMessage(result['error'])),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -215,7 +217,7 @@ class _HomePageState extends State<HomePage> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error: $e'),
+                      content: Text(S.of(context).errorMessage(e.toString())),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -421,13 +423,14 @@ class _HomePageState extends State<HomePage> {
     return Container(
       color: Colors.grey[300],
       alignment: Alignment.center,
-      child: const Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.image_not_supported, size: 56, color: Colors.black54),
-          SizedBox(height: 8),
-          Text('Sin imagen',
-              style: TextStyle(color: Colors.black54, fontSize: 16)),
+          const Icon(Icons.image_not_supported,
+              size: 56, color: Colors.black54),
+          const SizedBox(height: 8),
+          Text(S.of(context).noImageLabel,
+              style: const TextStyle(color: Colors.black54, fontSize: 16)),
         ],
       ),
     );
@@ -651,15 +654,19 @@ class _HomeContentState extends State<HomeContent> {
           print(
               'Home: property ${p.id} mainPhoto -> ${AppConfig.sanitizeUrl(p.mainPhoto!)}');
         }
-        final typeLabel = p.type.isNotEmpty ? _capitalize(p.type) : 'Propiedad';
-        final addressLabel =
-            p.address.isNotEmpty ? _capitalize(p.address) : 'Propiedad';
+        final typeLabel = p.type.isNotEmpty
+            ? _capitalize(p.type)
+            : S.of(context).propertyLabel;
+        final addressLabel = p.address.isNotEmpty
+            ? _capitalize(p.address)
+            : S.of(context).propertyLabel;
         final formattedTitle = "$typeLabel · $addressLabel";
         cards.add(HomePropertyCardData(
           id: p.id,
           title: formattedTitle,
-          priceLabel:
-              p.price > 0 ? 'Bs. ${p.price.toStringAsFixed(0)}/mes' : '—',
+          priceLabel: p.price > 0
+              ? S.of(context).pricePerMonth(p.price.toStringAsFixed(0))
+              : '—',
           images: initialImages,
           distanceKm: 0.0,
           tags: [p.type.isNotEmpty ? _capitalize(p.type) : ''],
@@ -677,7 +684,7 @@ class _HomeContentState extends State<HomeContent> {
       }
     } else {
       setState(() {
-        _error = propsRes['error'] ?? 'No se pudieron cargar propiedades';
+        _error = propsRes['error'] ?? S.of(context).propertiesLoadError;
         _isLoading = false;
       });
     }
@@ -694,10 +701,10 @@ class _HomeContentState extends State<HomeContent> {
             color: Colors.white.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Por el momento no tenemos matchs',
+          Text(
+            S.of(context).noMatchesTitle,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -725,9 +732,9 @@ class _HomeContentState extends State<HomeContent> {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Actualizar',
-                    style: TextStyle(
+                  Text(
+                    S.of(context).refreshButton,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -889,7 +896,7 @@ class _HomeContentState extends State<HomeContent> {
                                             .showSnackBar(
                                           SnackBar(
                                               content: Text(res['error'] ??
-                                                  'Error al hacer like')),
+                                                  S.of(context).likeError)),
                                         );
                                       }
                                       return;
@@ -914,7 +921,7 @@ class _HomeContentState extends State<HomeContent> {
                                           .showSnackBar(
                                         SnackBar(
                                             content: Text(res['error'] ??
-                                                'Error al rechazar')),
+                                                S.of(context).rejectError)),
                                       );
                                     }
                                   },
@@ -975,11 +982,10 @@ class _HomeContentState extends State<HomeContent> {
                           if (res['success'] == true) {
                             _spawnHeartsBurst();
                             messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    '¡Like enviado! El propietario será notificado.'),
+                              SnackBar(
+                                content: Text(S.of(context).likeSent),
                                 backgroundColor: AppTheme.secondaryColor,
-                                duration: Duration(seconds: 2),
+                                duration: const Duration(seconds: 2),
                               ),
                             );
                             widget.deckKey.currentState?.swipeRight();
@@ -987,7 +993,7 @@ class _HomeContentState extends State<HomeContent> {
                             messenger.showSnackBar(
                               SnackBar(
                                   content: Text(
-                                      res['error'] ?? 'Error al hacer like')),
+                                      res['error'] ?? S.of(context).likeError)),
                             );
                           }
                         }
@@ -1308,7 +1314,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
     if (topIndex >= widget.properties.length) {
       return Center(
         child: Text(
-          'No hay más propiedades',
+          S.of(context).noMoreProperties,
           style: TextStyle(color: Colors.white.withOpacity(0.8)),
         ),
       );
@@ -1485,7 +1491,7 @@ class _PropertyCardState extends State<PropertyCard> {
           Icon(Icons.image_not_supported, size: 56, color: Colors.black54),
           SizedBox(height: 8),
           Text(
-            'Sin imagen',
+            S.of(context).noImageLabel,
             style: TextStyle(color: Colors.black54, fontSize: 16),
           ),
         ],

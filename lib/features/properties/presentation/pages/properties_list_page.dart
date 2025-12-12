@@ -8,6 +8,7 @@ import 'package:habitto/config/app_config.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/theme/app_theme.dart';
 import 'edit_property_page.dart';
+import '../../../../../generated/l10n.dart';
 
 class PropertiesListPage extends StatefulWidget {
   const PropertiesListPage({super.key});
@@ -44,12 +45,12 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
         });
       } else {
         setState(() {
-          _error = response['error'] ?? 'Error cargando propiedades';
+          _error = response['error'] ?? S.of(context).loadPropertiesError;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Error de conexión: ${e.toString()}';
+        _error = S.of(context).connectionError(e.toString());
       });
     } finally {
       setState(() {
@@ -63,9 +64,9 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Mis Propiedades',
-          style: TextStyle(
+        title: Text(
+          S.of(context).myPropertiesTitle,
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -128,7 +129,7 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
             ),
             const SizedBox(height: 16),
             CustomButton(
-              text: 'Reintentar',
+              text: S.of(context).retryButton,
               onPressed: _loadProperties,
               backgroundColor: AppTheme.primaryColor,
             ),
@@ -149,7 +150,7 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No tienes propiedades registradas',
+              S.of(context).noPropertiesRegistered,
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.grey[600],
@@ -158,7 +159,7 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Agrega tu primera propiedad para comenzar',
+              S.of(context).addFirstProperty,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -166,7 +167,7 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
             ),
             const SizedBox(height: 24),
             CustomButton(
-              text: 'Agregar Propiedad',
+              text: S.of(context).addPropertyButton,
               onPressed: () {
                 Navigator.pushNamed(context, '/add-property').then((_) {
                   _loadProperties();
@@ -271,7 +272,9 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
                           ),
                         ),
                         child: Text(
-                          property.isActive ? 'ACTIVA' : 'INACTIVA',
+                          property.isActive
+                              ? S.of(context).activeStatus
+                              : S.of(context).inactiveStatus,
                           style: TextStyle(
                             color: property.isActive
                                 ? Colors.green[700]

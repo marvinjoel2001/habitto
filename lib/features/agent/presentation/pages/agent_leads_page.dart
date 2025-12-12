@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../matching/data/services/matching_service.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../../generated/l10n.dart';
 
 class AgentLeadsPage extends StatefulWidget {
   const AgentLeadsPage({super.key});
@@ -43,7 +44,7 @@ class _AgentLeadsPageState extends State<AgentLeadsPage> {
       });
     } else {
       setState(() {
-        _error = resp['error'] ?? 'Error cargando leads';
+        _error = resp['error'] ?? S.of(context).loadLeadsError;
         _isLoading = false;
       });
     }
@@ -57,8 +58,8 @@ class _AgentLeadsPageState extends State<AgentLeadsPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false, // Removed back button
-        title: const Text('Solicitudes',
-            style: TextStyle(
+        title: Text(S.of(context).requestsTitle,
+            style: const TextStyle(
                 color: Colors.black,
                 fontSize: 20,
                 fontWeight: FontWeight.w600)),
@@ -84,7 +85,7 @@ class _AgentLeadsPageState extends State<AgentLeadsPage> {
                       Text(
                         _error.isNotEmpty
                             ? _error
-                            : 'No tienes nuevas solicitudes',
+                            : S.of(context).noNewRequests,
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.black54,
@@ -92,9 +93,9 @@ class _AgentLeadsPageState extends State<AgentLeadsPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Las nuevas solicitudes aparecerán aquí',
-                        style: TextStyle(
+                      Text(
+                        S.of(context).newRequestsPlaceholder,
+                        style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black45,
                         ),
@@ -111,9 +112,9 @@ class _AgentLeadsPageState extends State<AgentLeadsPage> {
                             borderRadius: BorderRadius.circular(24),
                           ),
                         ),
-                        child: const Text(
-                          'Actualizar',
-                          style: TextStyle(
+                        child: Text(
+                          S.of(context).refreshButton,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -152,11 +153,15 @@ class _AgentLeadsPageState extends State<AgentLeadsPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('${prop['address'] ?? 'Propiedad'}',
+                                  Text(
+                                      '${prop['address'] ?? S.of(context).propertyTitleFallback}',
                                       style: const TextStyle(
                                           fontWeight: FontWeight.w600)),
                                   const SizedBox(height: 4),
-                                  Text('Score: $score%',
+                                  Text(
+                                      S
+                                          .of(context)
+                                          .scoreLabel(score.toString()),
                                       style: const TextStyle(
                                           color: Colors.black54)),
                                 ],

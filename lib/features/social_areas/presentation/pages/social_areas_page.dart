@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../../generated/l10n.dart';
 
 class SocialAreasPage extends StatelessWidget {
   const SocialAreasPage({super.key});
@@ -9,7 +10,7 @@ class SocialAreasPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Áreas Sociales'),
+        title: Text(S.of(context).socialAreasTitle),
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
@@ -17,10 +18,10 @@ class SocialAreasPage extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: const Center(
+      body: Center(
         child: Text(
-          'Áreas Sociales - Próximamente',
-          style: TextStyle(color: Colors.white, fontSize: 18),
+          S.of(context).socialAreasComingSoon,
+          style: const TextStyle(color: Colors.white, fontSize: 18),
         ),
       ),
     );

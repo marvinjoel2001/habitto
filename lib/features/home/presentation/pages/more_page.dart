@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../../generated/l10n.dart';
 
 /// Página "Más" que muestra opciones adicionales para inquilinos
 class MorePage extends StatelessWidget {
@@ -16,9 +17,9 @@ class MorePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              const Text(
-                'Más opciones',
-                style: TextStyle(
+              Text(
+                S.of(context).moreOptionsTitle,
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.blackColor,
@@ -28,8 +29,8 @@ class MorePage extends StatelessWidget {
               _buildOptionCard(
                 context,
                 icon: Icons.favorite_outline,
-                title: 'Propiedades favoritas',
-                subtitle: 'Ver tus propiedades guardadas',
+                title: S.of(context).favoritePropertiesOption,
+                subtitle: S.of(context).favoritePropertiesSubtitle,
                 onTap: () {
                   Navigator.pushNamed(context, '/favorites');
                 },
@@ -38,8 +39,8 @@ class MorePage extends StatelessWidget {
               _buildOptionCard(
                 context,
                 icon: Icons.history,
-                title: 'Historial de búsqueda',
-                subtitle: 'Ver tus búsquedas recientes',
+                title: S.of(context).searchHistoryOption,
+                subtitle: S.of(context).searchHistorySubtitle,
                 onTap: () {
                   Navigator.pushNamed(context, '/search-history');
                 },
@@ -48,8 +49,8 @@ class MorePage extends StatelessWidget {
               _buildOptionCard(
                 context,
                 icon: Icons.notifications_outlined,
-                title: 'Notificaciones',
-                subtitle: 'Configurar tus notificaciones',
+                title: S.of(context).notificationsOption,
+                subtitle: S.of(context).notificationsSubtitle,
                 onTap: () {
                   Navigator.pushNamed(context, '/notifications-settings');
                 },
@@ -58,8 +59,8 @@ class MorePage extends StatelessWidget {
               _buildOptionCard(
                 context,
                 icon: Icons.help_outline,
-                title: 'Ayuda y soporte',
-                subtitle: 'Preguntas frecuentes y soporte',
+                title: S.of(context).helpSupportOption,
+                subtitle: S.of(context).helpSupportSubtitle,
                 onTap: () {
                   Navigator.pushNamed(context, '/help');
                 },
@@ -68,8 +69,8 @@ class MorePage extends StatelessWidget {
               _buildOptionCard(
                 context,
                 icon: Icons.settings_outlined,
-                title: 'Configuración',
-                subtitle: 'Ajustes de la aplicación',
+                title: S.of(context).settingsOption,
+                subtitle: S.of(context).settingsSubtitle,
                 onTap: () {
                   Navigator.pushNamed(context, '/settings');
                 },

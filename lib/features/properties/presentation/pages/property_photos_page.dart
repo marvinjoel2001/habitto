@@ -6,6 +6,7 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../data/services/photo_service.dart';
 import '../../domain/entities/photo.dart';
 import '../../domain/entities/property.dart';
+import '../../../../../generated/l10n.dart';
 
 class PropertyPhotosPage extends StatefulWidget {
   final Property property;
@@ -22,7 +23,7 @@ class PropertyPhotosPage extends StatefulWidget {
 class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
   late PhotoService _photoService;
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   List<Photo> _photos = [];
   bool _isLoading = true;
   bool _isUploading = false;
@@ -41,7 +42,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
     });
 
     final result = await _photoService.getPropertyPhotos(widget.property.id);
-    
+
     if (result['success']) {
       setState(() {
         _photos = result['data']['photos'];
@@ -51,11 +52,12 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
       setState(() {
         _isLoading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['error'] ?? 'Error al cargar fotos'),
+            content:
+                Text(result['error'] ?? S.of(context).loadPhotosErrorGeneric),
             backgroundColor: Colors.red,
           ),
         );
@@ -79,7 +81,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al seleccionar imagen: $e'),
+            content: Text(S.of(context).pickImageError(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -91,8 +93,8 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
     try {
       if (widget.property.id <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ID de propiedad inválido. Crea la propiedad antes de subir fotos.'),
+          SnackBar(
+            content: Text(S.of(context).invalidPropertyIdError),
             backgroundColor: Colors.red,
           ),
         );
@@ -112,7 +114,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al tomar foto: $e'),
+            content: Text(S.of(context).takePhotoError(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -124,18 +126,19 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
     try {
       if (widget.property.id <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ID de propiedad inválido. Crea la propiedad antes de subir fotos.'),
+          SnackBar(
+            content: Text(S.of(context).invalidPropertyIdError),
             backgroundColor: Colors.red,
           ),
         );
         return;
       }
       final List<XFile> images = await _imagePicker.pickMultiImage(
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      ) ?? [];
+            maxWidth: 1920,
+            maxHeight: 1080,
+            imageQuality: 85,
+          ) ??
+          [];
 
       if (images.isNotEmpty) {
         setState(() {
@@ -155,7 +158,8 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(result['error'] ?? 'Error al subir una foto'),
+                content: Text(
+                    result['error'] ?? S.of(context).uploadPhotoErrorGeneric),
                 backgroundColor: Colors.red,
               ),
             );
@@ -168,7 +172,8 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Se subieron $_uploadedCount fotos'),
+            content: Text(
+                S.of(context).photosUploadedCount(_uploadedCount.toString())),
             backgroundColor: Colors.green,
           ),
         );
@@ -179,7 +184,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al seleccionar imágenes: $e'),
+            content: Text(S.of(context).pickImagesError(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -193,11 +198,13 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
     });
 
     if (widget.property.id <= 0) {
-      setState(() { _isUploading = false; });
+      setState(() {
+        _isUploading = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ID de propiedad inválido (pk=0). Crea la propiedad y usa su ID real.'),
+          SnackBar(
+            content: Text(S.of(context).invalidPropertyIdErrorDetail),
             backgroundColor: Colors.red,
           ),
         );
@@ -219,19 +226,21 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'Foto subida exitosamente'),
+            content:
+                Text(result['message'] ?? S.of(context).photoUploadedSuccess),
             backgroundColor: Colors.green,
           ),
         );
       }
-      
+
       // Recargar las fotos
       await _loadPhotos();
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['error'] ?? 'Error al subir foto'),
+            content:
+                Text(result['error'] ?? S.of(context).uploadPhotoErrorGeneric),
             backgroundColor: Colors.red,
           ),
         );
@@ -243,17 +252,17 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar foto'),
-        content: const Text('¿Estás seguro de que quieres eliminar esta foto?'),
+        title: Text(S.of(context).deletePhotoTitle),
+        content: Text(S.of(context).deletePhotoConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
+            child: Text(S.of(context).cancelButton),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
+            child: Text(S.of(context).deleteButton),
           ),
         ],
       ),
@@ -261,24 +270,26 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
 
     if (confirmed == true) {
       final result = await _photoService.deletePhoto(photo.id);
-      
+
       if (result['success']) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? 'Foto eliminada exitosamente'),
+              content:
+                  Text(result['message'] ?? S.of(context).photoDeletedSuccess),
               backgroundColor: Colors.green,
             ),
           );
         }
-        
+
         // Recargar las fotos
         await _loadPhotos();
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['error'] ?? 'Error al eliminar foto'),
+              content: Text(
+                  result['error'] ?? S.of(context).deletePhotoErrorGeneric),
               backgroundColor: Colors.red,
             ),
           );
@@ -293,7 +304,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: Text(
-          'Fotos de ${widget.property.address}',
+          S.of(context).photosOfProperty(widget.property.address),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -310,17 +321,22 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
               children: [
                 // Encabezado informativo
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
-                      const Icon(Icons.home_outlined, color: AppTheme.primaryColor),
+                      const Icon(Icons.home_outlined,
+                          color: AppTheme.primaryColor),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(widget.property.type, style: AppTheme.headlineSmall),
-                            Text('ID: ${widget.property.id} · ${widget.property.address}', style: AppTheme.bodyMedium),
+                            Text(widget.property.type,
+                                style: AppTheme.headlineSmall),
+                            Text(
+                                'ID: ${widget.property.id} · ${widget.property.address}',
+                                style: AppTheme.bodyMedium),
                           ],
                         ),
                       ),
@@ -337,34 +353,47 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: (_isUploading || widget.property.id <= 0) ? null : _pickAndUploadImage,
+                              onPressed:
+                                  (_isUploading || widget.property.id <= 0)
+                                      ? null
+                                      : _pickAndUploadImage,
                               icon: _isUploading
                                   ? const SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
                                     )
                                   : const Icon(Icons.photo_library_outlined),
-                              label: Text(_isUploading ? 'Subiendo...' : 'Galería'),
+                              label: Text(_isUploading
+                                  ? S.of(context).uploadingStatus
+                                  : S.of(context).galleryOption),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryColor,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: (_isUploading || widget.property.id <= 0) ? null : _pickFromCamera,
+                              onPressed:
+                                  (_isUploading || widget.property.id <= 0)
+                                      ? null
+                                      : _pickFromCamera,
                               icon: const Icon(Icons.photo_camera_outlined),
-                              label: const Text('Cámara'),
+                              label: Text(S.of(context).cameraOption),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.black87,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
                           ),
@@ -374,13 +403,17 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: (_isUploading || widget.property.id <= 0) ? null : _pickMultipleAndUpload,
+                          onPressed: (_isUploading || widget.property.id <= 0)
+                              ? null
+                              : _pickMultipleAndUpload,
                           icon: const Icon(Icons.collections_outlined),
-                          label: const Text('Seleccionar múltiples fotos'),
+                          label: Text(S.of(context).selectMultiplePhotos),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(color: AppTheme.primaryColor),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            side:
+                                const BorderSide(color: AppTheme.primaryColor),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                       ),
@@ -388,19 +421,19 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Puedes subir varias imágenes. Recomendado 1920x1080, JPG/PNG.',
-                          style: AppTheme.bodyMedium.copyWith(color: Colors.grey[700]),
+                          S.of(context).uploadMultipleHint,
+                          style: AppTheme.bodyMedium
+                              .copyWith(color: Colors.grey[700]),
                         ),
                       ),
                     ],
                   ),
                 ),
-                
+
                 // Lista de fotos
                 Expanded(
-                  child: _photos.isEmpty
-                      ? _buildEmptyState()
-                      : _buildPhotoGrid(),
+                  child:
+                      _photos.isEmpty ? _buildEmptyState() : _buildPhotoGrid(),
                 ),
               ],
             ),
@@ -419,14 +452,14 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No hay fotos aún',
+            S.of(context).noPhotosYet,
             style: AppTheme.headlineSmall.copyWith(
               color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Agrega fotos para mostrar tu propiedad',
+            S.of(context).addPhotosHint,
             style: AppTheme.bodyMedium.copyWith(
               color: Colors.grey[500],
             ),
@@ -495,7 +528,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
                 );
               },
             ),
-            
+
             // Overlay con botones
             Positioned(
               top: 8,
@@ -519,7 +552,7 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
                 ),
               ),
             ),
-            
+
             // Caption si existe
             if (photo.caption != null && photo.caption!.isNotEmpty)
               Positioned(

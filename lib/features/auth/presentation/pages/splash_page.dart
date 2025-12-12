@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import '../../../../shared/theme/app_theme.dart';
 import '../../../profile/data/services/profile_service.dart';
+import '../../../../generated/l10n.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 
@@ -127,9 +128,9 @@ class _SplashPageState extends State<SplashPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Verificando tu perfil...',
-                  style: TextStyle(
+                Text(
+                  S.of(context).verifyingProfile,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

@@ -4,6 +4,7 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../properties/data/services/property_service.dart';
 import '../../../properties/domain/entities/payment_method.dart';
+import '../../../../../generated/l10n.dart';
 
 class PaymentMethodsPage extends StatefulWidget {
   const PaymentMethodsPage({super.key});
@@ -51,12 +52,13 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
-                  Text('Error cargando métodos de pago: ${result['error']}')),
+                  Text(S.of(context).paymentMethodsLoadError(result['error']))),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cargando métodos de pago: $e')),
+        SnackBar(
+            content: Text(S.of(context).paymentMethodsLoadError(e.toString()))),
       );
     } finally {
       setState(() {
@@ -68,9 +70,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
   Future<void> _createPaymentMethod() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('Por favor ingresa un nombre para el método de pago')),
+        SnackBar(content: Text(S.of(context).enterPaymentMethodNameError)),
       );
       return;
     }
@@ -91,18 +91,20 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
         Navigator.of(context).pop(); // Cerrar el diálogo
         _loadPaymentMethods(); // Recargar la lista
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Método de pago creado exitosamente')),
+          SnackBar(content: Text(S.of(context).paymentMethodCreatedSuccess)),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content:
-                  Text('Error creando método de pago: ${result['error']}')),
+              content: Text(
+                  S.of(context).paymentMethodCreateError(result['error']))),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creando método de pago: $e')),
+        SnackBar(
+            content:
+                Text(S.of(context).paymentMethodCreateError(e.toString()))),
       );
     } finally {
       setState(() {
@@ -118,16 +120,16 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Crear Método de Pago'),
+              title: Text(S.of(context).createPaymentMethodTitle),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre del método de pago',
-                      hintText: 'Ej: Efectivo, Transferencia bancaria',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: S.of(context).paymentMethodNameLabel,
+                      hintText: S.of(context).paymentMethodNameHint,
+                      border: const OutlineInputBorder(),
                     ),
                     textCapitalization: TextCapitalization.words,
                   ),
@@ -141,7 +143,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
                           _nameController.clear();
                           Navigator.of(context).pop();
                         },
-                  child: const Text('Cancelar'),
+                  child: Text(S.of(context).cancelButton),
                 ),
                 ElevatedButton(
                   onPressed: _isCreating ? null : _createPaymentMethod,
@@ -151,7 +153,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Crear'),
+                      : Text(S.of(context).createButton),
                 ),
               ],
             );
@@ -165,7 +167,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Métodos de Pago'),
+        title: Text(S.of(context).paymentMethodsTitle),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
@@ -216,7 +218,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No hay métodos de pago',
+              S.of(context).noPaymentMethods,
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.grey[600],
@@ -225,7 +227,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Crea tu primer método de pago personalizado',
+              S.of(context).createFirstPaymentMethodHint,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -233,7 +235,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
             ),
             const SizedBox(height: 24),
             CustomButton(
-              text: 'Crear Método de Pago',
+              text: S.of(context).createPaymentMethodTitle,
               onPressed: _showCreatePaymentMethodDialog,
               backgroundColor: AppTheme.primaryColor,
               textColor: Colors.white,
@@ -274,7 +276,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
               ),
             ),
             subtitle: Text(
-              'ID: ${paymentMethod.id}',
+              S.of(context).idLabel(paymentMethod.id),
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 12,
@@ -286,33 +288,34 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
                   case 'edit':
                     // TODO: Implementar edición
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Función de edición próximamente')),
+                      SnackBar(
+                          content: Text(S.of(context).editFeatureComingSoon)),
                     );
                     break;
                   case 'delete':
                     // TODO: Implementar eliminación
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Función de eliminación próximamente')),
+                      SnackBar(
+                          content: Text(S.of(context).deleteFeatureComingSoon)),
                     );
                     break;
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
+                PopupMenuItem<String>(
                   value: 'edit',
                   child: ListTile(
-                    leading: Icon(Icons.edit, size: 20),
-                    title: Text('Editar'),
+                    leading: const Icon(Icons.edit, size: 20),
+                    title: Text(S.of(context).editButton),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
-                const PopupMenuItem<String>(
+                PopupMenuItem<String>(
                   value: 'delete',
                   child: ListTile(
-                    leading: Icon(Icons.delete, color: Colors.red, size: 20),
-                    title: Text('Eliminar'),
+                    leading:
+                        const Icon(Icons.delete, color: Colors.red, size: 20),
+                    title: Text(S.of(context).deleteButton),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),

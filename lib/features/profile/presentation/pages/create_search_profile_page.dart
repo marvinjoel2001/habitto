@@ -8,6 +8,7 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/step_progress_indicator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../data/services/profile_service.dart';
+import '../../../../generated/l10n.dart';
 
 class CreateSearchProfilePage extends StatefulWidget {
   const CreateSearchProfilePage({super.key});
@@ -57,50 +58,50 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
   bool _isLoadingData = true;
 
   // Property types
-  final List<Map<String, dynamic>> _propertyTypes = [
-    {'id': 'casa', 'name': 'Casa', 'icon': Icons.home},
-    {'id': 'departamento', 'name': 'Departamento', 'icon': Icons.apartment},
-    {'id': 'habitacion', 'name': 'Habitación', 'icon': Icons.bedroom_parent},
+  List<Map<String, dynamic>> get _propertyTypes => [
+    {'id': 'casa', 'name': S.of(context).houseType, 'icon': Icons.home},
+    {'id': 'departamento', 'name': S.of(context).apartmentType, 'icon': Icons.apartment},
+    {'id': 'habitacion', 'name': S.of(context).roomType, 'icon': Icons.bedroom_parent},
   ];
 
   // Common amenities
-  final List<Map<String, dynamic>> _amenities = [
-    {'id': 'wifi', 'name': 'WiFi', 'icon': Icons.wifi},
-    {'id': 'parking', 'name': 'Estacionamiento', 'icon': Icons.local_parking},
+  List<Map<String, dynamic>> get _amenities => [
+    {'id': 'wifi', 'name': S.of(context).wifiAmenity, 'icon': Icons.wifi},
+    {'id': 'parking', 'name': S.of(context).parkingAmenity, 'icon': Icons.local_parking},
     {
       'id': 'laundry',
-      'name': 'Lavandería',
+      'name': S.of(context).laundryAmenity,
       'icon': Icons.local_laundry_service
     },
-    {'id': 'gym', 'name': 'Gimnasio', 'icon': Icons.fitness_center},
-    {'id': 'pool', 'name': 'Piscina', 'icon': Icons.pool},
-    {'id': 'garden', 'name': 'Jardín', 'icon': Icons.park},
+    {'id': 'gym', 'name': S.of(context).gymAmenity, 'icon': Icons.fitness_center},
+    {'id': 'pool', 'name': S.of(context).poolAmenity, 'icon': Icons.pool},
+    {'id': 'garden', 'name': S.of(context).gardenAmenity, 'icon': Icons.park},
   ];
 
   // Lifestyle tags
-  final List<String> _lifestyleTags = [
-    'Tranquilo',
-    'Social',
-    'Deportista',
-    'Lectura',
-    'Música',
-    'Cine',
-    'Cocina',
-    'Viajes',
-    'Tecnología',
-    'Arte',
-    'Naturaleza',
-    'Estudio'
+  List<String> get _lifestyleTags => [
+    S.of(context).lifestyleQuiet,
+    S.of(context).lifestyleSocial,
+    S.of(context).lifestyleActive,
+    S.of(context).lifestyleReading,
+    S.of(context).lifestyleMusic,
+    S.of(context).lifestyleMovies,
+    S.of(context).lifestyleCooking,
+    S.of(context).lifestyleTravel,
+    S.of(context).lifestyleTech,
+    S.of(context).lifestyleArt,
+    S.of(context).lifestyleNature,
+    S.of(context).lifestyleStudy
   ];
 
   // Languages
-  final List<String> _languages = [
-    'Español',
-    'Inglés',
-    'Portugués',
-    'Francés',
-    'Alemán',
-    'Italiano'
+  List<String> get _languages => [
+    S.of(context).langSpanish,
+    S.of(context).langEnglish,
+    S.of(context).langPortuguese,
+    S.of(context).langFrench,
+    S.of(context).langGerman,
+    S.of(context).langItalian
   ];
 
   @override
@@ -303,27 +304,27 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('¡Perfil de búsqueda creado!'),
-            content: const Text(
-                'Tu perfil de búsqueda ha sido creado exitosamente. ¡Ahora podemos encontrar mejores matches para ti!'),
+            title: Text(S.of(context).searchProfileCreatedTitle),
+            content: Text(
+                S.of(context).searchProfileCreatedMessage),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                   Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
                 },
-                child: const Text('Continuar'),
+                child: Text(S.of(context).continueButton),
               ),
             ],
           ),
         );
       } else {
         throw Exception(
-            response['error'] ?? 'Error al crear perfil de búsqueda');
+            response['error'] ?? S.of(context).errorCreatingSearchProfile);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(content: Text(S.of(context).errorMessage(e.toString()))),
       );
     } finally {
       setState(() {
@@ -338,8 +339,8 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
         if (_latitudeController.text.isEmpty ||
             _longitudeController.text.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Por favor selecciona una ubicación en el mapa')),
+            SnackBar(
+                content: Text(S.of(context).selectLocationError)),
           );
           return false;
         }
@@ -347,9 +348,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
       case 1:
         if (_selectedPropertyTypes.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
                 content:
-                    Text('Por favor selecciona al menos un tipo de propiedad')),
+                    Text(S.of(context).selectPropertyTypeError)),
           );
           return false;
         }
@@ -470,10 +471,10 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () => Navigator.pop(context),
               ),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Crear Perfil de Búsqueda',
-                  style: TextStyle(
+                  S.of(context).createSearchProfileTitle,
+                  style: const TextStyle(
                     color: Colors.black,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -484,9 +485,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
               if (_currentStep >= 2)
                 TextButton(
                   onPressed: _skipStep,
-                  child: const Text(
-                    'Omitir',
-                    style: TextStyle(
+                  child: Text(
+                    S.of(context).skipButton,
+                    style: const TextStyle(
                       color: Colors.black,
                       fontSize: 14,
                     ),
@@ -507,7 +508,12 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
       child: StepProgressIndicator(
         currentStep: _currentStep,
         totalSteps: 4,
-        stepTitles: const ['Ubicación', 'Propiedad', 'Cohabitación', 'Estilo'],
+        stepTitles: [
+          S.of(context).locationStep,
+          S.of(context).propertyStep,
+          S.of(context).cohabitationStep,
+          S.of(context).lifestyleStep
+        ],
       ),
     );
   }
@@ -519,16 +525,16 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '¿Dónde te gustaría vivir y cuál es tu presupuesto?',
-            style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+          Text(
+            S.of(context).step1Title,
+            style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
 
           // Map for location selection
-          const Text(
-            'Ubicación',
-            style: TextStyle(
+          Text(
+            S.of(context).locationStep,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -636,9 +642,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
           const SizedBox(height: 24),
 
           // Budget range slider
-          const Text(
-            'Rango de Presupuesto',
-            style: TextStyle(
+          Text(
+            S.of(context).budgetRangeLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -660,9 +666,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Arrastra para ajustar',
-                      style: TextStyle(color: Colors.black),
+                    Text(
+                      S.of(context).dragToAdjustLabel,
+                      style: const TextStyle(color: Colors.black),
                     ),
                     Text(
                       'Bs. ${_budgetMax.toStringAsFixed(0)}',
@@ -704,16 +710,16 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '¿Qué tipo de propiedad estás buscando?',
-            style: TextStyle(fontSize: 16, color: Colors.black, height: 1.5),
+          Text(
+            S.of(context).step2Title,
+            style: const TextStyle(fontSize: 16, color: Colors.black, height: 1.5),
           ),
           const SizedBox(height: 32),
 
           // Property types
-          const Text(
-            'Tipo de Propiedad',
-            style: TextStyle(
+          Text(
+            S.of(context).propertyTypeLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -765,9 +771,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
           const SizedBox(height: 24),
 
           // Bedrooms range
-          const Text(
-            'Dormitorios',
-            style: TextStyle(
+          Text(
+            S.of(context).bedroomsLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -789,9 +795,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Mínimo: $_bedroomsMin',
+                    Text(S.of(context).minLabel(_bedroomsMin),
                         style: const TextStyle(color: Colors.black)),
-                    Text('Máximo: $_bedroomsMax',
+                    Text(S.of(context).maxLabel(_bedroomsMax),
                         style: const TextStyle(color: Colors.black)),
                   ],
                 ),
@@ -822,9 +828,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
           const SizedBox(height: 24),
 
           // Amenities
-          const Text(
-            'Comodidades',
-            style: TextStyle(
+          Text(
+            S.of(context).amenitiesLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -894,9 +900,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Espacio para Home Office',
-                      style: TextStyle(fontSize: 16, color: Colors.black),
+                    Text(
+                      S.of(context).remoteWorkSpaceLabel,
+                      style: const TextStyle(fontSize: 16, color: Colors.black),
                     ),
                     Switch(
                       value: _remoteWorkSpace,
@@ -913,9 +919,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Mascotas Permitidas',
-                      style: TextStyle(fontSize: 16, color: Colors.black),
+                    Text(
+                      S.of(context).petAllowedLabel,
+                      style: const TextStyle(fontSize: 16, color: Colors.black),
                     ),
                     Switch(
                       value: _petAllowed,
@@ -943,16 +949,16 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '¿Cómo te gustaría compartir tu espacio?',
-            style: TextStyle(fontSize: 16, color: Colors.black, height: 1.5),
+          Text(
+            S.of(context).step3Title,
+            style: const TextStyle(fontSize: 16, color: Colors.black, height: 1.5),
           ),
           const SizedBox(height: 32),
 
           // Roommate preference
-          const Text(
-            'Preferencia de Roommate',
-            style: TextStyle(
+          Text(
+            S.of(context).roommatePreferenceLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -971,11 +977,11 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
             ),
             child: Column(
               children: [
-                _buildRadioOption('No busco roommate', 'no'),
+                _buildRadioOption(S.of(context).noRoommateOption, 'no'),
                 const SizedBox(height: 12),
-                _buildRadioOption('Abierto a la posibilidad', 'open'),
+                _buildRadioOption(S.of(context).openRoommateOption, 'open'),
                 const SizedBox(height: 12),
-                _buildRadioOption('Busco roommate', 'yes'),
+                _buildRadioOption(S.of(context).yesRoommateOption, 'yes'),
               ],
             ),
           ),
@@ -983,9 +989,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
           const SizedBox(height: 24),
 
           // Family size
-          const Text(
-            'Tamaño de Familia',
-            style: TextStyle(
+          Text(
+            S.of(context).familySizeLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -1003,9 +1009,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
           const SizedBox(height: 24),
 
           // Children count
-          const Text(
-            'Número de Hijos',
-            style: TextStyle(
+          Text(
+            S.of(context).childrenCountLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -1031,21 +1037,21 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Cuéntanos sobre tu estilo de vida',
-            style: TextStyle(fontSize: 16, color: Colors.black, height: 1.5),
+          Text(
+            S.of(context).step4Title,
+            style: const TextStyle(fontSize: 16, color: Colors.black, height: 1.5),
           ),
           const SizedBox(height: 32),
 
           // Lifestyle tags
-          const Text(
-            'Estilo de Vida',
-            style: TextStyle(
+          Text(
+            S.of(context).lifestyleLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
           Text(
-            'Selecciona 3-5 etiquetas (${_selectedLifestyleTags.length}/5)',
+            S.of(context).selectTagsLabel(_selectedLifestyleTags.length),
             style: const TextStyle(
               fontSize: 14,
               color: Colors.black,
@@ -1111,9 +1117,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Fumador',
-                  style: TextStyle(fontSize: 16, color: Colors.black),
+                Text(
+                  S.of(context).smokerLabel,
+                  style: const TextStyle(fontSize: 16, color: Colors.black),
                 ),
                 Switch(
                   value: _smoker,
@@ -1131,9 +1137,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
           const SizedBox(height: 24),
 
           // Languages
-          const Text(
-            'Idiomas',
-            style: TextStyle(
+          Text(
+            S.of(context).languagesLabel,
+            style: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
@@ -1294,9 +1300,9 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  child: const Text(
-                    'Anterior',
-                    style: TextStyle(
+                  child: Text(
+                    S.of(context).previousButton,
+                    style: const TextStyle(
                       color: AppTheme.whiteColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -1310,7 +1316,7 @@ class _CreateSearchProfilePageState extends State<CreateSearchProfilePage> {
             child: Container(
               decoration: AppTheme.getMintButtonDecoration(),
               child: CustomButton(
-                text: _currentStep == 3 ? 'Finalizar' : 'Siguiente',
+                text: _currentStep == 3 ? S.of(context).finishButton : S.of(context).nextButton,
                 onPressed: _isLoading ? null : _nextStep,
                 backgroundColor: Colors.transparent,
                 textColor: AppTheme.darkGrayBase,

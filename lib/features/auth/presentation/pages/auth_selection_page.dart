@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'dart:io' show Platform;
 import '../../data/services/auth_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import '../../../../generated/l10n.dart';
 
 class AuthSelectionPage extends StatefulWidget {
   const AuthSelectionPage({super.key});
@@ -47,10 +48,10 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
       if (res['success'] == true) {
         navigator.pushReplacementNamed('/splash');
       } else {
-        _showToast(res['error'] ?? 'Error con $provider');
+        _showToast(res['error'] ?? S.of(context).socialLoginError(provider));
       }
     } catch (e) {
-      _showToast('Error: $e');
+      _showToast(S.of(context).errorMessage(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -229,14 +230,14 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
 
                   // Buttons
                   _buildGlassButton(
-                    text: 'Usuario/Contraseña',
+                    text: S.of(context).loginWithEmailButton,
                     onPressed: () {
                       Navigator.pushNamed(context, '/login-form');
                     },
                   ),
 
                   _buildGlassButton(
-                    text: 'Entrar con Google',
+                    text: S.of(context).loginWithGoogleButton,
                     imageAsset: 'assets/icons/google.png',
                     isLoading: _socialLoading == 'google',
                     onPressed: () => _handleSocialLogin('google'),
@@ -244,14 +245,14 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
 
                   if (Platform.isIOS)
                     _buildGlassButton(
-                      text: 'Entrar con Apple',
+                      text: S.of(context).loginWithAppleButton,
                       imageAsset: 'assets/icons/apple.png',
                       isLoading: _socialLoading == 'apple',
                       onPressed: () => _handleSocialLogin('apple'),
                     ),
 
                   _buildGlassButton(
-                    text: 'Entrar con Facebook',
+                    text: S.of(context).loginWithFacebookButton,
                     imageAsset: 'assets/icons/facebook.png',
                     isLoading: _socialLoading == 'facebook',
                     onPressed: () => _handleSocialLogin('facebook'),
@@ -259,9 +260,9 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
 
                   const Spacer(),
 
-                  const Text(
-                    'Encontrar hogar nunca fue tan fácil',
-                    style: TextStyle(
+                  Text(
+                    S.of(context).tagline,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
