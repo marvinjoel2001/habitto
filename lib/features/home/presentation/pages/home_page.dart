@@ -322,7 +322,7 @@ class _HomePageState extends State<HomePage> {
         Container(
           height: double.infinity,
           width: double.infinity,
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withValues(alpha: 0.5),
         ),
         // Content
         Scaffold(
@@ -450,9 +450,9 @@ class _GlassTag extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.18),
+            color: Colors.white.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.35), width: 1),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1),
           ),
           child: Text(
             label,
@@ -698,7 +698,7 @@ class _HomeContentState extends State<HomeContent> {
           Icon(
             Icons.favorite_border,
             size: 64,
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -716,10 +716,10 @@ class _HomeContentState extends State<HomeContent> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -728,7 +728,7 @@ class _HomeContentState extends State<HomeContent> {
                 children: [
                   Icon(
                     Icons.refresh,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -790,11 +790,11 @@ class _HomeContentState extends State<HomeContent> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -1132,10 +1132,10 @@ class _PullHintHandState extends State<_PullHintHand>
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.white.withValues(alpha: 0.08),
               shape: BoxShape.circle,
               border:
-                  Border.all(color: Colors.white.withOpacity(0.25), width: 1.2),
+                  Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.2),
             ),
             child: const Icon(Icons.touch_app, color: Colors.white, size: 30),
           ),
@@ -1315,7 +1315,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
       return Center(
         child: Text(
           S.of(context).noMoreProperties,
-          style: TextStyle(color: Colors.white.withOpacity(0.8)),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
         ),
       );
     }
@@ -1430,7 +1430,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Cerrar',
-      barrierColor: Colors.black.withOpacity(0.98),
+      barrierColor: Colors.black.withValues(alpha: 0.98),
       pageBuilder: (context, anim1, anim2) {
         return FullScreenImageViewer(
           images: images,
@@ -1485,14 +1485,15 @@ class _PropertyCardState extends State<PropertyCard> {
     return Container(
       color: Colors.grey[300],
       alignment: Alignment.center,
-      child: const Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.image_not_supported, size: 56, color: Colors.black54),
-          SizedBox(height: 8),
+          const Icon(Icons.image_not_supported,
+              size: 56, color: Colors.black54),
+          const SizedBox(height: 8),
           Text(
             S.of(context).noImageLabel,
-            style: TextStyle(color: Colors.black54, fontSize: 16),
+            style: const TextStyle(color: Colors.black54, fontSize: 16),
           ),
         ],
       ),
@@ -1517,12 +1518,12 @@ class _PropertyCardState extends State<PropertyCard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.25),
+              color: Colors.black.withValues(alpha: 0.25),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
             BoxShadow(
-              color: Colors.white.withOpacity(widget.isDragging ? 0.35 : 0.0),
+              color: Colors.white.withValues(alpha: widget.isDragging ? 0.35 : 0.0),
               blurRadius: 18,
               spreadRadius: 1,
               offset: const Offset(0, 0),
@@ -1595,7 +1596,7 @@ class _PropertyCardState extends State<PropertyCard> {
                       width: active ? 42 : 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(active ? 0.9 : 0.6),
+                        color: Colors.white.withValues(alpha: active ? 0.9 : 0.6),
                         borderRadius: BorderRadius.circular(20),
                       ),
                     );
@@ -1612,10 +1613,10 @@ class _PropertyCardState extends State<PropertyCard> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.35),
+                    color: Colors.black.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -1652,7 +1653,7 @@ class _PropertyCardState extends State<PropertyCard> {
                         gradient: AppTheme.getCardGradient(opacity: 0.62),
                         border: Border(
                           top: BorderSide(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                               width: 0.8),
                         ),
                       ),
@@ -1748,7 +1749,7 @@ class _PropertyCardState extends State<PropertyCard> {
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Cerrar',
-      barrierColor: Colors.black.withOpacity(0.98),
+      barrierColor: Colors.black.withValues(alpha: 0.98),
       pageBuilder: (context, anim1, anim2) {
         return FullScreenImageViewer(
           images: widget.property.images,
@@ -1817,7 +1818,7 @@ class _FloatingCategoryItemState extends State<_FloatingCategoryItem>
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       spreadRadius: 0,
                       blurRadius: 15,
                       offset: const Offset(0, 8),
@@ -1832,10 +1833,10 @@ class _FloatingCategoryItemState extends State<_FloatingCategoryItem>
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                           width: 1.5,
                         ),
                       ),
@@ -1845,7 +1846,7 @@ class _FloatingCategoryItemState extends State<_FloatingCategoryItem>
                           filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Image.asset(
@@ -2076,10 +2077,10 @@ class _BigXOverlayState extends State<_BigXOverlay>
                           height: size.width * 0.5,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
+                                color: Colors.black.withValues(alpha: 0.25),
                                 blurRadius: 24,
                                 offset: const Offset(0, 10),
                               ),

@@ -14,7 +14,7 @@ class MatchModal {
       context: context,
       barrierDismissible: true,
       barrierLabel: S.of(context).closeButton,
-      barrierColor: Colors.black.withOpacity(0.6),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
       transitionDuration: const Duration(milliseconds: 320),
       pageBuilder: (context, anim1, anim2) {
         return _FullScreenMatchContent(
@@ -62,7 +62,7 @@ class _FullScreenMatchContent extends StatelessWidget {
             child: BackdropFilter(
               filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
               child: Container(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -148,12 +148,12 @@ class _FullScreenMatchContent extends StatelessWidget {
                                 width: 60,
                                 height: 60,
                                 decoration: BoxDecoration(
-                                  color: Colors.orange.withOpacity(0.85),
+                                  color: Colors.orange.withValues(alpha: 0.85),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
                                       color:
-                                          AppTheme.accentMint.withOpacity(0.45),
+                                          AppTheme.accentMint.withValues(alpha: 0.45),
                                       blurRadius: 20,
                                       offset: const Offset(0, 8),
                                     ),
@@ -271,7 +271,7 @@ class _RoundedImageCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.30),
+            color: Colors.black.withValues(alpha: 0.30),
             blurRadius: 18,
             offset: const Offset(0, 12),
           ),
@@ -307,7 +307,7 @@ class _FloatingIcon extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: bg.withOpacity(0.35),
+            color: bg.withValues(alpha: 0.35),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -424,9 +424,9 @@ class _DraggableCtaState extends State<_DraggableCta>
           height: height,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(36),
-            border: Border.all(color: Colors.white.withOpacity(0.20)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -531,17 +531,17 @@ class _DraggableCtaState extends State<_DraggableCta>
                         width: knobSize,
                         height: knobSize,
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.95),
+                          color: Colors.orange.withValues(alpha: 0.95),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.orange.withOpacity(0.45),
+                              color: Colors.orange.withValues(alpha: 0.45),
                               blurRadius: 18,
                               offset: const Offset(0, 8),
                             ),
                           ],
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.35), width: 1),
+                              color: Colors.white.withValues(alpha: 0.35), width: 1),
                         ),
                         child: const Icon(Icons.chat_bubble,
                             color: Colors.white, size: 22),

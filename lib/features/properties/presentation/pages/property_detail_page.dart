@@ -177,7 +177,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withValues(alpha: 0.08),
                                 blurRadius: 16,
                                 offset: const Offset(0, 8)),
                           ],
@@ -263,7 +263,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
         border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 4))
         ],
@@ -282,7 +282,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 4))
         ],
@@ -305,7 +305,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-                color: bg.withOpacity(0.35),
+                color: bg.withValues(alpha: 0.35),
                 blurRadius: 12,
                 offset: const Offset(0, 8))
           ],
@@ -328,7 +328,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
           border: Border.all(color: Colors.grey.shade300),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 4))
           ],
@@ -350,7 +350,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 6))
         ],
@@ -374,7 +374,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
                 ]),
                 const SizedBox(height: 6),
                 Text(text,
-                    style: TextStyle(color: Colors.black.withOpacity(0.8))),
+                    style: TextStyle(color: Colors.black.withValues(alpha: 0.8))),
               ],
             ),
           ),

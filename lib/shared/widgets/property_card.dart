@@ -36,12 +36,12 @@ class PropertyCard extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-          color: AppTheme.whiteColor.withOpacity(0.15),
+          color: AppTheme.whiteColor.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.whiteColor.withOpacity(0.3), width: 1),
+          border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.3), width: 1),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.blackColor.withOpacity(0.10),
+              color: AppTheme.blackColor.withValues(alpha: 0.10),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -89,7 +89,7 @@ class PropertyCard extends StatelessWidget {
                             subtitle!,
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppTheme.whiteColor.withOpacity(0.6),
+                              color: AppTheme.whiteColor.withValues(alpha: 0.6),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -100,9 +100,9 @@ class PropertyCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.18),
+                            color: statusColor.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: statusColor.withOpacity(0.4), width: 1),
+                            border: Border.all(color: statusColor.withValues(alpha: 0.4), width: 1),
                           ),
                           child: Text(
                             status,
@@ -170,7 +170,7 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -217,7 +217,7 @@ class _PropertyImage extends StatelessWidget {
       alignment: Alignment.center,
       child: Icon(
         Icons.home,
-        color: AppTheme.whiteColor.withOpacity(0.7),
+        color: AppTheme.whiteColor.withValues(alpha: 0.7),
         size: 32,
       ),
     );

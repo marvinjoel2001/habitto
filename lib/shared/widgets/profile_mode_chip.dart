@@ -28,13 +28,13 @@ class ProfileModeChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
               color: isActive
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.35)
-                  : Colors.white.withOpacity(0.20),
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.35)
+                  : Colors.white.withValues(alpha: 0.20),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isActive
-                    ? Theme.of(context).colorScheme.primary.withOpacity(0.8)
-                    : Colors.white.withOpacity(0.40),
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
+                    : Colors.white.withValues(alpha: 0.40),
                 width: 1.5,
               ),
             ),

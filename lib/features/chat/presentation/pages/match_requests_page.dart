@@ -321,14 +321,14 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                             Icon(
                               Icons.error_outline,
                               size: 64,
-                              color: onSurface.withOpacity(0.6),
+                              color: onSurface.withValues(alpha: 0.6),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               _error,
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: onSurface.withOpacity(0.8),
+                                color: onSurface.withValues(alpha: 0.8),
                                 fontSize: 16,
                               ),
                             ),
@@ -358,7 +358,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                             Text(
                               'No tienes más solicitudes de match',
                                   style: TextStyle(
-                                    color: onSurface.withOpacity(0.8),
+                                    color: onSurface.withValues(alpha: 0.8),
                                     fontSize: 18,
                                   ),
                                 ),
@@ -366,7 +366,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                 Text(
                                   'Las nuevas solicitudes aparecerán aquí',
                                   style: TextStyle(
-                                    color: onSurface.withOpacity(0.6),
+                                    color: onSurface.withValues(alpha: 0.6),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -422,17 +422,17 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
                           colors: [
-                            Colors.red.withOpacity(0.2),
-                            Colors.red.withOpacity(0.1),
+                            Colors.red.withValues(alpha: 0.2),
+                            Colors.red.withValues(alpha: 0.1),
                           ],
                         ),
                         border: Border.all(
-                          color: Colors.red.withOpacity(0.3),
+                          color: Colors.red.withValues(alpha: 0.3),
                           width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.withOpacity(0.2),
+                            color: Colors.red.withValues(alpha: 0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -456,17 +456,17 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
                           colors: [
-                            AppTheme.secondaryColor.withOpacity(0.8),
-                            AppTheme.primaryColor.withOpacity(0.8),
+                            AppTheme.secondaryColor.withValues(alpha: 0.8),
+                            AppTheme.primaryColor.withValues(alpha: 0.8),
                           ],
                         ),
                         border: Border.all(
-                          color: AppTheme.primaryColor.withOpacity(0.5),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.5),
                           width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.4),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -554,18 +554,18 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withOpacity(0.85),
-                      Colors.white.withOpacity(0.65),
+                      Colors.white.withValues(alpha: 0.85),
+                      Colors.white.withValues(alpha: 0.65),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.4),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.4),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -592,8 +592,8 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      AppTheme.primaryColor.withOpacity(0.3),
-                                      AppTheme.secondaryColor.withOpacity(0.3),
+                                      AppTheme.primaryColor.withValues(alpha: 0.3),
+                                      AppTheme.secondaryColor.withValues(alpha: 0.3),
                                     ],
                                   ),
                                   borderRadius: const BorderRadius.vertical(
@@ -627,7 +627,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                     end: Alignment.bottomCenter,
                                     colors: [
                                       Colors.transparent,
-                                      Colors.black.withOpacity(0.7),
+                                      Colors.black.withValues(alpha: 0.7),
                                     ],
                                   ),
                                 ),
@@ -640,7 +640,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           borderRadius: const BorderRadius.vertical(
                               bottom: Radius.circular(24)),
                         ),
@@ -675,7 +675,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                           style: TextStyle(
                                             fontSize: 16,
                                             color: const Color(0xFF1A1A1A)
-                                                .withOpacity(0.7),
+                                                .withValues(alpha: 0.7),
                                           ),
                                         ),
                                       ],
@@ -690,15 +690,15 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                       gradient: LinearGradient(
                                         colors: [
                                           AppTheme.secondaryColor
-                                              .withOpacity(0.8),
+                                              .withValues(alpha: 0.8),
                                           AppTheme.primaryColor
-                                              .withOpacity(0.8),
+                                              .withValues(alpha: 0.8),
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
                                         color: AppTheme.primaryColor
-                                            .withOpacity(0.5),
+                                            .withValues(alpha: 0.5),
                                         width: 1,
                                       ),
                                     ),
@@ -723,15 +723,15 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        AppTheme.primaryColor.withOpacity(0.1),
+                                        AppTheme.primaryColor.withValues(alpha: 0.1),
                                         AppTheme.secondaryColor
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: AppTheme.primaryColor
-                                          .withOpacity(0.2),
+                                          .withValues(alpha: 0.2),
                                       width: 1,
                                     ),
                                   ),
@@ -758,7 +758,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                         style: TextStyle(
                                           fontSize: 13,
                                           color: const Color(0xFF1A1A1A)
-                                              .withOpacity(0.7),
+                                              .withValues(alpha: 0.7),
                                         ),
                                       ),
                                     ],
@@ -792,13 +792,13 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.3 - (offset * 0.1)),
-              Colors.white.withOpacity(0.2 - (offset * 0.1)),
+              Colors.white.withValues(alpha: 0.3 - (offset * 0.1)),
+              Colors.white.withValues(alpha: 0.2 - (offset * 0.1)),
             ],
           ),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.2 - (offset * 0.05)),
+            color: AppTheme.primaryColor.withValues(alpha: 0.2 - (offset * 0.05)),
             width: 1.5,
           ),
         ),

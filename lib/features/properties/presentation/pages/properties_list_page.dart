@@ -212,7 +212,7 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -229,13 +229,13 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.white.withOpacity(0.85),
-                    Colors.white.withOpacity(0.65),
+                    Colors.white.withValues(alpha: 0.85),
+                    Colors.white.withValues(alpha: 0.65),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.4),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.4),
                   width: 1.5,
                 ),
               ),
@@ -266,8 +266,8 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: property.isActive
-                                ? Colors.green.withOpacity(0.5)
-                                : Colors.red.withOpacity(0.5),
+                                ? Colors.green.withValues(alpha: 0.5)
+                                : Colors.red.withValues(alpha: 0.5),
                             width: 1,
                           ),
                         ),

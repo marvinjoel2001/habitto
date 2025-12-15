@@ -191,13 +191,13 @@ class _OnboardingPageState extends State<OnboardingPage>
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        Colors.white.withOpacity(0.2),
-                                        Colors.white.withOpacity(0.1),
+                                        Colors.white.withValues(alpha: 0.2),
+                                        Colors.white.withValues(alpha: 0.1),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.3),
+                                      color: Colors.white.withValues(alpha: 0.3),
                                       width: 1,
                                     ),
                                   ),
@@ -227,13 +227,13 @@ class _OnboardingPageState extends State<OnboardingPage>
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Colors.white.withOpacity(0.2),
-                                Colors.white.withOpacity(0.1),
+                                Colors.white.withValues(alpha: 0.2),
+                                Colors.white.withValues(alpha: 0.1),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -313,8 +313,8 @@ class _OnboardingPageState extends State<OnboardingPage>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.3 * _fadeAnimation.value),
-                          Colors.black.withOpacity(0.7 * _fadeAnimation.value),
+                          Colors.black.withValues(alpha: 0.3 * _fadeAnimation.value),
+                          Colors.black.withValues(alpha: 0.7 * _fadeAnimation.value),
                         ],
                       ),
                     ),
@@ -336,13 +336,13 @@ class _OnboardingPageState extends State<OnboardingPage>
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      Colors.white.withOpacity(0.25),
-                                      Colors.white.withOpacity(0.1),
+                                      Colors.white.withValues(alpha: 0.25),
+                                      Colors.white.withValues(alpha: 0.1),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(25),
                                   border: Border.all(
-                                    color: Colors.white.withOpacity(0.4),
+                                    color: Colors.white.withValues(alpha: 0.4),
                                     width: 1.5,
                                   ),
                                 ),
@@ -362,7 +362,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                                             offset: const Offset(0, 2),
                                             blurRadius: 4,
                                             color:
-                                                Colors.black.withOpacity(0.3),
+                                                Colors.black.withValues(alpha: 0.3),
                                           ),
                                         ],
                                       ),
@@ -375,14 +375,14 @@ class _OnboardingPageState extends State<OnboardingPage>
                                           .textTheme
                                           .bodyLarge
                                           ?.copyWith(
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Colors.white.withValues(alpha: 0.9),
                                         fontSize: 18,
                                         shadows: [
                                           Shadow(
                                             offset: const Offset(0, 1),
                                             blurRadius: 2,
                                             color:
-                                                Colors.black.withOpacity(0.3),
+                                                Colors.black.withValues(alpha: 0.3),
                                           ),
                                         ],
                                       ),
@@ -515,13 +515,13 @@ class _OnboardingPageState extends State<OnboardingPage>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withOpacity(0.3),
-                Colors.white.withOpacity(0.1),
+                Colors.white.withValues(alpha: 0.3),
+                Colors.white.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withValues(alpha: 0.4),
               width: 1,
             ),
           ),
@@ -565,18 +565,18 @@ class _OnboardingPageState extends State<OnboardingPage>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.05),
+                Colors.white.withValues(alpha: 0.2),
+                Colors.white.withValues(alpha: 0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 spreadRadius: 2,
                 blurRadius: 20,
                 offset: const Offset(0, 8),

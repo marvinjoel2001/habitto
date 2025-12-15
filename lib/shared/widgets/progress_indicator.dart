@@ -24,7 +24,7 @@ class CustomProgressIndicator extends StatelessWidget {
             shape: BoxShape.circle,
             color: index <= currentStep
                 ? Theme.of(context).colorScheme.primary
-                : Colors.grey.withOpacity(0.3),
+                : Colors.grey.withValues(alpha: 0.3),
           ),
         ),
       ),

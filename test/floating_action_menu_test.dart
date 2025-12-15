@@ -4,7 +4,8 @@ import 'package:habitto/shared/widgets/floating_action_menu.dart';
 
 void main() {
   group('FloatingActionMenu Tests', () {
-    testWidgets('should show fullscreen overlay with 50% opacity', (WidgetTester tester) async {
+    testWidgets('should show fullscreen overlay with 50% opacity',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -32,7 +33,8 @@ void main() {
       expect(find.text('✕'), findsOneWidget);
     });
 
-    testWidgets('should call callbacks when buttons are tapped', (WidgetTester tester) async {
+    testWidgets('should call callbacks when buttons are tapped',
+        (WidgetTester tester) async {
       bool socialAreasTapped = false;
       bool alertHistoryTapped = false;
       bool closeTapped = false;
@@ -76,10 +78,13 @@ void main() {
       expect(closeTapped, isTrue);
     });
 
-    testWidgets('should be responsive on different screen sizes', (WidgetTester tester) async {
+    testWidgets('should be responsive on different screen sizes',
+        (WidgetTester tester) async {
       // Test on small screen
-      tester.binding.window.physicalSizeTestValue = const Size(320, 568);
-      tester.binding.window.devicePixelRatioTestValue = 2.0;
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -103,10 +108,11 @@ void main() {
       expect(find.text('Historial de alertas'), findsOneWidget);
 
       // Reset screen size
-      tester.binding.window.clearPhysicalSizeTestValue();
+      // Cleanup handled by addTearDown
     });
 
-    testWidgets('should show animation on appear/disappear', (WidgetTester tester) async {
+    testWidgets('should show animation on appear/disappear',
+        (WidgetTester tester) async {
       bool isVisible = false;
 
       await tester.pumpWidget(
@@ -159,7 +165,8 @@ void main() {
       expect(find.text('Áreas sociales'), findsOneWidget);
     });
 
-    testWidgets('should be accessible with proper semantics', (WidgetTester tester) async {
+    testWidgets('should be accessible with proper semantics',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -180,11 +187,11 @@ void main() {
       // Verify semantics - find by text since the buttons contain the text
       expect(find.text('Áreas sociales'), findsOneWidget);
       expect(find.text('Historial de alertas'), findsOneWidget);
-      
+
       // Verify that buttons are tappable
       await tester.tap(find.text('Áreas sociales'));
       await tester.pumpAndSettle();
-      
+
       await tester.tap(find.text('Historial de alertas'));
       await tester.pumpAndSettle();
     });

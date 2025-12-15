@@ -215,9 +215,9 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.white.withOpacity(0.25),
-                                Colors.white.withOpacity(0.45),
-                                Colors.white.withOpacity(0.60),
+                                Colors.white.withValues(alpha: 0.25),
+                                Colors.white.withValues(alpha: 0.45),
+                                Colors.white.withValues(alpha: 0.60),
                               ],
                               stops: const [0.0, 0.55, 1.0],
                             )
@@ -225,26 +225,26 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Colors.white.withOpacity(0.25),
-                                Colors.white.withOpacity(0.05),
+                                Colors.white.withValues(alpha: 0.25),
+                                Colors.white.withValues(alpha: 0.05),
                               ],
                             ),
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: _isWhiteMode()
-                            ? Colors.white.withOpacity(0.35)
-                            : Colors.white.withOpacity(0.25),
+                            ? Colors.white.withValues(alpha: 0.35)
+                            : Colors.white.withValues(alpha: 0.25),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.10),
+                          color: Colors.black.withValues(alpha: 0.10),
                           spreadRadius: 0,
                           blurRadius: 18,
                           offset: const Offset(0, 8),
                         ),
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           spreadRadius: 0,
                           blurRadius: 6,
                           offset: const Offset(0, 2),
@@ -487,12 +487,12 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
               color: AppTheme.mintGreen,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.mintGreen.withOpacity(0.45),
+                  color: AppTheme.mintGreen.withValues(alpha: 0.45),
                   blurRadius: 14,
                   offset: const Offset(0, 6),
                 ),
@@ -552,7 +552,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
             borderRadius: BorderRadius.circular(100),
             color: Colors.white,
             border: Border.all(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               width: 0.9,
             ),
           ),

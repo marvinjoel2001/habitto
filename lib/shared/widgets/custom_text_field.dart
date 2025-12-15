@@ -64,7 +64,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       decoration: InputDecoration(
         hintText: widget.hintText,
         hintStyle: TextStyle(
-          color: (widget.textColor ?? AppTheme.blackColor).withOpacity(0.7),
+          color: (widget.textColor ?? AppTheme.blackColor).withValues(alpha: 0.7),
           fontSize: 16,
         ),
         prefixIcon: widget.prefixIcon,
@@ -72,7 +72,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             ? IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: (widget.textColor ?? AppTheme.blackColor).withOpacity(0.6),
+                  color: (widget.textColor ?? AppTheme.blackColor).withValues(alpha: 0.6),
                 ),
                 onPressed: () {
                   setState(() {
@@ -95,7 +95,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: cs.primary.withOpacity(0.6),
+            color: cs.primary.withValues(alpha: 0.6),
             width: 1.5,
           ),
         ),

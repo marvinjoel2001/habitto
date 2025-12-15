@@ -363,11 +363,11 @@ class _SearchPageState extends State<SearchPage> {
                       Container(
                         margin: const EdgeInsets.only(top: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.95),
+                          color: Colors.white.withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -908,7 +908,7 @@ class _SearchPageState extends State<SearchPage> {
                   children: _selectedProperty!.features
                       .map((f) => Chip(
                             label: Text(f),
-                            backgroundColor: Colors.white.withOpacity(0.85),
+                            backgroundColor: Colors.white.withValues(alpha: 0.85),
                           ))
                       .toList(),
                 ),

@@ -266,5 +266,511 @@
   "noImageLabel": "No image",
   "retryButton": "Retry",
   "noPendingMatchRequests": "No pending match requests",
-  "newMatchRequestsWillAppearHere": "New requests will appear here"
+  "newMatchRequestsWillAppearHere": "New requests will appear here",
+  "searchPlaceholder": "Search by zone, price, type...",
+  "filterZone": "Zone",
+  "filterPrice": "Price",
+  "filterType": "Type",
+  "filterAmenities": "Amenities",
+  "viewMoreDetails": "View more details",
+  "houseType": "House",
+  "apartmentType": "Apartment",
+  "roomType": "Room",
+  "wifiAmenity": "WiFi",
+  "parkingAmenity": "Parking",
+  "laundryAmenity": "Laundry",
+  "gymAmenity": "Gym",
+  "poolAmenity": "Pool",
+  "gardenAmenity": "Garden",
+  "lifestyleQuiet": "Quiet",
+  "lifestyleSocial": "Social",
+  "lifestyleActive": "Active",
+  "lifestyleReading": "Reading",
+  "lifestyleMusic": "Music",
+  "lifestyleMovies": "Movies",
+  "lifestyleCooking": "Cooking",
+  "lifestyleTravel": "Travel",
+  "lifestyleTech": "Tech",
+  "lifestyleArt": "Art",
+  "lifestyleNature": "Nature",
+  "lifestyleStudy": "Study",
+  "langSpanish": "Spanish",
+  "langEnglish": "English",
+  "langPortuguese": "Portuguese",
+  "langFrench": "French",
+  "langGerman": "German",
+  "langItalian": "Italian",
+  "searchProfileCreatedTitle": "Search profile created",
+  "searchProfileCreatedMessage": "Your preferences have been saved.",
+  "continueButton": "Continue",
+  "errorCreatingSearchProfile": "Error creating search profile",
+  "errorMessage": "Error: {error}",
+  "@errorMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "selectLocationError": "Select a location on the map",
+  "selectPropertyTypeError": "Select at least one property type",
+  "createSearchProfileTitle": "Create search profile",
+  "skipButton": "Skip",
+  "locationStep": "Location",
+  "propertyStep": "Property",
+  "cohabitationStep": "Cohabitation",
+  "lifestyleStep": "Lifestyle",
+  "step1Title": "Location and budget",
+  "budgetRangeLabel": "Budget range",
+  "dragToAdjustLabel": "Drag to adjust",
+  "step2Title": "Property type",
+  "minLabel": "Min: {value}",
+  "@minLabel": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "maxLabel": "Max: {value}",
+  "@maxLabel": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "remoteWorkSpaceLabel": "Remote workspace",
+  "petAllowedLabel": "Pets allowed",
+  "step3Title": "Cohabitation preferences",
+  "roommatePreferenceLabel": "Roommate preference",
+  "noRoommateOption": "No roommate",
+  "openRoommateOption": "Open to roommate",
+  "yesRoommateOption": "Want roommate",
+  "familySizeLabel": "Family size",
+  "childrenCountLabel": "Number of children",
+  "step4Title": "Lifestyle",
+  "lifestyleLabel": "Lifestyle",
+  "selectTagsLabel": "Select tags ({count})",
+  "@selectTagsLabel": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "smokerLabel": "Smoker",
+  "languagesLabel": "Languages"
+  ,
+  "paymentMethodsLoadError": "Error loading payment methods: {error}",
+  "@paymentMethodsLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "enterPaymentMethodNameError": "Enter the payment method name",
+  "paymentMethodCreatedSuccess": "Payment method created",
+  "paymentMethodCreateError": "Error creating payment method: {error}",
+  "@paymentMethodCreateError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "createPaymentMethodTitle": "Create payment method",
+  "paymentMethodNameLabel": "Payment method name",
+  "paymentMethodNameHint": "Ex. Bank transfer",
+  "createButton": "Create",
+  "paymentMethodsTitle": "Payment Methods",
+  "noPaymentMethods": "No payment methods",
+  "createFirstPaymentMethodHint": "Create your first payment method",
+  "idLabel": "ID: {id}",
+  "@idLabel": {
+    "placeholders": {
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "editFeatureComingSoon": "Edit coming soon",
+  "deleteFeatureComingSoon": "Delete coming soon",
+  "editButton": "Edit",
+  "imageSelectionError": "Error selecting image: {error}",
+  "@imageSelectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "profileUpdatedSuccess": "Profile updated",
+  "profileUpdateError": "Error updating profile: {error}",
+  "@profileUpdateError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "editProfileTitle": "Edit profile",
+  "firstNameLabel": "First name",
+  "lastNameLabel": "Last name",
+  "emailLabel": "Email",
+  "phoneLabel": "Phone",
+  "changePasswordLabel": "Change password",
+  "notificationsLabel": "Notifications",
+  "cancelButtonCaps": "Cancel",
+  "profileLoadError": "Error loading profile: {error}",
+  "@profileLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "logoutTitle": "Log out",
+  "logoutConfirmation": "Do you want to log out?",
+  "logoutError": "Error logging out: {error}",
+  "@logoutError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "profileInfoLoadError": "Error loading profile info",
+  "clientsButton": "Clients",
+  "salesButton": "Sales",
+  "commissionsButton": "Commissions",
+  "agendaButton": "Agenda",
+  "myRentalsTitle": "My rentals",
+  "assignedPropertiesTitle": "Assigned properties",
+  "profileSettingsTitle": "Profile settings",
+  "changeUserModeLabel": "Change user mode",
+  "verifyProfileLabel": "Verify profile",
+  "editProfileLabel": "Edit profile",
+  "deleteAccountLabel": "Delete account",
+  "profileVerificationTitle": "Profile verification",
+  "profileVerificationMessage": "Your profile has been verified.",
+  "understoodButton": "Understood",
+  "deleteAccountConfirmation": "Are you sure you want to delete your account?",
+  "accountDeletionScheduled": "Account deletion scheduled",
+  "deleteAccountError": "Error deleting account",
+  "confirmModeChange": "Confirm change to {name}",
+  "@confirmModeChange": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "acceptButton": "Accept",
+  "updatingProfile": "Updating profile...",
+  "profileModeUpdated": "Profile mode updated to {name}",
+  "@profileModeUpdated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profileUpdateGenericError": "Error updating profile",
+  "tenantModeDescription": "Explore and rent properties.",
+  "landlordModeDescription": "Publish and manage your properties.",
+  "agentModeDescription": "Manage clients and properties as an agent.",
+  "noRegisteredProperties": "You have no registered properties",
+  "propertyNoAddress": "No address",
+  "availableStatus": "Available",
+  "unavailableStatus": "Unavailable",
+  "manageButton": "Manage",
+  "noAssignedProperties": "You have no assigned properties",
+  "viewReviewsButton": "View reviews",
+  "incentivesButton": "Incentives",
+  "userLabel": "User",
+  "myRentalsTitleMixed": "Your rentals",
+  "myPropertiesTitle": "My properties",
+  "assignedPropertiesTitleMixed": "Assigned",
+  "verifiedLabel": "Verified"
+  ,
+  "loadPropertiesError": "Error loading properties",
+  "connectionError": "Connection error: {error}",
+  "@connectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noPropertiesRegistered": "You have no registered properties",
+  "addFirstProperty": "Add your first property",
+  "addPropertyButton": "Add property",
+  "activeStatus": "Active",
+  "inactiveStatus": "Inactive",
+  "loadPhotosErrorGeneric": "Error loading photos",
+  "invalidPropertyIdError": "Invalid property ID",
+  "invalidPropertyIdErrorDetail": "Could not validate the property ID",
+  "takePhotoError": "Error taking photo: {error}",
+  "@takePhotoError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadPhotoErrorGeneric": "Error uploading photo",
+  "photosUploadedCount": "Photos uploaded: {count}",
+  "@photosUploadedCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "pickImagesError": "Error selecting images: {error}",
+  "@pickImagesError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "photoUploadedSuccess": "Photo uploaded successfully",
+  "deletePhotoErrorGeneric": "Error deleting photo",
+  "photosOfProperty": "Photos of {address}",
+  "@photosOfProperty": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadingStatus": "Uploading..."
+  ,
+  "selectMultiplePhotos": "Select multiple photos"
+  ,
+  "moreOptionsTitle": "More options",
+  "favoritePropertiesOption": "Favorite properties",
+  "favoritePropertiesSubtitle": "Access your favorites list",
+  "searchHistoryOption": "Search history",
+  "searchHistorySubtitle": "View your recent searches",
+  "notificationsOption": "Notifications",
+  "notificationsSubtitle": "Configure your alerts",
+  "helpSupportOption": "Help & support",
+  "helpSupportSubtitle": "Find assistance and FAQs",
+  "settingsOption": "Settings",
+  "settingsSubtitle": "App preferences",
+  "propertyLabel": "Property",
+  "pricePerMonth": "Bs. {price}/month",
+  "@pricePerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "fetchProfileError": "Error fetching profile",
+  "loadFavoritesError": "Error loading favorites",
+  "removeFavoriteError": "Error removing from favorites",
+  "yourLikesTitle": "Your likes",
+  "yourLikesSubtitle": "Properties you like",
+  "noLikesYet": "You have no favorites yet",
+  "explorePropertiesHint": "Explore properties and add likes"
+  ,
+  "removedFromFavorites": "Removed from favorites: {type} · {address}",
+  "@removedFromFavorites": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "address": {
+        "type": "String"
+      }
+    }
+  }
+  ,
+  "defaultUser": "User",
+  "processingProfile": "Processing profile...",
+  "searchProfileCreatedSuccess": "Search profile created",
+  "propertiesLoadError": "Error loading properties",
+  "noMatchesTitle": "No matches found",
+  "refreshButton": "Refresh"
+  ,
+  "messagesTitle": "Messages",
+  "searchConversationsPlaceholder": "Search conversations...",
+  "matchRequestsTitle": "Match Requests",
+  "matchRequestsAction": "Review match requests",
+  "noMatchRequests": "No pending match requests",
+  "notificationsTitle": "Notifications",
+  "notificationsSubtitle": "Recent updates and alerts",
+  "notificationsLoadError": "Error loading notifications",
+  "notificationMarkedRead": "Notification marked as read",
+  "notificationDefaultTitle": "Notification",
+  "markAsReadButton": "Mark as read",
+  "noNotifications": "No notifications",
+  "userDefaultName": "User {id}",
+  "@userDefaultName": {
+    "placeholders": {
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "hoursAgo": "{count}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "minutesAgo": "{count}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "nowLabel": "Just now",
+  "selectUserTitle": "Select a user",
+  "searchUsersPlaceholder": "Search users...",
+  "noUsersAvailable": "No users available",
+  "noUsersFound": "No users found",
+  "tryRefreshList": "Try refreshing the list",
+  "tryAnotherSearch": "Try another search",
+  "errorGetCurrentUser": "Unable to get current user",
+  "wsRouteNotFound": "WebSocket route not found",
+  "wsError": "WebSocket error: {error}",
+  "@wsError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "wsConnectionClosed": "WebSocket connection closed",
+  "chatExampleMessage1": "Hello! How can I help you?",
+  "chatExampleMessage2": "Hi! I'm interested in your property.",
+  "chatExampleMessage3": "Great! Do you have any questions?",
+  "chatExampleMessage4": "Yes, what's the neighborhood like?",
+  "chatExampleMessage5": "It's quiet and close to shops.",
+  "chatExampleMessage6": "Perfect, thanks!",
+  "sendingMessage": "Sending...",
+  "errorSendingMessage": "Error sending",
+  "wsConnectionUnavailable": "WebSocket not available",
+  "serverNoConfirmation": "Server did not confirm",
+  "clearChatTitle": "Clear conversation",
+  "todayLabel": "Today",
+  "matchedWithUser": "Matched with {name}",
+  "@matchedWithUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "typingPlaceholder": "Type a message...",
+  "clearChatConfirmation": "This will remove all messages",
+  "clearButton": "Clear",
+  "chatClearedLocally": "Chat cleared locally",
+  "chatClearedForAccount": "Chat cleared for this account",
+  "untitledProperty": "Untitled property",
+  "unspecifiedAddress": "Unspecified address",
+  "acceptError": "Accept error: {error}",
+  "@acceptError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "rejectError": "Reject error: {error}",
+  "@rejectError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "matchRequestAccepted": "Match request accepted",
+  "matchRequestRejected": "Match request rejected",
+  "rejectButton": "Reject"
+  ,
+  "verifyingProfile": "Verifying profile...",
+  "socialLoginError": "Social login error: {provider}",
+  "@socialLoginError": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "loginWithEmailButton": "Login with email",
+  "loginWithGoogleButton": "Continue with Google",
+  "loginWithAppleButton": "Continue with Apple",
+  "loginWithFacebookButton": "Continue with Facebook",
+  "tagline": "Find, connect and rent — all in one place",
+  "takePhotoButton": "Take photo",
+  "galleryButton": "Choose from gallery",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "createSearchProfileDescription": "We will use your preferences to personalize results.",
+  "registrationSuccess": "Registration successful",
+  "registrationSuccessLogin": "Registered successfully. Please log in.",
+  "registrationError": "Registration failed",
+  "backButton": "Back",
+  "yourNameTitle": "Your name",
+  "firstNamePlaceholder": "First name",
+  "lastNamePlaceholder": "Last name",
+  "contactTitle": "Contact",
+  "emailPlaceholder": "Email",
+  "enterEmailError": "Enter your email",
+  "enterValidEmailError": "Enter a valid email",
+  "phonePlaceholder": "Phone",
+  "enterPhoneError": "Enter your phone number",
+  "accountTitle": "Account",
+  "usernamePlaceholder": "Username",
+  "enterUsernameError": "Enter your username",
+  "passwordPlaceholder": "Password",
+  "enterPasswordError": "Enter your password",
+  "passwordLengthError": "Password must be at least 6 characters",
+  "confirmPasswordPlaceholder": "Confirm password",
+  "confirmPasswordError": "Confirm your password",
+  "authErrorDefault": "Authentication error",
+  "forgotPasswordButton": "Forgot your password?",
+  "noAccountLabel": "Don’t have an account?",
+  "registerLink": "Register",
+  "welcomeToHabitto": "Welcome to Habitto",
+  "emailOrUsernamePlaceholder": "Email or Username",
+  "enterEmailOrUsernameError": "Enter your email or username",
+  "createWithAIButton": "Create with AI",
+  "portfolioTitle": "Agent Portfolio",
+  "loadPortfolioError": "Error loading portfolio",
+  "portfolioItemSubtitle": "Bs. {price} • {size} m²",
+  "@portfolioItemSubtitle": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "requestsTitle": "Requests",
+  "loadLeadsError": "Error loading leads",
+  "noNewRequests": "No new requests",
+  "newRequestsPlaceholder": "Check back later for new leads",
+  "scoreLabel": "Score: {score}%",
+  "@scoreLabel": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "alertHistoryTitle": "Alert History",
+  "alertHistoryComingSoon": "Alert history coming soon"
 }

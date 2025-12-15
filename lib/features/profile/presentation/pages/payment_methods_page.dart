@@ -182,7 +182,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
             child: BackdropFilter(
               filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
               child: Container(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -260,7 +260,7 @@ class _PaymentMethodsPageState extends State<PaymentMethodsPage> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(

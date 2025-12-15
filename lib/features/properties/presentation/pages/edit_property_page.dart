@@ -320,10 +320,10 @@ class _EditPropertyPageState extends State<EditPropertyPage>
         child: Container(
           padding: padding ?? const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -369,7 +369,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
             child: BackdropFilter(
               filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -463,7 +463,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
             border: Border.all(color: Colors.white, width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -622,7 +622,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -714,7 +714,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
                     Text(
                       S.of(context).matchScore(match['score'] ?? '0'),
                       style: TextStyle(
-                        color: AppTheme.primaryColor.withOpacity(0.9),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.9),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),

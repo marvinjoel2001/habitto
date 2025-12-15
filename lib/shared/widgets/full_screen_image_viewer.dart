@@ -151,7 +151,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                       width: active ? 42 : 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(active ? 0.9 : 0.6),
+                        color: Colors.white.withValues(alpha: active ? 0.9 : 0.6),
                         borderRadius: BorderRadius.circular(20),
                       ),
                     );

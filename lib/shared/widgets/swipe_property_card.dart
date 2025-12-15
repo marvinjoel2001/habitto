@@ -118,13 +118,13 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withValues(alpha: 0.25),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
                 BoxShadow(
                   color:
-                      Colors.white.withOpacity(widget.isDragging ? 0.35 : 0.0),
+                      Colors.white.withValues(alpha: widget.isDragging ? 0.35 : 0.0),
                   blurRadius: 18,
                   spreadRadius: 1,
                   offset: const Offset(0, 0),
@@ -258,7 +258,7 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                             height: 8,
                             decoration: BoxDecoration(
                               color:
-                                  Colors.white.withOpacity(active ? 0.9 : 0.6),
+                                  Colors.white.withValues(alpha: active ? 0.9 : 0.6),
                               borderRadius: BorderRadius.circular(20),
                             ),
                           );
@@ -276,10 +276,10 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.35),
+                          color: Colors.black.withValues(alpha: 0.35),
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -322,13 +322,13 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Colors.white.withOpacity(0.25),
-                                Colors.white.withOpacity(0.05),
+                                Colors.white.withValues(alpha: 0.25),
+                                Colors.white.withValues(alpha: 0.05),
                               ],
                             ),
                             border: Border(
                               top: BorderSide(
-                                color: Colors.white.withOpacity(0.25),
+                                color: Colors.white.withValues(alpha: 0.25),
                                 width: 1,
                               ),
                             ),
@@ -414,14 +414,14 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                               boxShadow: [
                                 BoxShadow(
                                   color:
-                                      AppTheme.secondaryColor.withOpacity(0.35),
+                                      AppTheme.secondaryColor.withValues(alpha: 0.35),
                                   blurRadius: 36,
                                   spreadRadius: 10,
                                 ),
                               ],
                               border: Border.all(
                                 color:
-                                    AppTheme.secondaryColor.withOpacity(0.65),
+                                    AppTheme.secondaryColor.withValues(alpha: 0.65),
                                 width: 3,
                               ),
                             ),

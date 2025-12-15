@@ -489,7 +489,7 @@ class _ConversationPageState extends State<ConversationPage> {
           gradient: LinearGradient(
             colors: [
               Colors.white,
-              cs.primary.withOpacity(0.06),
+              cs.primary.withValues(alpha: 0.06),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,

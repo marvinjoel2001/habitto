@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:habitto/shared/widgets/custom_bottom_navigation.dart';
-import 'package:habitto/shared/widgets/floating_action_menu.dart';
 
 void main() {
   group('CustomBottomNavigation Overflow Tests', () {
-    testWidgets('No overflow with normal text scale', (WidgetTester tester) async {
+    testWidgets('No overflow with normal text scale',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -23,6 +23,7 @@ void main() {
                 onSwipeRight: () {},
                 onGoBack: () {},
                 onAddFavorite: () {},
+                userMode: 'inquilino',
               ),
             ),
           ),
@@ -40,7 +41,8 @@ void main() {
       expect(chatText.maxLines, equals(1));
     });
 
-    testWidgets('No overflow with large text scale', (WidgetTester tester) async {
+    testWidgets('No overflow with large text scale',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -58,6 +60,7 @@ void main() {
                 onSwipeRight: () {},
                 onGoBack: () {},
                 onAddFavorite: () {},
+                userMode: 'inquilino',
               ),
             ),
           ),
@@ -70,7 +73,8 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('No overflow with extra large text scale', (WidgetTester tester) async {
+    testWidgets('No overflow with extra large text scale',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -88,6 +92,7 @@ void main() {
                 onSwipeRight: () {},
                 onGoBack: () {},
                 onAddFavorite: () {},
+                userMode: 'inquilino',
               ),
             ),
           ),
@@ -100,7 +105,8 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('No overflow with different selected items', (WidgetTester tester) async {
+    testWidgets('No overflow with different selected items',
+        (WidgetTester tester) async {
       for (int i = 0; i < 5; i++) {
         await tester.pumpWidget(
           MaterialApp(
@@ -117,6 +123,7 @@ void main() {
                 onSwipeRight: () {},
                 onGoBack: () {},
                 onAddFavorite: () {},
+                userMode: 'inquilino',
               ),
             ),
           ),
@@ -130,7 +137,8 @@ void main() {
       }
     });
 
-    testWidgets('No overflow with owner/agent mode', (WidgetTester tester) async {
+    testWidgets('No overflow with owner/agent mode',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -146,6 +154,7 @@ void main() {
               onSwipeRight: () {},
               onGoBack: () {},
               onAddFavorite: () {},
+              userMode: 'propietario',
             ),
           ),
         ),
@@ -178,6 +187,7 @@ void main() {
                 onSwipeRight: () {},
                 onGoBack: () {},
                 onAddFavorite: () {},
+                userMode: 'inquilino',
               ),
             ),
           ),
@@ -213,6 +223,7 @@ void main() {
                 onSwipeRight: () {},
                 onGoBack: () {},
                 onAddFavorite: () {},
+                userMode: 'inquilino',
               ),
             ),
           ),
@@ -225,7 +236,8 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('All navigation items fit within constraints', (WidgetTester tester) async {
+    testWidgets('All navigation items fit within constraints',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -241,6 +253,7 @@ void main() {
               onSwipeRight: () {},
               onGoBack: () {},
               onAddFavorite: () {},
+              userMode: 'inquilino',
             ),
           ),
         ),

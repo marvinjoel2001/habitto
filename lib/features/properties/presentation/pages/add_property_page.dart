@@ -199,14 +199,14 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
     // Círculo principal del marcador
     final circlePaint = Paint()
-      ..color = AppTheme.primaryColor.withOpacity(0.95)
+      ..color = AppTheme.primaryColor.withValues(alpha: 0.95)
       ..style = ui.PaintingStyle.fill;
     const center = Offset(size / 2, size / 2);
     canvas.drawCircle(center, size * 0.36, circlePaint);
 
     // Borde sutil
     final borderPaint = Paint()
-      ..color = AppTheme.whiteColor.withOpacity(0.8)
+      ..color = AppTheme.whiteColor.withValues(alpha: 0.8)
       ..style = ui.PaintingStyle.stroke
       ..strokeWidth = 3;
     canvas.drawCircle(center, size * 0.36, borderPaint);
@@ -603,7 +603,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                        color: AppTheme.darkGrayBase.withOpacity(0.3),
+                        color: AppTheme.darkGrayBase.withValues(alpha: 0.3),
                         width: 1),
                     gradient: AppTheme.getCardGradient(),
                   ),
@@ -672,7 +672,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                        color: AppTheme.darkGrayBase.withOpacity(0.3),
+                        color: AppTheme.darkGrayBase.withValues(alpha: 0.3),
                         width: 1),
                     gradient: AppTheme.getCardGradient(),
                   ),
@@ -1210,17 +1210,17 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                     ),
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         alignment: Alignment.center,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 8),
                             ],
                           ),
@@ -1302,11 +1302,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -1332,7 +1332,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           filled: true,
           fillColor: Colors.white,
           isDense: true,
-          hintStyle: TextStyle(color: Colors.black.withOpacity(0.5)),
+          hintStyle: TextStyle(color: Colors.black.withValues(alpha: 0.5)),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
@@ -1343,11 +1343,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   Widget _buildPropertyTypeDropdown() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -1367,7 +1367,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           filled: true,
           fillColor: Colors.white,
           isDense: true,
-          hintStyle: TextStyle(color: Colors.black.withOpacity(0.5)),
+          hintStyle: TextStyle(color: Colors.black.withValues(alpha: 0.5)),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
@@ -1400,7 +1400,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           end: Alignment.bottomCenter,
           colors: [
             Colors.transparent,
-            AppTheme.darkGrayBase.withOpacity(0.3),
+            AppTheme.darkGrayBase.withValues(alpha: 0.3),
           ],
         ),
       ),
@@ -1415,7 +1415,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   style: OutlinedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     side:
-                        BorderSide(color: AppTheme.whiteColor.withOpacity(0.3)),
+                        BorderSide(color: AppTheme.whiteColor.withValues(alpha: 0.3)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),

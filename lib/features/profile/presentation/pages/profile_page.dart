@@ -288,7 +288,7 @@ class _ProfilePageState extends State<ProfilePage>
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -305,13 +305,13 @@ class _ProfilePageState extends State<ProfilePage>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  color.withOpacity(0.25),
-                  color.withOpacity(0.05),
+                  color.withValues(alpha: 0.25),
+                  color.withValues(alpha: 0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(borderRadius),
               border: border ??
-                  Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+                  Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
             ),
             child: child,
           ),
@@ -449,7 +449,7 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -603,7 +603,7 @@ class _ProfilePageState extends State<ProfilePage>
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white
-                  .withOpacity(0.9), // Slightly more opaque for readability
+                  .withValues(alpha: 0.9), // Slightly more opaque for readability
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(20)),
             ),
@@ -635,7 +635,7 @@ class _ProfilePageState extends State<ProfilePage>
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: _currentMode == mode
-                                ? const Color(0xFF8E2DE2).withOpacity(0.1)
+                                ? const Color(0xFF8E2DE2).withValues(alpha: 0.1)
                                 : Colors.grey[100],
                             shape: BoxShape.circle,
                           ),
@@ -775,7 +775,7 @@ class _ProfilePageState extends State<ProfilePage>
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.85),
+          backgroundColor: Colors.black.withValues(alpha: 0.85),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
@@ -803,7 +803,7 @@ class _ProfilePageState extends State<ProfilePage>
           content: SingleChildScrollView(
             child: Text(
               _getModeConfirmationText(mode),
-              style: TextStyle(color: Colors.white.withOpacity(0.85)),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.85)),
             ),
           ),
           actions: [
@@ -978,8 +978,8 @@ class _ProfilePageState extends State<ProfilePage>
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: alquiler['estado'] == 'Activo'
-                          ? Colors.green.withOpacity(0.2)
-                          : Colors.grey.withOpacity(0.2),
+                          ? Colors.green.withValues(alpha: 0.2)
+                          : Colors.grey.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -1079,8 +1079,8 @@ class _ProfilePageState extends State<ProfilePage>
                           horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? Colors.green.withOpacity(0.2)
-                            : Colors.red.withOpacity(0.2),
+                            ? Colors.green.withValues(alpha: 0.2)
+                            : Colors.red.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
@@ -1104,7 +1104,7 @@ class _ProfilePageState extends State<ProfilePage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -1201,8 +1201,8 @@ class _ProfilePageState extends State<ProfilePage>
                           horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? Colors.green.withOpacity(0.2)
-                            : Colors.red.withOpacity(0.2),
+                            ? Colors.green.withValues(alpha: 0.2)
+                            : Colors.red.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
@@ -1226,7 +1226,7 @@ class _ProfilePageState extends State<ProfilePage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
