@@ -5,7 +5,7 @@ class AppConfig {
   // API Configuration
   //static const String baseUrl = 'http://192.168.1.128:8000';
   //static const String baseUrl = 'http://10.0.2.2:8000';
-  static const String baseUrl = 'https://habitto-bk.onrender.com';
+  static const String baseUrl = 'https://web-production-67a04a.up.railway.app/';
   static const int timeoutDuration = 30000; // milliseconds
 
   // API Endpoints
