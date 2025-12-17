@@ -201,9 +201,12 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
 
   // Swipe gesture handling
   void _onPanStart(DragStartDetails details) {
-    if (_currentCardIndex >= _matchRequests.length ||
-        _animationController.isAnimating) {
+    if (_currentCardIndex >= _matchRequests.length) {
       return;
+    }
+
+    if (_animationController.isAnimating) {
+      _animationController.stop();
     }
 
     setState(() {
@@ -212,8 +215,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
-    if (_currentCardIndex >= _matchRequests.length ||
-        _animationController.isAnimating) {
+    if (_currentCardIndex >= _matchRequests.length) {
       return;
     }
 
@@ -223,8 +225,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
   }
 
   void _onPanEnd(DragEndDetails details) {
-    if (_currentCardIndex >= _matchRequests.length ||
-        _animationController.isAnimating) {
+    if (_currentCardIndex >= _matchRequests.length) {
       return;
     }
 
@@ -244,7 +245,10 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
     }
   }
 
-  void _animateTo(Offset target, {bool isDismiss = false, int direction = 0}) {
+  void _animateTo(Offset target,
+      {bool isDismiss = false,
+      int direction = 0,
+      Curve curve = Curves.easeOut}) {
     _isAnimatingOut = isDismiss;
     _pendingDirection = direction;
 
@@ -254,7 +258,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
     ).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: Curves.easeOut,
+        curve: curve,
       ),
     );
 
@@ -264,17 +268,17 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
   void _swipeCardLeft() {
     final width = MediaQuery.of(context).size.width;
     _animateTo(Offset(-width * 1.5, _dragPosition.dy),
-        isDismiss: true, direction: -1);
+        isDismiss: true, direction: -1, curve: Curves.easeIn);
   }
 
   void _swipeCardRight() {
     final width = MediaQuery.of(context).size.width;
     _animateTo(Offset(width * 1.5, _dragPosition.dy),
-        isDismiss: true, direction: 1);
+        isDismiss: true, direction: 1, curve: Curves.easeIn);
   }
 
   void _resetCardPosition() {
-    _animateTo(Offset.zero, isDismiss: false);
+    _animateTo(Offset.zero, isDismiss: false, curve: Curves.easeOutBack);
   }
 
   @override
@@ -349,14 +353,15 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                            Icon(
-                              Icons.favorite_border,
-                              size: 64,
-                              color: Colors.grey.shade400, // Light grey color, matching leads page icon style
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No tienes más solicitudes de match',
+                                Icon(
+                                  Icons.favorite_border,
+                                  size: 64,
+                                  color: Colors.grey
+                                      .shade400, // Light grey color, matching leads page icon style
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No tienes más solicitudes de match',
                                   style: TextStyle(
                                     color: onSurface.withValues(alpha: 0.8),
                                     fontSize: 18,
@@ -482,7 +487,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 110),
           ],
         ],
       ),
@@ -592,8 +597,10 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      AppTheme.primaryColor.withValues(alpha: 0.3),
-                                      AppTheme.secondaryColor.withValues(alpha: 0.3),
+                                      AppTheme.primaryColor
+                                          .withValues(alpha: 0.3),
+                                      AppTheme.secondaryColor
+                                          .withValues(alpha: 0.3),
                                     ],
                                   ),
                                   borderRadius: const BorderRadius.vertical(
@@ -723,7 +730,8 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        AppTheme.primaryColor.withValues(alpha: 0.1),
+                                        AppTheme.primaryColor
+                                            .withValues(alpha: 0.1),
                                         AppTheme.secondaryColor
                                             .withValues(alpha: 0.1),
                                       ],
@@ -798,7 +806,8 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
           ),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: AppTheme.primaryColor.withValues(alpha: 0.2 - (offset * 0.05)),
+            color:
+                AppTheme.primaryColor.withValues(alpha: 0.2 - (offset * 0.05)),
             width: 1.5,
           ),
         ),
