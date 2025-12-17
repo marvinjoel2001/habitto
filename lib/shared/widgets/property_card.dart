@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../shared/theme/app_theme.dart';
+import '../../config/app_config.dart';
 import 'dart:ui' as ui;
-
 
 class PropertyCard extends StatelessWidget {
   final String imageUrl;
@@ -36,17 +36,18 @@ class PropertyCard extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-          color: AppTheme.whiteColor.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.3), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.blackColor.withValues(alpha: 0.10),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+            color: AppTheme.whiteColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: AppTheme.whiteColor.withValues(alpha: 0.3), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.blackColor.withValues(alpha: 0.10),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(12),
@@ -98,11 +99,14 @@ class PropertyCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         // Estado de la propiedad
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: statusColor.withValues(alpha: 0.4), width: 1),
+                            border: Border.all(
+                                color: statusColor.withValues(alpha: 0.4),
+                                width: 1),
                           ),
                           child: Text(
                             status,
@@ -205,13 +209,14 @@ class PropertyStatus {
   static const Color inactivo = Color(0xFF9E9E9E); // Gris
   static const Color pendiente = Color(0xFFFFC107); // Amarillo
 }
+
 class _PropertyImage extends StatelessWidget {
   final String imageUrl;
   const _PropertyImage({required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
-    final isNetwork = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+    final isAsset = imageUrl.startsWith('assets/');
     final placeholder = Container(
       color: AppTheme.grayColor,
       alignment: Alignment.center,
@@ -222,15 +227,16 @@ class _PropertyImage extends StatelessWidget {
       ),
     );
 
-    if (isNetwork) {
-      return Image.network(
+    if (isAsset) {
+      return Image.asset(
         imageUrl,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => placeholder,
       );
     }
-    return Image.asset(
-      imageUrl,
+
+    return Image.network(
+      AppConfig.sanitizeUrl(imageUrl),
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => placeholder,
     );

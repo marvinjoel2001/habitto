@@ -1,4 +1,34 @@
+# Documentación de la API
+
+## Manejo de Imágenes (Cloudinary)
+La aplicación utiliza Cloudinary para el almacenamiento optimizado de imágenes. El flujo recomendado es:
+1. Subir la imagen al endpoint dedicado de subida.
+2. Obtener la URL segura de la respuesta.
+3. Usar esa URL en los endpoints de creación/edición de recursos (Usuarios, Propiedades).
+
+### `POST /api/upload/image/`
+- **Descripción**: Sube una imagen a Cloudinary y retorna su URL optimizada.
+- **Autenticación**: Requerida.
+- **Content-Type**: `multipart/form-data`
+- **Parámetros**:
+  - `file` (Required): El archivo de imagen.
+  - `folder` (Optional): Carpeta de destino (default: `habitto/uploads`).
+- **Respuesta Exitosa (201 Created)**:
+  ```json
+  {
+    "url": "https://res.cloudinary.com/dpdpgl5kg/image/upload/f_auto,q_auto/v1/habitto/uploads/imagen.jpg",
+    "filename": "imagen.jpg"
+  }
+  ```
+- **Errores**:
+  - `400 Bad Request`: Archivo no proporcionado, formato inválido o tamaño excedido (>10MB).
+
+---
+
+## Autenticación y Usuarios
+
 # Registro con imagen usando curl
+```bash
 curl -X POST http://localhost:8000/api/users/ \
   -H "Content-Type: multipart/form-data" \
   -F "username=juan_perez" \
@@ -17,14 +47,24 @@ curl -X POST http://localhost:8000/api/users/ \
 - **Content-Type**: `multipart/form-data`
 - **Campos**:
   - `profile_picture` (archivo, obligatorio): Imagen nueva
-- **Ejemplo**:
+  - `profile_picture_url` (URL, opcional): URL de Cloudinary (si ya se subió previamente)
+- **Ejemplo con URL**:
+```bash
+curl -X PATCH http://localhost:8000/api/profiles/update_me/ \
+  -H "Authorization: Bearer TU_TOKEN_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "profile_picture_url": "https://res.cloudinary.com/..."
+  }'
+```
+- **Ejemplo con archivo**:
 ```bash
 curl -X POST http://localhost:8000/api/profiles/upload_profile_picture/ \
   -H "Authorization: Bearer TU_TOKEN_JWT" \
   -H "Content-Type: multipart/form-data" \
   -F "profile_picture=@/ruta/a/nueva_foto.jpg"
 ```
-- **Respuesta (200 OK)**: Devuelve el perfil actualizado, incluyendo `profile_picture` (URL)
+- **Respuesta (200 OK)**: Devuelve el perfil actualizado, incluyendo `profile_picture_url` (URL)
 - **Errores comunes**:
   - `401 Unauthorized`: Falta token o token inválido
   - `400 Bad Request`: No se envió `profile_picture` o formato no soportado
@@ -83,37 +123,29 @@ curl -X GET http://localhost:8000/api/profiles/picture_history/ \
 [
   {
     "id": 3,
-    "image": "http://localhost:8000/media/profile_pictures/user_1_20241201_143022_a1b2c3d4.jpg",
+    "image_url": "https://res.cloudinary.com/dpdpgl5kg/image/upload/v1/habitto/profiles/user_1_abc.jpg",
     "original_filename": "nueva_foto.jpg",
     "uploaded_at": "2024-12-01T14:30:22.123456Z",
     "is_current": true
   },
   {
     "id": 2,
-    "image": "http://localhost:8000/media/profile_pictures/user_1_20241130_091545_e5f6g7h8.jpg",
+    "image_url": "https://res.cloudinary.com/dpdpgl5kg/image/upload/v1/habitto/profiles/user_1_xyz.jpg",
     "original_filename": "foto_anterior.jpg",
     "uploaded_at": "2024-11-30T09:15:45.987654Z",
-    "is_current": false
-  },
-  {
-    "id": 1,
-    "image": "http://localhost:8000/media/profile_pictures/user_1_20241129_160312_i9j0k1l2.jpg",
-    "original_filename": "primera_foto.jpg",
-    "uploaded_at": "2024-11-29T16:03:12.456789Z",
     "is_current": false
   }
 ]
 ```
 
 **Notas importantes:**
-- Las imágenes se almacenan en `media/profile_pictures/` con nombres únicos
-- Formato de nombres: `user_{id}_{timestamp}_{uuid}.{extension}`
-- Se mantiene un historial completo de todas las fotos subidas
-- Solo una foto puede estar marcada como `is_current: true`
-- Formatos soportados: JPG, PNG, GIF, WEBP
-- Tamaño máximo recomendado: 5MB
-- Las URLs de las imágenes incluyen el dominio completo en las respuestas
+- Las imágenes se almacenan en Cloudinary.
+- Se mantiene un historial completo de todas las fotos subidas.
+- Solo una foto puede estar marcada como `is_current: true`.
+- Formatos soportados: JPG, PNG, GIF, WEBP.
+- Tamaño máximo recomendado: 10MB.
 - **Si no envías el token JWT, la API responde `401 Unauthorized`. Asegúrate de incluir `Authorization: Bearer <token>`.
+
 
 ## Autenticación Social (Google, Facebook, Apple)
 - Dependencias: `django-allauth`, `dj-rest-auth`, `requests-oauthlib`.
@@ -329,6 +361,7 @@ Gestiona las propiedades inmobiliarias del sistema.
   - `amenities`: Array de IDs de amenidades
   - `availability_date`: Fecha de disponibilidad
   - `accepted_payment_methods`: Array de IDs de métodos de pago aceptados
+  - `photos_urls`: Array de URLs de imágenes en Cloudinary (Recomendado)
   - `zone_id`: ID de la zona (se asigna automáticamente si no se especifica)
   - `allows_roommates`: Si la propiedad permite roomies
   - `max_occupancy`: Ocupantes máximos recomendados
@@ -622,14 +655,14 @@ Además, las respuestas de propiedades incluyen el campo `main_photo` con la URL
         {
           "id": 1,
           "property": 1,
-          "image": "http://localhost:8000/media/properties/foto1.jpg",
+          "image_url": "https://res.cloudinary.com/dpdpgl5kg/image/upload/v1/habitto/properties/foto1.jpg",
           "caption": "Fachada de la propiedad",
           "created_at": "2025-10-22T10:00:00Z"
         },
         {
           "id": 2,
           "property": 1,
-          "image": "http://localhost:8000/media/properties/foto2.jpg",
+          "image_url": "https://res.cloudinary.com/dpdpgl5kg/image/upload/v1/habitto/properties/foto2.jpg",
           "caption": "Sala de estar",
           "created_at": "2025-10-22T11:00:00Z"
         }
@@ -666,7 +699,7 @@ Además, las respuestas de propiedades incluyen el campo `main_photo` con la URL
     "data": {
       "id": 1,
       "property": 1,
-      "image": "http://localhost:8000/media/properties/foto1.jpg",
+      "image_url": "https://res.cloudinary.com/dpdpgl5kg/image/upload/v1/habitto/properties/foto1.jpg",
       "caption": "Fachada de la propiedad",
       "created_at": "2025-10-22T10:00:00Z"
     }
@@ -724,7 +757,7 @@ Además, las respuestas de propiedades incluyen el campo `main_photo` con la URL
     "data": {
       "id": 1,
       "property": 1,
-      "image": "http://localhost:8000/media/properties/foto1.jpg",
+      "image_url": "https://res.cloudinary.com/dpdpgl5kg/image/upload/v1/habitto/properties/foto1.jpg",
       "caption": "Fachada de la propiedad",
       "created_at": "2025-10-22T10:00:00Z"
     }
@@ -757,7 +790,7 @@ Además, las respuestas de propiedades incluyen el campo `main_photo` con la URL
     "data": {
       "id": 1,
       "property": 1,
-      "image": "http://localhost:8000/media/properties/foto1.jpg",
+      "image_url": "https://res.cloudinary.com/dpdpgl5kg/image/upload/v1/habitto/properties/foto1.jpg",
       "caption": "Nueva descripción de la foto",
       "created_at": "2025-10-22T10:00:00Z"
     }
@@ -810,7 +843,7 @@ Además, las respuestas de propiedades incluyen el campo `main_photo` con la URL
     }
     ```
 
-**Nota**: Las imágenes se almacenan en el directorio `media/properties/` del servidor.
+**Nota**: Las imágenes se almacenan en Cloudinary.
 
 ## 4.1. Campo `main_photo` en Propiedades
 
@@ -836,7 +869,7 @@ Además, las respuestas de propiedades incluyen el campo `main_photo` con la URL
           "bathrooms": 2,
           "zone_name": "Zona Centro",
           "is_active": true,
-          "main_photo": "http://localhost:8000/media/properties/foto1.jpg"
+          "main_photo": "https://res.cloudinary.com/dpdpgl5kg/image/upload/v1/habitto/properties/foto1.jpg"
         }
       ]
     }
@@ -3560,3 +3593,39 @@ Sistema para reportar perfiles de usuarios (propietarios, agentes, inquilinos) y
   - Proceso: tarea/command de backend ejecuta la eliminación definitiva cuando `deletion_scheduled_for <= now`.
   - Command manual (ops): `python manage.py purge_soft_deleted_users`
   - Efecto: se elimina el `User` y por cascada sus datos asociados.
+
+## 17. Endpoints de Pagos BNB (`/api/bnb/`)
+
+Integración con BNB Pago QR Simple.
+
+### `POST /api/bnb/generate-qr`
+- **Descripción**: Genera un código QR para pago.
+- **Autenticación**: No requerida (o según configuración de vista).
+- **Body JSON**:
+  ```json
+  {
+    "amount": 50.00,
+    "description": "Pedido #123",
+    "single_use": true,
+    "expiration_minutes": 30,
+    "additional_data": "order_id:123"
+  }
+  ```
+- **Response (200 OK)**:
+  ```json
+  {
+    "qr_id": "...",
+    "qr_base64": "..."
+  }
+  ```
+- **Errores**:
+  - `400 Bad Request`: Faltan datos (`amount`, `description`).
+  - `502 Bad Gateway`: Error al comunicar con BNB.
+
+### `POST /api/bnb/notify`
+- **Descripción**: Webhook para notificaciones de pago desde BNB.
+- **Body JSON**: Estructura definida por BNB (QRId, Gloss, etc.).
+- **Response**:
+  ```json
+  { "success": true, "message": "OK" }
+  ```

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../shared/widgets/custom_network_image.dart';
 import '../../../../shared/widgets/match_modal.dart';
 import '../../../../shared/widgets/ai_chat_widget.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -452,7 +453,8 @@ class _GlassTag extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1),
+            border: Border.all(
+                color: Colors.white.withValues(alpha: 0.35), width: 1),
           ),
           child: Text(
             label,
@@ -1134,8 +1136,8 @@ class _PullHintHandState extends State<_PullHintHand>
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.08),
               shape: BoxShape.circle,
-              border:
-                  Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.2),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.25), width: 1.2),
             ),
             child: const Icon(Icons.touch_app, color: Colors.white, size: 30),
           ),
@@ -1523,7 +1525,8 @@ class _PropertyCardState extends State<PropertyCard> {
               offset: const Offset(0, 10),
             ),
             BoxShadow(
-              color: Colors.white.withValues(alpha: widget.isDragging ? 0.35 : 0.0),
+              color: Colors.white
+                  .withValues(alpha: widget.isDragging ? 0.35 : 0.0),
               blurRadius: 18,
               spreadRadius: 1,
               offset: const Offset(0, 0),
@@ -1556,19 +1559,15 @@ class _PropertyCardState extends State<PropertyCard> {
                         Positioned.fill(
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(24),
-                            child: Image.network(
-                              url,
+                            child: CustomNetworkImage(
+                              imageUrl: url,
                               fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return Container(
-                                  color: Colors.black12,
-                                  alignment: Alignment.center,
-                                  child: const CircularProgressIndicator(),
-                                );
-                              },
-                              errorBuilder: (context, error, stack) =>
-                                  _noImagePlaceholder(),
+                              placeholder: Container(
+                                color: Colors.black12,
+                                alignment: Alignment.center,
+                                child: const CircularProgressIndicator(),
+                              ),
+                              errorWidget: _noImagePlaceholder(),
                             ),
                           ),
                         ),
@@ -1596,7 +1595,8 @@ class _PropertyCardState extends State<PropertyCard> {
                       width: active ? 42 : 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: active ? 0.9 : 0.6),
+                        color:
+                            Colors.white.withValues(alpha: active ? 0.9 : 0.6),
                         borderRadius: BorderRadius.circular(20),
                       ),
                     );

@@ -30,6 +30,7 @@ dependencies:
   sign_in_with_apple: ^6.0.0
   speech_to_text: ^7.0.0
   fluttertoast: ^8.2.4
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

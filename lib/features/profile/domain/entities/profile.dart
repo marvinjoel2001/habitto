@@ -38,7 +38,9 @@ class Profile extends BaseModel {
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       favorites: List<int>.from(json['favorites'] ?? []),
-      profileImage: clean(json['profile_picture']).isNotEmpty ? clean(json['profile_picture']) : null,
+      profileImage: clean(json['profile_picture_url']).isNotEmpty 
+          ? clean(json['profile_picture_url']) 
+          : (clean(json['profile_picture']).isNotEmpty ? clean(json['profile_picture']) : null),
     );
   }
 

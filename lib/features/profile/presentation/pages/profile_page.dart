@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import '../../../../shared/widgets/custom_network_image.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/profile_mode_chip.dart';
 import '../../../../shared/widgets/property_card.dart';
@@ -15,6 +16,7 @@ import '../../../properties/domain/entities/photo.dart';
 import '../../../properties/presentation/pages/property_photos_page.dart';
 import '../../../properties/presentation/pages/property_detail_page.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../config/app_config.dart';
 import 'edit_profile_page.dart';
 import '../../../properties/presentation/pages/edit_property_page.dart';
 import '../../../../generated/l10n.dart';
@@ -311,7 +313,8 @@ class _ProfilePageState extends State<ProfilePage>
               ),
               borderRadius: BorderRadius.circular(borderRadius),
               border: border ??
-                  Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
+                  Border.all(
+                      color: Colors.white.withValues(alpha: 0.4), width: 1),
             ),
             child: child,
           ),
@@ -461,9 +464,8 @@ class _ProfilePageState extends State<ProfilePage>
                           color: Colors.transparent,
                           shape: BoxShape.circle,
                         ),
-                        child: CircleAvatar(
-                          radius: 60,
-                          backgroundImage: _getProfileImage(),
+                        child: ClipOval(
+                          child: _buildProfileImageWidget(),
                         ),
                       ),
                     ),
@@ -602,8 +604,8 @@ class _ProfilePageState extends State<ProfilePage>
           filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white
-                  .withValues(alpha: 0.9), // Slightly more opaque for readability
+              color: Colors.white.withValues(
+                  alpha: 0.9), // Slightly more opaque for readability
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(20)),
             ),
@@ -1376,16 +1378,29 @@ class _ProfilePageState extends State<ProfilePage>
     return S.of(context).userLabel;
   }
 
-  ImageProvider _getProfileImage() {
+  Widget _buildProfileImageWidget() {
     // Verificar si el usuario tiene una foto de perfil
     if (_currentProfile?.profileImage != null &&
         _currentProfile!.profileImage!.isNotEmpty) {
-      return NetworkImage(_currentProfile!.profileImage!);
+      return CustomNetworkImage(
+        imageUrl: _currentProfile!.profileImage!,
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+        errorWidget: Image.asset(
+          'assets/images/unnamed.png',
+          fit: BoxFit.cover,
+        ),
+      );
     }
 
     // Si no tiene foto de perfil, mostrar la imagen por defecto
-    // Cambiado a un asset existente para evitar errores de carga
-    return const AssetImage('assets/images/unnamed.png');
+    return Image.asset(
+      'assets/images/unnamed.png',
+      fit: BoxFit.cover,
+      width: 120,
+      height: 120,
+    );
   }
 
   String _getModeTitle() {
@@ -1449,14 +1464,12 @@ class _ProfilePageState extends State<ProfilePage>
 
     if (photos != null && photos.isNotEmpty) {
       // Mostrar la primera foto de la propiedad
-      return Image.network(
-        photos.first.image,
+      return CustomNetworkImage(
+        imageUrl: photos.first.image,
         width: 70,
         height: 70,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildDefaultPropertyImage();
-        },
+        errorWidget: _buildDefaultPropertyImage(),
       );
     } else {
       // Mostrar imagen por defecto

@@ -86,26 +86,38 @@ class AppConfig {
 
   static String sanitizeUrl(String url) {
     if (url.isEmpty) return url;
+
+    // Debug log to see what we receive
+    // print('AppConfig.sanitizeUrl input: $url');
+
+    // 1. Check if it's a relative path (no scheme)
     Uri? u;
     try {
       u = Uri.parse(url);
     } catch (_) {}
-    if (u == null || !u.hasScheme) return url;
-    final http = httpBaseUri();
-    final host =
-        (u.host == 'localhost' || u.host == '127.0.0.1') ? http.host : u.host;
-    final port = (u.host == 'localhost' || u.host == '127.0.0.1')
-        ? http.port
-        : (u.hasPort ? u.port : http.port);
-    final scheme = http.scheme;
-    final rebuilt = Uri(
-      scheme: scheme,
-      host: host,
-      port: port,
-      path: u.path,
-      query: u.query,
-      fragment: u.fragment,
-    );
-    return rebuilt.toString();
+
+    if (u == null || !u.hasScheme) {
+      // Relative path: Prepend baseUrl
+      String base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+      String path = url.startsWith('/') ? url.substring(1) : url;
+      return '$base$path';
+    }
+
+    // 2. Handle Absolute URLs
+    // If it is localhost or 127.0.0.1, we might need to rewrite it to point to the backend
+    // (useful when running on emulator/device but backend returns localhost)
+    if (u.host == 'localhost' || u.host == '127.0.0.1') {
+      final http = httpBaseUri();
+      return u
+          .replace(
+            scheme: http.scheme,
+            host: http.host,
+            port: http.port,
+          )
+          .toString();
+    }
+
+    // 3. For other absolute URLs (e.g. Cloudinary, S3), return as is
+    return url;
   }
 }

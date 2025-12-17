@@ -106,9 +106,11 @@ class Property extends BaseModel {
       availabilityDate: json['availability_date'] != null
           ? parseDate(json['availability_date'])
           : null,
-      mainPhoto: (clean(json['main_photo']).isNotEmpty)
-          ? clean(json['main_photo'])
-          : null,
+      mainPhoto: (clean(json['main_photo_url']).isNotEmpty) 
+          ? clean(json['main_photo_url']) 
+          : ((clean(json['main_photo']).isNotEmpty)
+              ? clean(json['main_photo'])
+              : null),
     );
   }
 

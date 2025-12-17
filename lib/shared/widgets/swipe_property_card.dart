@@ -2,7 +2,9 @@ import 'dart:ui' as ui;
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
+import 'custom_network_image.dart';
 import '../theme/app_theme.dart';
+import '../../config/app_config.dart';
 import '../../generated/l10n.dart';
 
 class SwipePropertyCard extends StatefulWidget {
@@ -123,8 +125,8 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                   offset: const Offset(0, 10),
                 ),
                 BoxShadow(
-                  color:
-                      Colors.white.withValues(alpha: widget.isDragging ? 0.35 : 0.0),
+                  color: Colors.white
+                      .withValues(alpha: widget.isDragging ? 0.35 : 0.0),
                   blurRadius: 18,
                   spreadRadius: 1,
                   offset: const Offset(0, 0),
@@ -152,20 +154,15 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                           Positioned.fill(
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(24),
-                              child: Image.network(
-                                url,
+                              child: CustomNetworkImage(
+                                imageUrl: AppConfig.sanitizeUrl(url),
                                 fit: BoxFit.cover,
-                                loadingBuilder: (context, child, progress) {
-                                  if (progress == null) return child;
-                                  return Container(
-                                    color: Colors.black12,
-                                    alignment: Alignment.center,
-                                    child: const CircularProgressIndicator(),
-                                  );
-                                },
-                                errorBuilder: (context, error, stack) =>
-                                    _noImagePlaceholder(),
-                                semanticLabel: 'property-image',
+                                placeholder: Container(
+                                  color: Colors.black12,
+                                  alignment: Alignment.center,
+                                  child: const CircularProgressIndicator(),
+                                ),
+                                errorWidget: _noImagePlaceholder(),
                               ),
                             ),
                           ),
@@ -257,8 +254,8 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                             width: active ? 42 : 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color:
-                                  Colors.white.withValues(alpha: active ? 0.9 : 0.6),
+                              color: Colors.white
+                                  .withValues(alpha: active ? 0.9 : 0.6),
                               borderRadius: BorderRadius.circular(20),
                             ),
                           );
@@ -413,15 +410,15 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color:
-                                      AppTheme.secondaryColor.withValues(alpha: 0.35),
+                                  color: AppTheme.secondaryColor
+                                      .withValues(alpha: 0.35),
                                   blurRadius: 36,
                                   spreadRadius: 10,
                                 ),
                               ],
                               border: Border.all(
-                                color:
-                                    AppTheme.secondaryColor.withValues(alpha: 0.65),
+                                color: AppTheme.secondaryColor
+                                    .withValues(alpha: 0.65),
                                 width: 3,
                               ),
                             ),

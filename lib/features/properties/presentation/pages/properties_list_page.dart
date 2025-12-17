@@ -6,6 +6,8 @@ import '../../data/services/photo_service.dart';
 import '../../../../core/services/api_service.dart';
 import 'package:habitto/config/app_config.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import '../../../../shared/widgets/property_image_grid.dart';
+import '../../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../../shared/theme/app_theme.dart';
 import 'edit_property_page.dart';
 import '../../../../../generated/l10n.dart';
@@ -291,7 +293,6 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
                     future: _photoService.getPropertyPhotos(property.id),
                     builder: (context, snapshot) {
                       List<String> urls = [];
-                      const fallback = 'assets/images/empty.jpg';
                       if (property.mainPhoto != null &&
                           property.mainPhoto!.isNotEmpty) {
                         urls.add(AppConfig.sanitizeUrl(property.mainPhoto!));
@@ -307,10 +308,26 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
                             .toList();
                         urls.addAll(photos);
                       }
-                      while (urls.length < 6) {
-                        urls.add('');
-                      }
-                      return _buildAlbumCollage(urls, fallback);
+
+                      // Eliminar duplicados
+                      urls = urls.toSet().toList();
+
+                      return PropertyImageGrid(
+                        imageUrls: urls,
+                        height: 240,
+                        borderRadius: 12,
+                        onImageTap: (index) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => FullScreenImageViewer(
+                                images: urls,
+                                initialIndex: index,
+                              ),
+                            ),
+                          );
+                        },
+                      );
                     },
                   ),
                 ],
@@ -319,62 +336,6 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildAlbumCollage(List<String> urls, String fallbackAsset) {
-    String? u(int i) =>
-        (i >= 0 && i < urls.length && urls[i].isNotEmpty) ? urls[i] : null;
-    Widget tile({String? url, double radius = 14}) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: url != null
-            ? Image.network(
-                url,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Image.asset(fallbackAsset, fit: BoxFit.cover),
-              )
-            : Image.asset(fallbackAsset, fit: BoxFit.cover),
-      );
-    }
-
-    return Column(
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: SizedBox(
-                height: 180,
-                child: tile(url: u(0)),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 1,
-              child: Column(
-                children: [
-                  SizedBox(height: 86, child: tile(url: u(1))),
-                  const SizedBox(height: 8),
-                  SizedBox(height: 86, child: tile(url: u(2))),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: SizedBox(height: 100, child: tile(url: u(3)))),
-            const SizedBox(width: 8),
-            Expanded(child: SizedBox(height: 100, child: tile(url: u(4)))),
-            const SizedBox(width: 8),
-            Expanded(child: SizedBox(height: 100, child: tile(url: u(5)))),
-          ],
-        ),
-      ],
     );
   }
 

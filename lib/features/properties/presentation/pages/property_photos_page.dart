@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../shared/widgets/custom_network_image.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../config/app_config.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../data/services/photo_service.dart';
 import '../../domain/entities/photo.dart';
@@ -134,11 +136,10 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
         return;
       }
       final List<XFile> images = await _imagePicker.pickMultiImage(
-            maxWidth: 1920,
-            maxHeight: 1080,
-            imageQuality: 85,
-          ) ??
-          [];
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
 
       if (images.isNotEmpty) {
         setState(() {
@@ -156,27 +157,31 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
           if (result['success']) {
             _uploadedCount++;
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    result['error'] ?? S.of(context).uploadPhotoErrorGeneric),
-                backgroundColor: Colors.red,
-              ),
-            );
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      result['error'] ?? S.of(context).uploadPhotoErrorGeneric),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           }
         }
 
-        setState(() {
-          _isUploading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isUploading = false;
+          });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                S.of(context).photosUploadedCount(_uploadedCount.toString())),
-            backgroundColor: Colors.green,
-          ),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  S.of(context).photosUploadedCount(_uploadedCount.toString())),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
 
         await _loadPhotos();
       }
@@ -505,28 +510,23 @@ class _PropertyPhotosPageState extends State<PropertyPhotosPage> {
           fit: StackFit.expand,
           children: [
             // Imagen
-            Image.network(
-              photo.image,
+            CustomNetworkImage(
+              imageUrl: AppConfig.sanitizeUrl(photo.image),
               fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  color: Colors.grey[200],
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey[200],
-                  child: const Icon(
-                    Icons.broken_image,
-                    size: 50,
-                    color: Colors.grey,
-                  ),
-                );
-              },
+              placeholder: Container(
+                color: Colors.grey[200],
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              errorWidget: Container(
+                color: Colors.grey[200],
+                child: const Icon(
+                  Icons.broken_image,
+                  size: 50,
+                  color: Colors.grey,
+                ),
+              ),
             ),
 
             // Overlay con botones

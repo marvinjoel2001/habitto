@@ -107,9 +107,17 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           'name': S.of(context).amenityLaundry,
           'icon': Icons.local_laundry_service
         },
-        {'id': 'gym', 'name': S.of(context).amenityGym, 'icon': Icons.fitness_center},
+        {
+          'id': 'gym',
+          'name': S.of(context).amenityGym,
+          'icon': Icons.fitness_center
+        },
         {'id': 'pool', 'name': S.of(context).amenityPool, 'icon': Icons.pool},
-        {'id': 'garden', 'name': S.of(context).amenityGarden, 'icon': Icons.park},
+        {
+          'id': 'garden',
+          'name': S.of(context).amenityGarden,
+          'icon': Icons.park
+        },
       ];
 
   @override
@@ -306,9 +314,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
     if (_currentUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text(S.of(context).userFetchError)),
+        SnackBar(content: Text(S.of(context).userFetchError)),
       );
       return;
     }
@@ -358,8 +364,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             title: Text(S.of(context).propertyCreatedTitle),
-            content: Text(
-                S.of(context).propertyCreatedMessage),
+            content: Text(S.of(context).propertyCreatedMessage),
             actions: [
               TextButton(
                 onPressed: () {
@@ -403,40 +408,35 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   bool _validateForm() {
     if (_addressController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(S.of(context).enterAddressError)),
+        SnackBar(content: Text(S.of(context).enterAddressError)),
       );
       return false;
     }
 
     if (_priceController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(S.of(context).enterPriceError)),
+        SnackBar(content: Text(S.of(context).enterPriceError)),
       );
       return false;
     }
 
     if (_guaranteeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(S.of(context).enterGuaranteeError)),
+        SnackBar(content: Text(S.of(context).enterGuaranteeError)),
       );
       return false;
     }
 
     if (_descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(S.of(context).enterDescriptionError)),
+        SnackBar(content: Text(S.of(context).enterDescriptionError)),
       );
       return false;
     }
 
     if (_areaController.text.isEmpty && _sizeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(S.of(context).enterAreaError)),
+        SnackBar(content: Text(S.of(context).enterAreaError)),
       );
       return false;
     }
@@ -569,7 +569,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         children: [
           Text(
             S.of(context).stepBasicDescription,
-            style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+            style: const TextStyle(
+                fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
           _buildPropertyTypeDropdown(),
@@ -740,7 +741,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         children: [
           Text(
             S.of(context).stepDetailsDescription,
-            style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+            style: const TextStyle(
+                fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
           Text(
@@ -760,7 +762,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.attach_money, color: AppTheme.primaryColor),
+                        const Icon(Icons.attach_money,
+                            color: AppTheme.primaryColor),
                         const SizedBox(width: 8),
                         Text(S.of(context).adjustPriceLabel,
                             style: const TextStyle(color: Colors.black87)),
@@ -807,7 +810,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                        const Icon(Icons.lock_outline,
+                            color: AppTheme.primaryColor),
                         const SizedBox(width: 8),
                         Text(S.of(context).adjustGuaranteeLabel,
                             style: const TextStyle(color: Colors.black87)),
@@ -876,23 +880,23 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       const SizedBox(width: 6),
                       Text(
                         name,
-                        style: const TextStyle(color: AppTheme.darkGrayBase),
+                        style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black),
                       ),
                       const SizedBox(width: 8),
                       Icon(
                         isSelected
                             ? Icons.check_circle
                             : Icons.radio_button_unchecked,
-                        color:
-                            isSelected ? AppTheme.secondaryColor : Colors.grey,
+                        color: isSelected ? Colors.white : Colors.grey,
                         size: 18,
                       ),
                     ],
                   ),
                   selected: isSelected,
                   backgroundColor: Colors.white,
-                  selectedColor: Colors.white,
-                  checkmarkColor: AppTheme.darkGrayBase,
+                  selectedColor: Colors.transparent,
+                  checkmarkColor: Colors.white,
                   onSelected: (selected) {
                     setState(() {
                       if (selected) {
@@ -926,7 +930,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   label: Text(
                     method.name,
                     style: TextStyle(
-                      color: isSelected ? AppTheme.darkGrayBase : Colors.black,
+                      color: isSelected ? Colors.white : Colors.black,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -934,7 +938,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   selected: isSelected,
                   backgroundColor: Colors.transparent,
                   selectedColor: Colors.transparent,
-                  checkmarkColor: AppTheme.darkGrayBase,
+                  checkmarkColor: Colors.white,
                   onSelected: (selected) {
                     setState(() {
                       if (selected) {
@@ -1158,7 +1162,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         children: [
           Text(
             S.of(context).stepLocationDescription,
-            style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+            style: const TextStyle(
+                fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
           Text(
@@ -1230,8 +1235,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                               const Icon(Icons.open_in_full,
                                   color: AppTheme.primaryColor),
                               const SizedBox(width: 8),
-                              Text(
-                                  S.of(context).tapToSelectLocation),
+                              Text(S.of(context).tapToSelectLocation),
                             ],
                           ),
                         ),
@@ -1306,7 +1310,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -1319,11 +1323,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         onTap: onTap,
         keyboardType: keyboardType,
         maxLines: maxLines,
-        style: const TextStyle(color: AppTheme.darkGrayBase),
+        style: const TextStyle(color: Colors.black),
         decoration: InputDecoration(
           hintText: hintText,
           floatingLabelBehavior: FloatingLabelBehavior.never,
-          labelStyle: const TextStyle(color: AppTheme.darkGrayBase),
+          labelStyle: const TextStyle(color: Colors.black54),
           prefixIcon: Icon(icon, color: AppTheme.primaryColor),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
@@ -1347,7 +1351,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -1358,7 +1362,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         decoration: InputDecoration(
           hintText: S.of(context).propertyTypeLabel,
           floatingLabelBehavior: FloatingLabelBehavior.never,
-          labelStyle: const TextStyle(color: AppTheme.darkGrayBase),
+          labelStyle: const TextStyle(color: Colors.black54),
           prefixIcon: const Icon(Icons.home_work, color: AppTheme.primaryColor),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
@@ -1372,12 +1376,12 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
         dropdownColor: Colors.white,
-        style: const TextStyle(color: AppTheme.darkGrayBase),
+        style: const TextStyle(color: Colors.black),
         items: _propertyTypeDisplayMapping.entries.map((entry) {
           return DropdownMenuItem<String>(
             value: entry.key,
-            child: Text(entry.value,
-                style: const TextStyle(color: AppTheme.darkGrayBase)),
+            child:
+                Text(entry.value, style: const TextStyle(color: Colors.black)),
           );
         }).toList(),
         onChanged: (value) {
@@ -1400,7 +1404,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           end: Alignment.bottomCenter,
           colors: [
             Colors.transparent,
-            AppTheme.darkGrayBase.withValues(alpha: 0.3),
+            Colors.white.withValues(alpha: 0.8),
           ],
         ),
       ),
@@ -1409,13 +1413,16 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           if (_currentStep > 0)
             Expanded(
               child: Container(
-                decoration: AppTheme.getGlassCard(),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  color: Colors.white,
+                  border: Border.all(color: AppTheme.primaryColor),
+                ),
                 child: OutlinedButton(
                   onPressed: _previousStep,
                   style: OutlinedButton.styleFrom(
                     backgroundColor: Colors.transparent,
-                    side:
-                        BorderSide(color: AppTheme.whiteColor.withValues(alpha: 0.3)),
+                    side: BorderSide.none,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
@@ -1424,7 +1431,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   child: Text(
                     S.of(context).previousButton,
                     style: const TextStyle(
-                      color: AppTheme.whiteColor,
+                      color: AppTheme.primaryColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1436,12 +1443,24 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           Expanded(
             flex: _currentStep == 0 ? 1 : 1,
             child: Container(
-              decoration: AppTheme.getMintButtonDecoration(),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: CustomButton(
-                text: _currentStep == 2 ? S.of(context).finishButton : S.of(context).nextButton,
+                text: _currentStep == 2
+                    ? S.of(context).finishButton
+                    : S.of(context).nextButton,
                 onPressed: _isLoading ? null : _nextStep,
                 backgroundColor: Colors.transparent,
-                textColor: AppTheme.darkGrayBase,
+                textColor: Colors.white,
               ),
             ),
           ),

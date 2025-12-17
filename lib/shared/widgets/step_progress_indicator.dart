@@ -23,7 +23,7 @@ class StepProgressIndicator extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 24),
           child: LinearProgressIndicator(
             value: (currentStep + 1) / totalSteps,
-            backgroundColor: AppTheme.whiteColor.withValues(alpha: 0.25),
+            backgroundColor: Colors.grey[300],
             valueColor: AlwaysStoppedAnimation<Color>(primary),
           ),
         ),
@@ -42,14 +42,14 @@ class StepProgressIndicator extends StatelessWidget {
                     height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isActive ? primary : AppTheme.whiteColor.withValues(alpha: 0.2),
+                      color: isActive ? primary : Colors.grey[300],
                       border: isCurrent ? Border.all(color: primary, width: 2) : null,
                     ),
                     child: Center(
                       child: Text(
                         '${index + 1}',
-                        style: const TextStyle(
-                          color: AppTheme.blackColor,
+                        style: TextStyle(
+                          color: isActive ? Colors.white : Colors.black54,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -62,7 +62,7 @@ class StepProgressIndicator extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                      color: isActive ? AppTheme.blackColor : AppTheme.whiteColor.withValues(alpha: 0.6),
+                      color: isActive ? AppTheme.blackColor : Colors.grey,
                     ),
                     textAlign: TextAlign.center,
                   ),

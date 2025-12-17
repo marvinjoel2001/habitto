@@ -20,10 +20,17 @@ class Photo extends BaseModel {
       final s = v?.toString() ?? '';
       return s.replaceAll('`', '').replaceAll('"', '').trim();
     }
+    
+    // Prioritize image_url if available (Cloudinary), otherwise fallback to image
+    String imageUrl = clean(json['image_url']);
+    if (imageUrl.isEmpty) {
+      imageUrl = clean(json['image']);
+    }
+
     return Photo(
       id: json['id'],
       property: json['property'],
-      image: clean(json['image']),
+      image: imageUrl,
       caption: json['caption'],
       createdAt: DateTime.parse(json['created_at']),
     );

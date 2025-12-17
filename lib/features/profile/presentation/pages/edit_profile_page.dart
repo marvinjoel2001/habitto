@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../shared/widgets/custom_network_image.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../config/app_config.dart';
 import '../../data/services/profile_service.dart';
 import '../../domain/entities/profile.dart';
 import '../../../auth/domain/entities/user.dart';
@@ -71,10 +73,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(S.of(context).imageSelectionError(e.toString()))),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(S.of(context).imageSelectionError(e.toString()))),
+        );
+      }
     }
   }
 
@@ -257,7 +261,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             ),
                           ],
                           border: Border.all(
-                            color: const Color(0xFF8E2DE2).withValues(alpha: 0.3),
+                            color:
+                                const Color(0xFF8E2DE2).withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -317,16 +322,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 )
                               : widget.profile.profileImage != null &&
                                       widget.profile.profileImage!.isNotEmpty
-                                  ? Image.network(
-                                      widget.profile.profileImage!,
+                                  ? CustomNetworkImage(
+                                      imageUrl: widget.profile.profileImage!,
                                       fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Image.asset(
-                                          'assets/images/unnamed.png',
-                                          fit: BoxFit.cover,
-                                        );
-                                      },
+                                      errorWidget: Image.asset(
+                                        'assets/images/unnamed.png',
+                                        fit: BoxFit.cover,
+                                      ),
                                     )
                                   : Image.asset(
                                       'assets/images/unnamed.png',
