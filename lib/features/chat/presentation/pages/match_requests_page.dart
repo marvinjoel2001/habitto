@@ -1,8 +1,12 @@
-import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
 import '../../../../features/matching/data/services/matching_service.dart';
+import '../../../../features/home/presentation/pages/home_page.dart';
+import '../../../../shared/widgets/match_modal.dart';
 import 'package:habitto/config/app_config.dart';
 import 'package:habitto/shared/theme/app_theme.dart';
+import '../../../../generated/l10n.dart';
 
 class MatchRequestsPage extends StatefulWidget {
   const MatchRequestsPage({super.key});
@@ -11,93 +15,21 @@ class MatchRequestsPage extends StatefulWidget {
   State<MatchRequestsPage> createState() => _MatchRequestsPageState();
 }
 
-class _MatchRequestsPageState extends State<MatchRequestsPage>
-    with SingleTickerProviderStateMixin {
+class _MatchRequestsPageState extends State<MatchRequestsPage> {
   final MatchingService _matchingService = MatchingService();
-  List<dynamic> _matchRequests = [];
+
+  List<HomePropertyCardData> _matchRequests = [];
   bool _isLoading = true;
   String _error = '';
 
-  // Swipe animation controller
-  late AnimationController _animationController;
-  Animation<Offset>? _offsetAnimation;
-
-  // Card tracking
-  int _currentCardIndex = 0;
-  bool _isDragging = false;
-  Offset _dragPosition = Offset.zero;
-
-  // Flag to indicate if we are animating off-screen
-  bool _isAnimatingOut = false;
-  int _pendingDirection = 0; // -1: Left (Reject), 1: Right (Accept)
-
-  // Swipe thresholds
-  static const double _swipeThreshold = 120.0;
-  static const double _maxRotation = 0.3; // radians
+  final GlobalKey<PropertySwipeDeckState> _deckKey =
+      GlobalKey<PropertySwipeDeckState>();
+  HomePropertyCardData? _currentTopProperty;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _animationController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        if (_isAnimatingOut) {
-          // Animation completed, move to next card
-          final direction = _pendingDirection;
-          final currentRequest = _currentCardIndex < _matchRequests.length
-              ? _matchRequests[_currentCardIndex]
-              : null;
-          final matchId = currentRequest != null
-              ? (currentRequest['match']?['id'] as int? ?? 0)
-              : 0;
-
-          setState(() {
-            _currentCardIndex++;
-            _dragPosition = Offset.zero;
-            _isDragging = false;
-            _isAnimatingOut = false;
-            _pendingDirection = 0;
-          });
-
-          // Reset controller for next usage
-          _animationController.reset();
-
-          // Perform action after UI update
-          if (direction == 1) {
-            _acceptMatchRequest(matchId);
-          } else if (direction == -1) {
-            _rejectMatchRequest(matchId);
-          }
-        } else {
-          // Reset animation (snap back) completed
-          setState(() {
-            _dragPosition = Offset.zero;
-            _isDragging = false;
-          });
-          _animationController.reset();
-        }
-      }
-    });
-
-    _animationController.addListener(() {
-      if (_offsetAnimation != null) {
-        setState(() {
-          _dragPosition = _offsetAnimation!.value;
-        });
-      }
-    });
-
     _loadMatchRequests();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadMatchRequests() async {
@@ -111,8 +43,55 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
 
       if (result['success']) {
         final requests = (result['data'] as List<dynamic>?) ?? [];
+        final cards = <HomePropertyCardData>[];
+
+        for (final req in requests) {
+          final match = req['match'] as Map<String, dynamic>? ?? {};
+          final property = req['property'] as Map<String, dynamic>? ?? {};
+          final interestedUser =
+              req['interested_user'] as Map<String, dynamic>? ?? {};
+
+          final userName =
+              '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'
+                  .trim();
+          final userUsername =
+              interestedUser['username'] as String? ?? 'Usuario';
+          final displayName = userName.isNotEmpty ? userName : userUsername;
+
+          String resolveAvatar(String? url) {
+            final u =
+                (url ?? '').trim().replaceAll('`', '').replaceAll('"', '');
+            if (u.isEmpty) return '';
+            if (u.startsWith('http://') || u.startsWith('https://')) return u;
+            final base = Uri.parse(AppConfig.baseUrl);
+            final abs = Uri(
+                scheme: base.scheme,
+                host: base.host,
+                port: base.port == 0 ? null : base.port,
+                path: u.startsWith('/') ? u : '/$u');
+            return abs.toString();
+          }
+
+          final avatarUrl =
+              resolveAvatar(interestedUser['profile_picture'] as String?);
+          final score =
+              match['score'] is num ? (match['score'] as num).round() : 0;
+          final propertyTitle =
+              property['title'] as String? ?? 'Propiedad sin título';
+          final matchId = match['id'] is num ? (match['id'] as num).toInt() : 0;
+
+          cards.add(HomePropertyCardData(
+            id: matchId, // Usamos matchId en lugar de propertyId
+            title: displayName, // Nombre del usuario como título
+            priceLabel: '$score% Match', // Score como subtítulo
+            images: [avatarUrl], // Foto de perfil como imagen principal
+            distanceKm: 0.0,
+            tags: [propertyTitle], // Título de la propiedad como tag
+          ));
+        }
+
         setState(() {
-          _matchRequests = requests;
+          _matchRequests = cards;
           _isLoading = false;
         });
       } else {
@@ -129,156 +108,31 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
     }
   }
 
-  Future<void> _acceptMatchRequest(int matchId) async {
-    try {
-      final result = await _matchingService.acceptMatchRequest(matchId);
-      if (mounted) {
-        if (result['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Solicitud de match aceptada'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${result['error']}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al aceptar: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _rejectMatchRequest(int matchId) async {
-    try {
-      final result = await _matchingService.rejectMatchRequest(matchId);
-      if (mounted) {
-        if (result['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Solicitud de match rechazada'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${result['error']}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al rechazar: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  }
-
-  // Swipe gesture handling
-  void _onPanStart(DragStartDetails details) {
-    if (_currentCardIndex >= _matchRequests.length) {
-      return;
-    }
-
-    if (_animationController.isAnimating) {
-      _animationController.stop();
-    }
-
-    setState(() {
-      _isDragging = true;
-    });
-  }
-
-  void _onPanUpdate(DragUpdateDetails details) {
-    if (_currentCardIndex >= _matchRequests.length) {
-      return;
-    }
-
-    setState(() {
-      _dragPosition += details.delta;
-    });
-  }
-
-  void _onPanEnd(DragEndDetails details) {
-    if (_currentCardIndex >= _matchRequests.length) {
-      return;
-    }
-
-    final velocity = details.velocity.pixelsPerSecond.dx;
-    final width = MediaQuery.of(context).size.width;
-    final threshold = width * 0.35;
-
-    final shouldSwipeLeft = _dragPosition.dx < -threshold || velocity < -700;
-    final shouldSwipeRight = _dragPosition.dx > threshold || velocity > 700;
-
-    if (shouldSwipeLeft) {
-      _swipeCardLeft();
-    } else if (shouldSwipeRight) {
-      _swipeCardRight();
-    } else {
-      _resetCardPosition();
-    }
-  }
-
-  void _animateTo(Offset target,
-      {bool isDismiss = false,
-      int direction = 0,
-      Curve curve = Curves.easeOut}) {
-    _isAnimatingOut = isDismiss;
-    _pendingDirection = direction;
-
-    _offsetAnimation = Tween<Offset>(
-      begin: _dragPosition,
-      end: target,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: curve,
-      ),
+  void _spawnHeartsBurst() {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (ctx) => const _HeartsBurstOverlay(),
     );
-
-    _animationController.forward(from: 0.0);
+    overlay.insert(entry);
+    Future.delayed(const Duration(milliseconds: 1750), () {
+      entry.remove();
+    });
   }
 
-  void _swipeCardLeft() {
-    final width = MediaQuery.of(context).size.width;
-    _animateTo(Offset(-width * 1.5, _dragPosition.dy),
-        isDismiss: true, direction: -1, curve: Curves.easeIn);
-  }
-
-  void _swipeCardRight() {
-    final width = MediaQuery.of(context).size.width;
-    _animateTo(Offset(width * 1.5, _dragPosition.dy),
-        isDismiss: true, direction: 1, curve: Curves.easeIn);
-  }
-
-  void _resetCardPosition() {
-    _animateTo(Offset.zero, isDismiss: false, curve: Curves.easeOutBack);
+  void _spawnBigXAndSwipeLeft() {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (ctx) => const _BigXOverlay(),
+    );
+    overlay.insert(entry);
+    Future.delayed(const Duration(milliseconds: 600), () {
+      _deckKey.currentState?.swipeLeft();
+    });
+    Future.delayed(const Duration(milliseconds: 800), () {
+      entry.remove();
+    });
   }
 
   @override
@@ -306,511 +160,562 @@ class _MatchRequestsPageState extends State<MatchRequestsPage>
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Card stack area
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                    ),
-                  )
-                : _error.isNotEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: onSurface.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _error,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: onSurface.withValues(alpha: 0.8),
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadMatchRequests,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryColor,
-                                foregroundColor: AppTheme.darkGrayBase,
-                              ),
-                              child: const Text('Reintentar'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _currentCardIndex >= _matchRequests.length
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.favorite_border,
-                                  size: 64,
-                                  color: Colors.grey
-                                      .shade400, // Light grey color, matching leads page icon style
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No tienes más solicitudes de match',
-                                  style: TextStyle(
-                                    color: onSurface.withValues(alpha: 0.8),
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Las nuevas solicitudes aparecerán aquí',
-                                  style: TextStyle(
-                                    color: onSurface.withValues(alpha: 0.6),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                ElevatedButton(
-                                  onPressed: _loadMatchRequests,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.primaryColor,
-                                    foregroundColor: AppTheme.darkGrayBase,
-                                  ),
-                                  child: const Text('Actualizar'),
-                                ),
-                              ],
-                            ),
-                          )
-                        : LayoutBuilder(
-                            builder: (context, constraints) {
-                              final cardWidth = constraints.maxWidth * 0.9;
-                              final cardHeight = constraints.maxHeight * 0.85;
-                              return Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  if (_currentCardIndex + 1 <
-                                      _matchRequests.length)
-                                    _buildBackgroundCard(
-                                        1, cardWidth, cardHeight),
-                                  if (_currentCardIndex + 2 <
-                                      _matchRequests.length)
-                                    _buildBackgroundCard(
-                                        2, cardWidth, cardHeight),
-                                  _buildSwipeCard(cardWidth, cardHeight),
-                                ],
-                              );
-                            },
-                          ),
-          ),
-
-          // Action buttons
-          if (_currentCardIndex < _matchRequests.length) ...[
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Reject button
-                  GestureDetector(
-                    onTap: _swipeCardLeft,
-                    child: Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.red.withValues(alpha: 0.2),
-                            Colors.red.withValues(alpha: 0.1),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: Colors.red.withValues(alpha: 0.3),
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withValues(alpha: 0.2),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              ),
+            )
+          : _error.isNotEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: onSurface.withValues(alpha: 0.6),
                       ),
-                      child: const Icon(
-                        Icons.close,
-                        size: 32,
-                        color: Colors.white,
+                      const SizedBox(height: 16),
+                      Text(
+                        _error,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: onSurface.withValues(alpha: 0.8),
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadMatchRequests,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: AppTheme.darkGrayBase,
+                        ),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
                   ),
-
-                  // Accept button
-                  GestureDetector(
-                    onTap: _swipeCardRight,
-                    child: Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.secondaryColor.withValues(alpha: 0.8),
-                            AppTheme.primaryColor.withValues(alpha: 0.8),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.5),
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                )
+              : _matchRequests.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.favorite_border,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No tienes más solicitudes de match',
+                            style: TextStyle(
+                              color: onSurface.withValues(alpha: 0.8),
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Las nuevas solicitudes aparecerán aquí',
+                            style: TextStyle(
+                              color: onSurface.withValues(alpha: 0.6),
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: _loadMatchRequests,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: AppTheme.darkGrayBase,
+                            ),
+                            child: const Text('Actualizar'),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.favorite,
-                        size: 32,
-                        color: AppTheme.darkGrayBase,
-                      ),
+                    )
+                  : Column(
+                      children: [
+                        Expanded(
+                          child: LayoutBuilder(builder: (ctx, constraints) {
+                            // Altura de la fila de botones de acción
+                            const double actionRowHeight = 80.0;
+                            // Espacio para el bottom spacing que hemos aumentado (para levantar botones)
+                            const double extraBottomSpacing = 85.0;
+                            final pad = MediaQuery.of(ctx).padding;
+
+                            // Ajustamos reservedBottom considerando el nuevo espaciado inferior
+                            // para que la card se reduzca y no haya overflow.
+                            final double reservedBottom = actionRowHeight +
+                                extraBottomSpacing +
+                                (pad.bottom > 0 ? pad.bottom : 0.0);
+
+                            // Altura disponible para el área principal
+                            // Reducimos un poco más para asegurar que los botones no tapen información vital
+                            const double sizeReduction = 20.0;
+
+                            final double availableHeight =
+                                constraints.maxHeight -
+                                    reservedBottom -
+                                    sizeReduction;
+
+                            // Altura dinámica de la card
+                            final double cardHeight =
+                                math.max(availableHeight, 400.0);
+
+                            return SizedBox(
+                              height: cardHeight,
+                              child: PropertySwipeDeck(
+                                key: _deckKey,
+                                properties: _matchRequests,
+                                overlayBottomSpace: -(actionRowHeight / 2),
+                                onLike: (p) async {
+                                  final res = await _matchingService
+                                      .acceptMatchRequest(p.id);
+                                  if (res['success'] != true) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(res['error'] ??
+                                                'Error al aceptar')),
+                                      );
+                                    }
+                                    return;
+                                  }
+                                  _spawnHeartsBurst();
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Solicitud aceptada'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
+                                  setState(() {
+                                    _matchRequests.removeWhere(
+                                        (element) => element.id == p.id);
+                                  });
+                                },
+                                onReject: (p) async {
+                                  final res = await _matchingService
+                                      .rejectMatchRequest(p.id);
+                                  if (res['success'] != true && mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(res['error'] ??
+                                              'Error al rechazar')),
+                                    );
+                                  } else if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Solicitud rechazada'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                  }
+                                  setState(() {
+                                    _matchRequests.removeWhere(
+                                        (element) => element.id == p.id);
+                                  });
+                                },
+                                onTopChange: (p) =>
+                                    setState(() => _currentTopProperty = p),
+                              ),
+                            );
+                          }),
+                        ),
+                        if (_matchRequests.isNotEmpty)
+                          Transform.translate(
+                            offset: const Offset(0, -40.0),
+                            child: Container(
+                              color: Colors.transparent,
+                              margin: EdgeInsets.zero,
+                              padding: EdgeInsets.zero,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _CircleActionButton(
+                                    icon: Icons.rotate_left,
+                                    bgColor: Colors.transparent,
+                                    iconColor: Colors.amber,
+                                    size: 54,
+                                    opacity: 0.15,
+                                    onTap: () =>
+                                        _deckKey.currentState?.goBack(),
+                                  ),
+                                  const SizedBox(width: 18),
+                                  _CircleActionButton(
+                                    icon: Icons.close,
+                                    bgColor: Colors.transparent,
+                                    iconColor: Colors.redAccent,
+                                    size: 54,
+                                    opacity: 0.15,
+                                    onTap: () async {
+                                      final p = _currentTopProperty;
+                                      if (p != null) {
+                                        await _matchingService
+                                            .rejectMatchRequest(p.id);
+                                        setState(() {
+                                          _matchRequests.removeWhere(
+                                              (element) => element.id == p.id);
+                                        });
+                                      }
+                                      _spawnBigXAndSwipeLeft();
+                                    },
+                                  ),
+                                  const SizedBox(width: 18),
+                                  _CircleActionButton(
+                                    icon: Icons.favorite,
+                                    bgColor: Colors.transparent,
+                                    iconColor: AppTheme.secondaryColor,
+                                    size: 78,
+                                    opacity: 0.32,
+                                    onTap: () async {
+                                      final messenger =
+                                          ScaffoldMessenger.of(context);
+                                      final p = _currentTopProperty;
+                                      if (p != null) {
+                                        final res = await _matchingService
+                                            .acceptMatchRequest(p.id);
+                                        if (res['success'] == true) {
+                                          _spawnHeartsBurst();
+                                          messenger.showSnackBar(
+                                            const SnackBar(
+                                              content:
+                                                  Text('Solicitud aceptada'),
+                                              backgroundColor: Colors.green,
+                                              duration: Duration(seconds: 2),
+                                            ),
+                                          );
+                                          _deckKey.currentState?.swipeRight();
+                                          setState(() {
+                                            _matchRequests.removeWhere(
+                                                (element) =>
+                                                    element.id == p.id);
+                                          });
+                                        } else {
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                                content: Text(res['error'] ??
+                                                    'Error al aceptar')),
+                                          );
+                                        }
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
+    );
+  }
+}
+
+class _CircleActionButton extends StatefulWidget {
+  final IconData icon;
+  final Color bgColor;
+  final Color iconColor;
+  final VoidCallback? onTap;
+  final double size;
+  final double opacity;
+
+  const _CircleActionButton({
+    required this.icon,
+    required this.bgColor,
+    required this.iconColor,
+    this.onTap,
+    this.size = 64.0,
+    this.opacity = 0.28,
+  });
+
+  @override
+  State<_CircleActionButton> createState() => _CircleActionButtonState();
+}
+
+class _CircleActionButtonState extends State<_CircleActionButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 160),
+      reverseDuration: const Duration(milliseconds: 140),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleTap() async {
+    await _controller.forward();
+    await _controller.reverse();
+    widget.onTap?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _handleTap,
+      child: ScaleTransition(
+        scale: _scale,
+        child: ClipOval(
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: BoxDecoration(
+                color: widget.bgColor.withValues(alpha: widget.opacity),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.bgColor.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 110),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSwipeCard(double cardWidth, double cardHeight) {
-    if (_currentCardIndex >= _matchRequests.length) {
-      return const SizedBox.shrink();
-    }
-
-    final request = _matchRequests[_currentCardIndex];
-    final match = request['match'] as Map<String, dynamic>? ?? {};
-    final property = request['property'] as Map<String, dynamic>? ?? {};
-    final interestedUser =
-        request['interested_user'] as Map<String, dynamic>? ?? {};
-
-    final userName =
-        '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'
-            .trim();
-    final userUsername = interestedUser['username'] as String? ?? 'Usuario';
-    final displayName = userName.isNotEmpty ? userName : userUsername;
-
-    String resolveAvatar(String? url) {
-      final u = (url ?? '').trim().replaceAll('`', '').replaceAll('"', '');
-      if (u.isEmpty) return '';
-      if (u.startsWith('http://') || u.startsWith('https://')) return u;
-      final base = Uri.parse(AppConfig.baseUrl);
-      final abs = Uri(
-          scheme: base.scheme,
-          host: base.host,
-          port: base.port == 0 ? null : base.port,
-          path: u.startsWith('/') ? u : '/$u');
-      return abs.toString();
-    }
-
-    final avatarUrl =
-        resolveAvatar(interestedUser['profile_picture'] as String?);
-    final score = match['score'] is num ? (match['score'] as num).round() : 0;
-    final propertyTitle =
-        property['title'] as String? ?? 'Propiedad sin título';
-    final propertyAddress =
-        property['address'] as String? ?? 'Dirección no especificada';
-
-    // Use _dragPosition directly, which is updated by animation listener
-    final cardOffset = _dragPosition;
-    final cardAngle = _isDragging
-        ? (_dragPosition.dx / _swipeThreshold) * _maxRotation
-        : (_dragPosition.dx / _swipeThreshold) * _maxRotation;
-
-    return GestureDetector(
-      onPanStart: _onPanStart,
-      onPanUpdate: _onPanUpdate,
-      onPanEnd: _onPanEnd,
-      child: Transform(
-        transform: Matrix4.identity()
-          ..translate(cardOffset.dx, cardOffset.dy)
-          ..rotateZ(cardAngle),
-        child: SizedBox(
-          width: cardWidth,
-          height: cardHeight,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.85),
-                      Colors.white.withValues(alpha: 0.65),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Expanded(
-                      flex: 65,
-                      child: Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(24)),
-                          image: avatarUrl.isNotEmpty
-                              ? DecorationImage(
-                                  image: NetworkImage(avatarUrl),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                        ),
-                        child: avatarUrl.isEmpty
-                            ? Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppTheme.primaryColor
-                                          .withValues(alpha: 0.3),
-                                      AppTheme.secondaryColor
-                                          .withValues(alpha: 0.3),
-                                    ],
-                                  ),
-                                  borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(24)),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Image.asset(
-                                      'assets/images/userempty.png',
-                                      width: 120,
-                                      height: 120,
-                                      fit: BoxFit.contain,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      displayName,
-                                      style: const TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF005041),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withValues(alpha: 0.7),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 35,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          borderRadius: const BorderRadius.vertical(
-                              bottom: Radius.circular(24)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Flexible(
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          displayName,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF005041),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '@$userUsername',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: const Color(0xFF1A1A1A)
-                                                .withValues(alpha: 0.7),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppTheme.secondaryColor
-                                              .withValues(alpha: 0.8),
-                                          AppTheme.primaryColor
-                                              .withValues(alpha: 0.8),
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: AppTheme.primaryColor
-                                            .withValues(alpha: 0.5),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      '$score%',
-                                      style: const TextStyle(
-                                        color: AppTheme.darkGrayBase,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Flexible(
-                              child: SingleChildScrollView(
-                                physics: const BouncingScrollPhysics(),
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppTheme.primaryColor
-                                            .withValues(alpha: 0.1),
-                                        AppTheme.secondaryColor
-                                            .withValues(alpha: 0.1),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppTheme.primaryColor
-                                          .withValues(alpha: 0.2),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        propertyTitle,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF005041),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        propertyAddress,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: const Color(0xFF1A1A1A)
-                                              .withValues(alpha: 0.7),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: Icon(widget.icon,
+                  color: widget.iconColor, size: widget.size * 0.45),
             ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildBackgroundCard(int offset, double cardWidth, double cardHeight) {
-    final cardIndex = _currentCardIndex + offset;
-    if (cardIndex >= _matchRequests.length) return const SizedBox.shrink();
+// Overlay de burst de corazones al presionar el botón de like
+class _HeartsBurstOverlay extends StatefulWidget {
+  const _HeartsBurstOverlay();
 
-    return Transform.scale(
-      scale: 1.0 - (offset * 0.05),
-      child: Container(
-        width: cardWidth,
-        height: cardHeight,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withValues(alpha: 0.3 - (offset * 0.1)),
-              Colors.white.withValues(alpha: 0.2 - (offset * 0.1)),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color:
-                AppTheme.primaryColor.withValues(alpha: 0.2 - (offset * 0.05)),
-            width: 1.5,
-          ),
-        ),
+  @override
+  State<_HeartsBurstOverlay> createState() => _HeartsBurstOverlayState();
+}
+
+class _HeartsBurstOverlayState extends State<_HeartsBurstOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final List<_HeartParticle> _particles;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..forward();
+
+    final rand = math.Random();
+    _particles = List.generate(22, (i) {
+      // Ángulos hacia arriba (de -π a 0), más disperso
+      final angle = -math.pi * rand.nextDouble();
+      final speed = 140 + rand.nextDouble() * 180; // px/s
+      final size = 18 + rand.nextDouble() * 16; // px
+      final drift = (rand.nextDouble() * 160) - 80; // px lateral extra
+      final delay = rand.nextDouble() * 0.25; // pequeño desfase
+      return _HeartParticle(
+        angle: angle,
+        speed: speed,
+        baseSize: size,
+        driftX: drift,
+        startDelay: delay,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final startX =
+        size.width / 2; // alineado al centro, donde están los botones
+    final startY = size.height - 140; // justo encima de la fila de acciones
+
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final tGlobal = _controller.value; // 0..1
+          return Positioned.fill(
+            child: Stack(
+              children: _particles.map((p) {
+                final t = (tGlobal - p.startDelay).clamp(0.0, 1.0);
+                // Movimiento radial con drift lateral
+                final vx = math.cos(p.angle) * p.speed;
+                final vy = math.sin(p.angle) * p.speed +
+                    220; // empuje superior adicional
+                final x = startX + (vx * t) + (p.driftX * t);
+                final y = startY - (vy * t);
+                final opacity = (1.0 - t).clamp(0.0, 1.0);
+                final scale = 1.0 + 0.4 * t;
+
+                return Positioned(
+                  left: x,
+                  top: y,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: p.baseSize,
+                        height: p.baseSize,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                        child: ShaderMask(
+                          shaderCallback: (Rect bounds) {
+                            return LinearGradient(
+                              colors: [
+                                AppTheme.secondaryColor.withValues(alpha: 0.95),
+                                AppTheme.secondaryColor.withValues(alpha: 0.7),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ).createShader(bounds);
+                          },
+                          child: Icon(
+                            Icons.favorite,
+                            color: Colors.white,
+                            size: p.baseSize,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _HeartParticle {
+  final double angle;
+  final double speed;
+  final double baseSize;
+  final double driftX;
+  final double startDelay;
+
+  _HeartParticle({
+    required this.angle,
+    required this.speed,
+    required this.baseSize,
+    required this.driftX,
+    required this.startDelay,
+  });
+}
+
+// Overlay de X grande antes de avanzar
+class _BigXOverlay extends StatefulWidget {
+  const _BigXOverlay();
+
+  @override
+  State<_BigXOverlay> createState() => _BigXOverlayState();
+}
+
+class _BigXOverlayState extends State<_BigXOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..forward();
+    _scale = Tween<double>(begin: 0.9, end: 1.15).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return Positioned.fill(
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: size.height * 0.38,
+                  child: Center(
+                    child: Opacity(
+                      opacity: _opacity.value,
+                      child: Transform.scale(
+                        scale: _scale.value,
+                        child: Container(
+                          width: size.width * 0.5,
+                          height: size.width * 0.5,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.85),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                blurRadius: 24,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.redAccent,
+                            size: size.width * 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

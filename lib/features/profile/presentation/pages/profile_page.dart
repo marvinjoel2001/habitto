@@ -327,31 +327,69 @@ class _ProfilePageState extends State<ProfilePage>
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
           ),
         ),
       );
     }
 
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent, // Mantener transparente arriba
       extendBodyBehindAppBar: true,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
+          child: Stack(
             children: [
-              _buildNewHeader(),
-              const SizedBox(height: 24),
-              _buildStatsButtons(),
-              const SizedBox(height: 24),
-              _buildPropertiesTitle(),
-              const SizedBox(height: 16),
-              _buildModeContent(),
-              const SizedBox(height: 40),
+              // White Background Card (Starting from mid-avatar)
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: screenHeight,
+                ),
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 150),
+                  padding: const EdgeInsets.only(top: 80, bottom: 40),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(30)),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildUserInfo(),
+                      const SizedBox(height: 24),
+                      _buildStatsButtons(),
+                      const SizedBox(height: 24),
+                      _buildPropertiesTitle(),
+                      const SizedBox(height: 16),
+                      _buildModeContent(),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Avatar Section (Centered on the edge of white card)
+              Positioned(
+                top: 80, // 150 (margin) - 70 (half height of 140 container)
+                left: 0,
+                right: 0,
+                child: _buildAvatarSection(),
+              ),
+
+              // Top Bar
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: _buildTopBar(),
+              ),
             ],
           ),
         ),
@@ -359,129 +397,140 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildNewHeader() {
-    return Column(
-      children: [
-        // Top Bar (Back & Settings)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+          ),
+          IconButton(
+            onPressed: _showSettingsModal,
+            icon: const Icon(Icons.settings_outlined,
+                color: Colors.white, size: 28),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarSection() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate center of the screen/stack
+        // Overlap amount (how much the label goes under the avatar)
+        const overlap = 30.0;
+        // Avatar radius (approximate based on width 130)
+        const avatarRadius = 65.0;
+
+        return SizedBox(
+          height: 140,
+          width: double.infinity, // Use full width
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
             children: [
-              IconButton(
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/home'),
-                icon:
-                    const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+              // Ribbon (User Type) - Behind Avatar
+              // Anchored to the right side of the label space
+              Positioned(
+                right: (constraints.maxWidth / 2) + (avatarRadius - overlap),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: (constraints.maxWidth / 2) -
+                        (avatarRadius - overlap) -
+                        10, // Margin from left
+                  ),
+                  child: _buildGlassContainer(
+                    borderRadius: 30,
+                    padding: const EdgeInsets.only(
+                      left: 16, // Reduced padding
+                      right: 50, // Padding to clear the overlap + gap
+                      top: 8,
+                      bottom: 8,
+                    ),
+                    color: AppTheme.primaryColor
+                        .withValues(alpha: 0.8), // Visible on white/transparent
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _getModeIcon(_currentMode),
+                          color: Colors.white,
+                          size: 16, // Reduced icon size
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _getModeDisplayName(_currentMode).toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11, // Slightly reduced font size
+                              ),
+                              maxLines: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              IconButton(
-                onPressed: _showSettingsModal,
-                icon: const Icon(Icons.settings_outlined,
-                    color: Colors.white, size: 28),
+
+              // Avatar - In Front
+              Center(
+                child: Container(
+                  width: 130,
+                  height: 130,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Colors.white30, Colors.white10],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      color: Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: ClipOval(
+                      child: _buildProfileImageWidget(),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-        ),
+        );
+      },
+    );
+  }
 
-        const SizedBox(height: 20),
-
-        // Avatar & Ribbon & Info
-        LayoutBuilder(
-          builder: (context, constraints) {
-            // Calculate center of the screen/stack
-            final centerX = constraints.maxWidth / 2;
-            // Overlap amount (how much the label goes under the avatar)
-            const overlap = 30.0;
-            // Avatar radius (approximate based on width 130)
-            const avatarRadius = 65.0;
-
-            return SizedBox(
-              height: 140,
-              width: double.infinity, // Use full width
-              child: Stack(
-                alignment: Alignment.center,
-                clipBehavior: Clip.none,
-                children: [
-                  // Ribbon (User Type) - Behind Avatar
-                  // Anchored to the right side of the label space
-                  Positioned(
-                    right:
-                        (constraints.maxWidth / 2) + (avatarRadius - overlap),
-                    child: _buildGlassContainer(
-                      borderRadius: 30,
-                      padding: const EdgeInsets.only(
-                        left: 20,
-                        right: 50, // Padding to clear the overlap + gap
-                        top: 8,
-                        bottom: 8,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _getModeIcon(_currentMode),
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _getModeDisplayName(_currentMode).toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Avatar - In Front
-                  Center(
-                    child: Container(
-                      width: 130,
-                      height: 130,
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Colors.white30, Colors.white10],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(
-                          color: Colors.transparent,
-                          shape: BoxShape.circle,
-                        ),
-                        child: ClipOval(
-                          child: _buildProfileImageWidget(),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
+  Widget _buildUserInfo() {
+    return Column(
+      children: [
         Text(
           _getUserName().toUpperCase(),
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black87, // Changed to black
             letterSpacing: 1.0,
           ),
         ),
@@ -490,7 +539,7 @@ class _ProfilePageState extends State<ProfilePage>
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w400,
-            color: Colors.white70,
+            color: Colors.black54, // Changed to dark grey
             letterSpacing: 1.5,
           ),
         ),
@@ -502,7 +551,7 @@ class _ProfilePageState extends State<ProfilePage>
               _getUserEmail(),
               style: const TextStyle(
                 fontSize: 14,
-                color: Colors.white70,
+                color: Colors.black54, // Changed to dark grey
               ),
             ),
           ],
@@ -513,13 +562,14 @@ class _ProfilePageState extends State<ProfilePage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.phone, size: 14, color: Colors.white70),
+                const Icon(Icons.phone,
+                    size: 14, color: Colors.black54), // Changed to dark grey
                 const SizedBox(width: 4),
                 Text(
                   _getUserPhone(),
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Colors.white70,
+                    color: Colors.black54, // Changed to dark grey
                   ),
                 ),
               ],
@@ -555,15 +605,27 @@ class _ProfilePageState extends State<ProfilePage>
         children: buttons.map((label) {
           return GestureDetector(
             onTap: () {},
-            child: _buildGlassContainer(
+            child: Container(
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Text(
                 label,
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.black87,
                 ),
               ),
             ),
@@ -585,7 +647,7 @@ class _ProfilePageState extends State<ProfilePage>
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.black87, // Changed to black
               letterSpacing: 0.5,
             ),
           ),
@@ -927,9 +989,21 @@ class _ProfilePageState extends State<ProfilePage>
     ];
 
     return alquileres.map((alquiler) {
-      return _buildGlassContainer(
+      return Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Row(
           children: [
             ClipRRect(
@@ -962,7 +1036,7 @@ class _ProfilePageState extends State<ProfilePage>
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -971,7 +1045,7 @@ class _ProfilePageState extends State<ProfilePage>
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white70,
+                      color: Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -980,8 +1054,8 @@ class _ProfilePageState extends State<ProfilePage>
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: alquiler['estado'] == 'Activo'
-                          ? Colors.green.withValues(alpha: 0.2)
-                          : Colors.grey.withValues(alpha: 0.2),
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.grey.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -989,8 +1063,8 @@ class _ProfilePageState extends State<ProfilePage>
                       style: TextStyle(
                         fontSize: 12,
                         color: alquiler['estado'] == 'Activo'
-                            ? Colors.greenAccent
-                            : Colors.grey[300],
+                            ? Colors.green
+                            : Colors.grey[600],
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1053,9 +1127,21 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ).then((_) => _loadUserProperties());
         },
-        child: _buildGlassContainer(
+        child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Row(
             children: [
               ClipRRect(
@@ -1072,7 +1158,7 @@ class _ProfilePageState extends State<ProfilePage>
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1081,8 +1167,8 @@ class _ProfilePageState extends State<ProfilePage>
                           horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? Colors.green.withValues(alpha: 0.2)
-                            : Colors.red.withValues(alpha: 0.2),
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
@@ -1091,8 +1177,7 @@ class _ProfilePageState extends State<ProfilePage>
                             : S.of(context).unavailableStatus,
                         style: TextStyle(
                           fontSize: 12,
-                          color:
-                              isActive ? Colors.greenAccent : Colors.redAccent,
+                          color: isActive ? Colors.green : Colors.redAccent,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1106,13 +1191,13 @@ class _ProfilePageState extends State<ProfilePage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppTheme.primaryColor,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     S.of(context).manageButton,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Colors.white, // Keep white on primary button
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1131,7 +1216,7 @@ class _ProfilePageState extends State<ProfilePage>
       return [
         const Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
           ),
         ),
       ];
@@ -1139,21 +1224,21 @@ class _ProfilePageState extends State<ProfilePage>
 
     if (_userProperties.isEmpty) {
       return [
-        _buildGlassContainer(
+        Container(
           padding: const EdgeInsets.all(32),
           child: Column(
             children: [
-              const Icon(
+              Icon(
                 Icons.business_outlined,
                 size: 64,
-                color: Colors.white70,
+                color: Colors.grey[400],
               ),
               const SizedBox(height: 16),
               Text(
                 S.of(context).noAssignedProperties,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white70,
+                  color: Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1175,9 +1260,21 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           );
         },
-        child: _buildGlassContainer(
+        child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Row(
             children: [
               ClipRRect(
@@ -1194,7 +1291,7 @@ class _ProfilePageState extends State<ProfilePage>
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1203,8 +1300,8 @@ class _ProfilePageState extends State<ProfilePage>
                           horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? Colors.green.withValues(alpha: 0.2)
-                            : Colors.red.withValues(alpha: 0.2),
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
@@ -1213,8 +1310,7 @@ class _ProfilePageState extends State<ProfilePage>
                             : S.of(context).unavailableStatus,
                         style: TextStyle(
                           fontSize: 12,
-                          color:
-                              isActive ? Colors.greenAccent : Colors.redAccent,
+                          color: isActive ? Colors.green : Colors.redAccent,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1228,7 +1324,7 @@ class _ProfilePageState extends State<ProfilePage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppTheme.primaryColor,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -1259,18 +1355,28 @@ class _ProfilePageState extends State<ProfilePage>
               Expanded(
                 child: GestureDetector(
                   onTap: () {},
-                  child: _buildGlassContainer(
+                  child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    borderRadius: 25,
-                    border: Border.all(
-                      color: const Color(0xFF7FFFD4),
-                      width: 1,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: Colors.teal,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Text(
                       S.of(context).viewReviewsButton,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Color(0xFF7FFFD4),
+                        color: Colors.teal,
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
                       ),
@@ -1282,18 +1388,28 @@ class _ProfilePageState extends State<ProfilePage>
               Expanded(
                 child: GestureDetector(
                   onTap: () {},
-                  child: _buildGlassContainer(
+                  child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    borderRadius: 25,
-                    border: Border.all(
-                      color: const Color(0xFF7FFFD4),
-                      width: 1,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: Colors.teal,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Text(
                       S.of(context).incentivesButton,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Color(0xFF7FFFD4),
+                        color: Colors.teal,
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
                       ),
@@ -1314,11 +1430,19 @@ class _ProfilePageState extends State<ProfilePage>
                   (route) => false,
                 );
               },
-              child: _buildGlassContainer(
+              child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                borderRadius: 25,
-                color: const Color(0xFFFF6B6B),
-                opacity: 0.8,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B6B),
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: Text(
                   S.of(context).logoutTitle,
                   textAlign: TextAlign.center,

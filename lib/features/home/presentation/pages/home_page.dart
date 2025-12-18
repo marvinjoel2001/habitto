@@ -361,18 +361,6 @@ class _HomePageState extends State<HomePage> {
                   child: _pages[_currentIndex],
                 ),
               ),
-              if (_userMode == profile.UserMode.inquilino)
-                Positioned(
-                  right: 16,
-                  bottom: 100,
-                  child: FloatingActionButton(
-                    heroTag: 'ai_chat_fab',
-                    onPressed: _openAiChat,
-                    backgroundColor: AppTheme.primaryColor,
-                    child: const Icon(Icons.chat_bubble_outline,
-                        color: Colors.white),
-                  ),
-                ),
               Positioned(
                 left: 0,
                 right: 0,
@@ -392,6 +380,7 @@ class _HomePageState extends State<HomePage> {
                   onSwipeRight: _handleSwipeRight,
                   onGoBack: _handleGoBack,
                   onAddFavorite: _handleAddFavorite,
+                  onAiChatTap: _openAiChat,
                   onTap: (index) {
                     setState(() {
                       _lastIndex = _currentIndex;
