@@ -461,19 +461,17 @@ class _GlassTag extends StatelessWidget {
 
 class _CircleActionButton extends StatefulWidget {
   final IconData icon;
-  final Color bgColor;
   final Color iconColor;
+  final Color borderColor;
   final VoidCallback? onTap;
   final double size;
-  final double opacity;
 
   const _CircleActionButton({
     required this.icon,
-    required this.bgColor,
     required this.iconColor,
+    required this.borderColor,
     this.onTap,
     this.size = 64.0,
-    this.opacity = 0.28,
   });
 
   @override
@@ -516,26 +514,28 @@ class _CircleActionButtonState extends State<_CircleActionButton>
       onTap: _handleTap,
       child: ScaleTransition(
         scale: _scale,
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              width: widget.size,
-              height: widget.size,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x26000000), // sombra suave en bordes
-                    blurRadius: 12,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(widget.icon,
-                  color: widget.iconColor, size: widget.size * 0.45),
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: widget.borderColor,
+              width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: widget.borderColor.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(
+            widget.icon,
+            color: widget.iconColor,
+            size: widget.size * 0.45,
           ),
         ),
       ),
@@ -936,20 +936,18 @@ class _HomeContentState extends State<HomeContent> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _CircleActionButton(
-                      icon: Icons.rotate_left,
-                      bgColor: Colors.transparent,
+                      icon: Icons.replay,
                       iconColor: Colors.amber,
+                      borderColor: Colors.amber,
                       size: 54,
-                      opacity: 0.15,
                       onTap: () => widget.deckKey.currentState?.goBack(),
                     ),
                     const SizedBox(width: 18),
                     _CircleActionButton(
-                      icon: Icons.close,
-                      bgColor: Colors.transparent,
+                      icon: Icons.thumb_down_rounded,
                       iconColor: Colors.redAccent,
+                      borderColor: Colors.redAccent,
                       size: 54,
-                      opacity: 0.15,
                       onTap: () async {
                         final p = _currentTopProperty;
                         if (p != null) {
@@ -961,10 +959,9 @@ class _HomeContentState extends State<HomeContent> {
                     const SizedBox(width: 18),
                     _CircleActionButton(
                       icon: Icons.favorite,
-                      bgColor: Colors.transparent,
                       iconColor: AppTheme.secondaryColor,
+                      borderColor: AppTheme.secondaryColor,
                       size: 78,
-                      opacity: 0.32,
                       onTap: () async {
                         final messenger = ScaffoldMessenger.of(context);
                         final p = _currentTopProperty;
@@ -993,10 +990,9 @@ class _HomeContentState extends State<HomeContent> {
                     const SizedBox(width: 18),
                     _CircleActionButton(
                       icon: Icons.star,
-                      bgColor: Colors.transparent,
                       iconColor: Colors.blueAccent,
+                      borderColor: Colors.blueAccent,
                       size: 54,
-                      opacity: 0.15,
                       onTap: () async {
                         final p = _currentTopProperty;
                         if (p != null) {

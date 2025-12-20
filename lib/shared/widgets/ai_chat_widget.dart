@@ -73,7 +73,25 @@ class _AiChatWidgetState extends State<AiChatWidget> {
 
   void _initSpeech() async {
     try {
-      _speechEnabled = await _speechToText.initialize();
+      _speechEnabled = await _speechToText.initialize(
+        onStatus: (status) {
+          if (status == 'notListening' || status == 'done') {
+            if (mounted) {
+              setState(() => _isListening = false);
+            }
+          } else if (status == 'listening') {
+            if (mounted) {
+              setState(() => _isListening = true);
+            }
+          }
+        },
+        onError: (error) {
+          if (mounted) {
+            setState(() => _isListening = false);
+          }
+          print('Speech error: $error');
+        },
+      );
       setState(() {});
     } catch (e) {
       print('Error initializing speech: $e');
@@ -125,6 +143,8 @@ class _AiChatWidgetState extends State<AiChatWidget> {
 
   void _startListening() async {
     if (_speechEnabled) {
+      // The state update is now handled by onStatus in _initSpeech,
+      // but setting it here provides immediate feedback
       setState(() => _isListening = true);
       try {
         await _speechToText.listen(
@@ -137,6 +157,8 @@ class _AiChatWidgetState extends State<AiChatWidget> {
             });
           },
           localeId: 'es_ES',
+          pauseFor: const Duration(seconds: 2),
+          listenFor: const Duration(seconds: 30),
         );
       } catch (e) {
         setState(() => _isListening = false);
@@ -287,15 +309,27 @@ class _AiChatWidgetState extends State<AiChatWidget> {
           ),
           child: Column(
             children: [
+              // Drag Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 5,
+                  margin: const EdgeInsets.only(top: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(2.5),
+                  ),
+                ),
+              ),
               // Header
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      width: 1,
+                      color: Colors.transparent, // Removed thin white line
+                      width: 0,
                     ),
                   ),
                 ),
@@ -528,34 +562,24 @@ class _AiChatWidgetState extends State<AiChatWidget> {
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
                 decoration: const BoxDecoration(
-                  color: Colors.white, // Solid white background for input area
-                  border: Border(
-                    top: BorderSide(
-                      color: AppTheme.lightGrayishDark,
-                      width: 1,
-                    ),
-                  ),
+                  color: Colors.transparent,
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppTheme
-                              .mediumGray, // Solid background for input field
+                          color: AppTheme.mediumGray,
                           borderRadius: BorderRadius.circular(25),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
                         ),
                         child: TextField(
                           controller: _controller,
                           enabled: !_isListening,
                           onChanged: (value) => setState(() {}),
+                          minLines: 1,
+                          maxLines: 4,
+                          textCapitalization: TextCapitalization.sentences,
                           decoration: InputDecoration(
                             hintText: _isListening
                                 ? S.of(context).listeningIndicator
@@ -570,16 +594,6 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                             focusedBorder: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 12),
-                            prefixIcon: Icon(
-                              _isListening
-                                  ? Icons.mic
-                                  : Icons.auto_awesome_mosaic_outlined,
-                              color: _isListening
-                                  ? AppTheme.primaryColor
-                                  : AppTheme.primaryColor
-                                      .withValues(alpha: 0.5),
-                              size: 20,
-                            ),
                           ),
                           onSubmitted: _sendMessage,
                         ),
