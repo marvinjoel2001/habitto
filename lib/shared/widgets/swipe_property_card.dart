@@ -158,7 +158,7 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                                 imageUrl: AppConfig.sanitizeUrl(url),
                                 fit: BoxFit.cover,
                                 placeholder: Container(
-                                  color: Colors.black12,
+                                  color: Colors.grey[200],
                                   alignment: Alignment.center,
                                   child: const CircularProgressIndicator(),
                                 ),

@@ -9,6 +9,7 @@ import '../../../../shared/widgets/custom_bottom_navigation.dart';
 import '../../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/swipe_property_card.dart';
+import '../../../../shared/widgets/property_card_skeleton.dart';
 import '../../../matching/data/services/matching_service.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
 import '../../../agent/presentation/pages/agent_leads_page.dart';
@@ -815,11 +816,39 @@ class _HomeContentState extends State<HomeContent> {
                 await _loadAllProperties();
               },
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
+                  ? Builder(builder: (ctx) {
+                      final sz = MediaQuery.of(ctx).size;
+                      final pad = MediaQuery.of(ctx).padding;
+                      // Mismos cálculos de dimensiones que en la vista normal
+                      const double actionRowHeight = 80.0;
+                      const double extraBottomSpacing = 85.0;
+                      final double reservedBottom = actionRowHeight +
+                          extraBottomSpacing +
+                          (pad.bottom > 0 ? pad.bottom : 0.0);
+                      const double topAreaHeight = 100.0;
+                      const double sizeReduction = 20.0;
+                      final double availableHeight = sz.height -
+                          topAreaHeight -
+                          reservedBottom -
+                          sizeReduction;
+                      final double cardHeight =
+                          math.max(availableHeight, 400.0);
+
+                      return ListView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        children: [
+                          SizedBox(
+                            height: cardHeight,
+                            child: PropertyCardSkeleton(
+                              overlayBottomSpace: -(actionRowHeight / 2),
+                              outerHorizontalPadding: 16.0,
+                              outerTopPadding: 16.0,
+                            ),
+                          ),
+                        ],
+                      );
+                    })
                   : (_cards.isEmpty
                       ? LayoutBuilder(
                           builder: (context, constraints) {
@@ -962,28 +991,24 @@ class _HomeContentState extends State<HomeContent> {
                       iconColor: AppTheme.secondaryColor,
                       borderColor: AppTheme.secondaryColor,
                       size: 78,
-                      onTap: () async {
-                        final messenger = ScaffoldMessenger.of(context);
+                      onTap: () {
                         final p = _currentTopProperty;
                         if (p != null) {
-                          final res = await _matchingService.likeProperty(p.id);
-                          if (res['success'] == true) {
-                            _spawnHeartsBurst();
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(S.of(context).likeSent),
-                                backgroundColor: AppTheme.secondaryColor,
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                            widget.deckKey.currentState?.swipeRight();
-                          } else {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      res['error'] ?? S.of(context).likeError)),
-                            );
-                          }
+                          // Acción inmediata para fluidez
+                          _spawnHeartsBurst();
+                          widget.deckKey.currentState?.swipeRight();
+
+                          // Solicitud en background sin bloquear UI
+                          _matchingService.likeProperty(p.id).then((res) {
+                            if (res['success'] != true && mounted) {
+                              // Solo mostrar error si falla
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(res['error'] ??
+                                        S.of(context).likeError)),
+                              );
+                            }
+                          });
                         }
                       },
                     ),
