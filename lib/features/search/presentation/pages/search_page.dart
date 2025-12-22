@@ -320,7 +320,7 @@ class _SearchPageState extends State<SearchPage> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: cs.primary,
+      backgroundColor: Colors.white,
       extendBody: true,
       body: Stack(
         children: [
@@ -470,7 +470,9 @@ class _SearchPageState extends State<SearchPage> {
             .where((p) => p.latitude != null && p.longitude != null)
             .map((p) => PropertyData(
                   id: p.id.toString(),
-                  title: p.address.isNotEmpty ? p.address : S.of(context).propertyTitleFallback,
+                  title: p.address.isNotEmpty
+                      ? p.address
+                      : S.of(context).propertyTitleFallback,
                   price: p.price > 0
                       ? S.of(context).rentPerMonth(p.price.toStringAsFixed(0))
                       : '—',
@@ -507,32 +509,31 @@ class _SearchPageState extends State<SearchPage> {
   // --- Widgets de UI extraídos para mayor claridad ---
 
   Widget _buildSearchBar() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(25),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppTheme.whiteColor.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(25),
-            border:
-                Border.all(color: AppTheme.whiteColor.withValues(alpha: 0.5)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: S.of(context).searchPlaceholder,
-              border: InputBorder.none,
-              icon: Icon(Icons.search,
-                  color: AppTheme.blackColor.withValues(alpha: 0.7)),
-              hintStyle:
-                  TextStyle(color: AppTheme.blackColor.withValues(alpha: 0.6)),
-            ),
-            style: const TextStyle(color: AppTheme.blackColor),
-            controller: _searchController,
-            onChanged: (v) => _onSearchChanged(v),
-          ),
+        ],
+      ),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: S.of(context).searchPlaceholder,
+          border: InputBorder.none,
+          icon: Icon(Icons.search,
+              color: AppTheme.blackColor.withValues(alpha: 0.7)),
+          hintStyle:
+              TextStyle(color: AppTheme.blackColor.withValues(alpha: 0.6)),
         ),
+        style: const TextStyle(color: AppTheme.blackColor),
+        controller: _searchController,
+        onChanged: (v) => _onSearchChanged(v),
       ),
     );
   }
@@ -908,7 +909,8 @@ class _SearchPageState extends State<SearchPage> {
                   children: _selectedProperty!.features
                       .map((f) => Chip(
                             label: Text(f),
-                            backgroundColor: Colors.white.withValues(alpha: 0.85),
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.85),
                           ))
                       .toList(),
                 ),
