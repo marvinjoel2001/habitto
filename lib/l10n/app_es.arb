@@ -216,6 +216,7 @@
   "searchApartmentSuggestion": "Busco departamento en...",
   "searchRoomieSuggestion": "Busco roomie...",
   "createProfileSuggestion": "Crear perfil...",
+  "createPropertySuggestion": "Publicar propiedad",
   "aiAssistantGreeting": "¡Hola {name}! Soy tu asistente...",
   "@aiAssistantGreeting": {
     "placeholders": {
@@ -255,6 +256,7 @@
   },
   "noImagePlaceholder": "Sin imagen",
   "menuMatchs": "Matches",
+  "menuAiAssistant": "Asistente IA",
   "menuAddProperty": "Agregar Propiedad",
   "tenantRole": "Inquilino",
   "landlordRole": "Propietario",

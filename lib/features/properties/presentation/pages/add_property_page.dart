@@ -9,6 +9,7 @@ import '../../domain/entities/payment_method.dart';
 import '../../data/services/property_service.dart';
 import '../../../profile/data/services/profile_service.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import '../../../../shared/widgets/custom_choice_chip.dart';
 import '../../../../shared/widgets/step_progress_indicator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import 'edit_property_page.dart';
@@ -207,7 +208,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
     // Círculo principal del marcador
     final circlePaint = Paint()
-      ..color = AppTheme.primaryColor.withValues(alpha: 0.95)
+      ..color = AppTheme.accentMint.withValues(alpha: 0.95)
       ..style = ui.PaintingStyle.fill;
     const center = Offset(size / 2, size / 2);
     canvas.drawCircle(center, size * 0.36, circlePaint);
@@ -527,18 +528,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              TextButton(
-                onPressed: () {
-                  // Guardar y salir
-                },
-                child: Text(
-                  S.of(context).saveAndExit,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
+              const SizedBox(width: 48), // Espacio para equilibrar el botón de retroceso
             ],
           ),
         ),
@@ -769,7 +759,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                             style: const TextStyle(color: Colors.black87)),
                       ],
                     ),
-                    Text('COP ${_priceValue.round()}',
+                    Text('BS ${_priceValue.round()}',
                         style: const TextStyle(
                             fontWeight: FontWeight.w600, color: Colors.black)),
                   ],
@@ -778,8 +768,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 Slider(
                   value: _priceValue,
                   min: 0,
-                  max: 500,
-                  divisions: 500,
+                  max: 100000,
+                  divisions: 2000,
                   label: _priceValue.round().toString(),
                   activeColor: AppTheme.primaryColor,
                   onChanged: (v) {
@@ -817,7 +807,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                             style: const TextStyle(color: Colors.black87)),
                       ],
                     ),
-                    Text('COP ${_guaranteeValue.round()}',
+                    Text('BS ${_guaranteeValue.round()}',
                         style: const TextStyle(
                             fontWeight: FontWeight.w600, color: Colors.black)),
                   ],
@@ -826,8 +816,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 Slider(
                   value: _guaranteeValue,
                   min: 0,
-                  max: 500,
-                  divisions: 500,
+                  max: 100000,
+                  divisions: 2000,
                   label: _guaranteeValue.round().toString(),
                   activeColor: AppTheme.secondaryColor,
                   onChanged: (v) {
@@ -867,46 +857,19 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             children: _canonicalAmenities.map((amenity) {
               final String name = amenity['name'] as String;
               final bool isSelected = _selectedAmenityNames.contains(name);
-              return Container(
-                decoration: isSelected
-                    ? AppTheme.getMintButtonDecoration()
-                    : AppTheme.getGlassCard(),
-                child: FilterChip(
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(amenity['icon'] as IconData,
-                          size: 16, color: AppTheme.darkGrayBase),
-                      const SizedBox(width: 6),
-                      Text(
-                        name,
-                        style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        isSelected
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked,
-                        color: isSelected ? Colors.white : Colors.grey,
-                        size: 18,
-                      ),
-                    ],
-                  ),
-                  selected: isSelected,
-                  backgroundColor: Colors.white,
-                  selectedColor: Colors.transparent,
-                  checkmarkColor: Colors.white,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedAmenityNames.add(name);
-                      } else {
-                        _selectedAmenityNames.remove(name);
-                      }
-                    });
-                  },
-                ),
+              return CustomChoiceChip(
+                label: name,
+                icon: amenity['icon'] as IconData,
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedAmenityNames.add(name);
+                    } else {
+                      _selectedAmenityNames.remove(name);
+                    }
+                  });
+                },
               );
             }).toList(),
           ),
@@ -922,33 +885,18 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             runSpacing: 8,
             children: _availablePaymentMethods.map((method) {
               final isSelected = _selectedPaymentMethodIds.contains(method.id);
-              return Container(
-                decoration: isSelected
-                    ? AppTheme.getMintButtonDecoration()
-                    : AppTheme.getGlassCard(),
-                child: FilterChip(
-                  label: Text(
-                    method.name,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                  selected: isSelected,
-                  backgroundColor: Colors.transparent,
-                  selectedColor: Colors.transparent,
-                  checkmarkColor: Colors.white,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedPaymentMethodIds.add(method.id);
-                      } else {
-                        _selectedPaymentMethodIds.remove(method.id);
-                      }
-                    });
-                  },
-                ),
+              return CustomChoiceChip(
+                label: method.name,
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedPaymentMethodIds.add(method.id);
+                    } else {
+                      _selectedPaymentMethodIds.remove(method.id);
+                    }
+                  });
+                },
               );
             }).toList(),
           ),
@@ -1012,7 +960,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       PointAnnotationOptions(
         geometry: Point(coordinates: Position(lng, lat)),
         image: _markerImage!,
-        iconSize: 0.5,
+        iconSize: 0.35,
       )
     ];
 
@@ -1045,7 +993,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
           await sheetAnnotationManager!.create(PointAnnotationOptions(
             geometry: Point(coordinates: Position(lng, lat)),
             image: _markerImage!,
-            iconSize: 0.6,
+            iconSize: 0.35,
           ));
         }
 
@@ -1110,11 +1058,22 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                         children: [
                           Expanded(
                             child: Container(
-                              decoration: AppTheme.getMintButtonDecoration(),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor,
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryColor
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
                               child: CustomButton(
                                 text: S.of(context).confirmLocation,
                                 backgroundColor: Colors.transparent,
-                                textColor: AppTheme.darkGrayBase,
+                                textColor: Colors.white,
                                 onPressed: () {
                                   _latitudeController.text =
                                       tempLat.toStringAsFixed(6);
@@ -1271,12 +1230,13 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 builder: (context, child) {
                   return Theme(
                     data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.dark(
+                      colorScheme: const ColorScheme.light(
                         primary: AppTheme.primaryColor,
-                        onPrimary: AppTheme.darkGrayBase,
-                        surface: AppTheme.mediumGray,
-                        onSurface: AppTheme.whiteColor,
+                        onPrimary: Colors.white,
+                        surface: Colors.white,
+                        onSurface: Colors.black,
                       ),
+                      dialogBackgroundColor: Colors.white,
                     ),
                     child: child!,
                   );

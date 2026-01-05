@@ -216,6 +216,7 @@
   "searchApartmentSuggestion": "Looking for apartment in...",
   "searchRoomieSuggestion": "Looking for roomie...",
   "createProfileSuggestion": "Create profile...",
+  "createPropertySuggestion": "List property",
   "aiAssistantGreeting": "Hello {name}! I am your assistant...",
   "@aiAssistantGreeting": {
     "placeholders": {
@@ -255,6 +256,7 @@
   },
   "noImagePlaceholder": "No image",
   "menuMatchs": "Matches",
+  "menuAiAssistant": "AI Assistant",
   "menuAddProperty": "Add Property",
   "tenantRole": "Tenant",
   "landlordRole": "Landlord",

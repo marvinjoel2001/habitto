@@ -877,6 +877,12 @@ abstract class S {
   /// **'Crear perfil...'**
   String get createProfileSuggestion;
 
+  /// No description provided for @createPropertySuggestion.
+  ///
+  /// In es, this message translates to:
+  /// **'Publicar propiedad'**
+  String get createPropertySuggestion;
+
   /// No description provided for @aiAssistantGreeting.
   ///
   /// In es, this message translates to:
@@ -1026,6 +1032,12 @@ abstract class S {
   /// In es, this message translates to:
   /// **'Matches'**
   String get menuMatchs;
+
+  /// No description provided for @menuAiAssistant.
+  ///
+  /// In es, this message translates to:
+  /// **'Asistente IA'**
+  String get menuAiAssistant;
 
   /// No description provided for @menuAddProperty.
   ///

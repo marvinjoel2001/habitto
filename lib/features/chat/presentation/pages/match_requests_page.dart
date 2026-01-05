@@ -410,7 +410,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 80),
                       ],
                     ),
     );

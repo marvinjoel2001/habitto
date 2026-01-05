@@ -424,6 +424,9 @@ class SEs extends S {
   String get createProfileSuggestion => 'Crear perfil...';
 
   @override
+  String get createPropertySuggestion => 'Publicar propiedad';
+
+  @override
   String aiAssistantGreeting(String name) {
     return '¡Hola $name! Soy tu asistente...';
   }
@@ -501,6 +504,9 @@ class SEs extends S {
 
   @override
   String get menuMatchs => 'Matches';
+
+  @override
+  String get menuAiAssistant => 'Asistente IA';
 
   @override
   String get menuAddProperty => 'Agregar Propiedad';

@@ -9,6 +9,7 @@ class FloatingActionMenu extends StatefulWidget {
   final VoidCallback onClose;
   final VoidCallback? onSocialAreasTap;
   final VoidCallback? onAlertHistoryTap;
+  final VoidCallback? onAiChatTap;
 
   const FloatingActionMenu({
     super.key,
@@ -18,6 +19,7 @@ class FloatingActionMenu extends StatefulWidget {
     required this.onClose,
     this.onSocialAreasTap,
     this.onAlertHistoryTap,
+    this.onAiChatTap,
   });
 
   @override
@@ -125,6 +127,15 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
                                   label: S.of(context).menuMatchs,
                                   color: AppTheme.secondaryColor,
                                   onTap: widget.onHomeTap,
+                                  buttonSize: buttonSize,
+                                  iconSize: iconSize,
+                                  fontSize: fontSize,
+                                ),
+                                _buildActionButton(
+                                  icon: Icons.auto_awesome,
+                                  label: 'Asistente IA', // TODO: Usar S.of(context).menuAiAssistant cuando se regenere
+                                  color: Colors.purpleAccent,
+                                  onTap: widget.onAiChatTap ?? () {},
                                   buttonSize: buttonSize,
                                   iconSize: iconSize,
                                   fontSize: fontSize,

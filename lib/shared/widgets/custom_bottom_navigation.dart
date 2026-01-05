@@ -109,6 +109,10 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
           Navigator.pushNamed(ctx, '/add-property');
         },
         onClose: _closeFloatingMenu,
+        onAiChatTap: () {
+          _closeFloatingMenu();
+          widget.onAiChatTap?.call();
+        },
         onSocialAreasTap: () {
           _closeFloatingMenu();
           Navigator.pushNamed(ctx, '/social-areas');

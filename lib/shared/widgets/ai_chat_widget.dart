@@ -58,6 +58,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
           S.of(context).searchApartmentSuggestion,
           S.of(context).searchRoomieSuggestion,
           S.of(context).createProfileSuggestion,
+          'Publicar propiedad', // TODO: Usar S.of(context).createPropertySuggestion
         ];
         if (mounted && _messages.isEmpty) {
           setState(() {
@@ -177,6 +178,32 @@ class _AiChatWidgetState extends State<AiChatWidget> {
 
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
+
+    // Intercept property creation intent
+    final lowerText = text.toLowerCase();
+    if (lowerText == 'publicar propiedad' || // TODO: Usar S.of(context).createPropertySuggestion
+        (lowerText.contains('propiedad') &&
+            (lowerText.contains('crear') ||
+                lowerText.contains('agregar') ||
+                lowerText.contains('publicar')))) {
+      setState(() {
+        _messages.add({'role': 'user', 'content': text});
+        _messages.add({
+          'role': 'assistant',
+          'content': '¡Claro! Te ayudo a publicar tu propiedad. Abriendo el formulario...'
+        });
+        _controller.clear();
+        _currentSuggestions = [];
+      });
+      _scrollToBottom();
+
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          Navigator.pushNamed(context, '/add-property');
+        }
+      });
+      return;
+    }
 
     setState(() {
       _messages.add({'role': 'user', 'content': text});
