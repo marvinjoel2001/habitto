@@ -73,6 +73,8 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
       return const SizedBox.shrink();
     }
 
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Material(
       type: MaterialType.transparency,
       child: Stack(
@@ -94,7 +96,7 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
           ),
           // Main content area with centered action buttons
           Positioned(
-            bottom: 120,
+            bottom: 120 + bottomPadding,
             left: 0,
             right: 0,
             child: AnimatedBuilder(

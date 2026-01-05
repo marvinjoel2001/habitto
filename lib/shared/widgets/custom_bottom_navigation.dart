@@ -197,10 +197,11 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
     const double navHeight = 70.0;
 
     return SizedBox(
-      height: navHeight + 40, // Extra space for floating button
+      height: navHeight + bottomPadding + 40, // Extra space for floating button
       child: Stack(
         alignment: Alignment.bottomCenter,
         clipBehavior: Clip.none,
@@ -210,7 +211,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
             bottom: 0,
             left: 0,
             right: 0,
-            height: navHeight,
+            height: navHeight + bottomPadding,
             child: ClipRRect(
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(20)),
@@ -228,7 +229,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
 
           // Navigation Items
           Positioned(
-            bottom: 0,
+            bottom: bottomPadding,
             left: 0,
             right: 0,
             height: navHeight,

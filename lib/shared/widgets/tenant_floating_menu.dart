@@ -77,6 +77,8 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
       return const SizedBox.shrink();
     }
 
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Material(
       type: MaterialType.transparency,
       child: Stack(
@@ -92,7 +94,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
           ),
           // Menu positioned exactly above the navigation button
           Positioned(
-            bottom: 100, // Positioned exactly above navigation bar
+            bottom: 100 + bottomPadding, // Positioned exactly above navigation bar
             left: 0,
             right: 0,
             child: AnimatedBuilder(
