@@ -1,5 +1,6 @@
 // Clase: SearchPage
 
+import 'dart:math';
 import 'dart:ui';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -63,27 +64,21 @@ class _SearchPageState extends State<SearchPage> {
     _loadPropertiesFromApi();
   }
 
-  // CAMBIO: Carga las imágenes específicas de marcadores desde assets
+  // CAMBIO: Carga las imágenes específicas de marcadores (Ahora generados programáticamente en Amarillo)
   Future<void> _loadMarkerImages() async {
     try {
-      // Cargar las tres imágenes de pointers desde assets
-      final ByteData houseBytes =
-          await rootBundle.load('assets/images/house_pointer.png');
-      _houseMarkerImage = houseBytes.buffer.asUint8List();
-
-      final ByteData edificioBytes =
-          await rootBundle.load('assets/images/edificio_pointer.png');
-      _edificioMarkerImage = edificioBytes.buffer.asUint8List();
-
-      final ByteData loteBytes =
-          await rootBundle.load('assets/images/lote_pointer.png');
-      _loteMarkerImage = loteBytes.buffer.asUint8List();
+      // Generamos marcadores específicos con íconos para cada tipo
+      // Usando el color amarillo (accentMint)
+      _houseMarkerImage = await _generateMarkerWithIcon(Icons.home);
+      _edificioMarkerImage = await _generateMarkerWithIcon(Icons.apartment);
+      _loteMarkerImage = await _generateMarkerWithIcon(Icons.landscape);
     } catch (e) {
-      debugPrint('Error cargando imágenes de marcadores: $e');
-      // Si falla, genera marcadores por defecto
-      _houseMarkerImage = await _generateDefaultMarker();
-      _edificioMarkerImage = await _generateDefaultMarker();
-      _loteMarkerImage = await _generateDefaultMarker();
+      debugPrint('Error generando marcadores: $e');
+      // Fallback
+      final defaultMarker = await _generateMarkerWithIcon(Icons.place);
+      _houseMarkerImage = defaultMarker;
+      _edificioMarkerImage = defaultMarker;
+      _loteMarkerImage = defaultMarker;
     }
 
     // Genera avatar para ubicación del usuario
@@ -102,42 +97,96 @@ class _SearchPageState extends State<SearchPage> {
 
     if (availableImages.isEmpty) return null;
 
-    // Selecciona una imagen aleatoria
+    // Selecciona una imagen aleatoria para simular variedad
     final randomIndex =
         DateTime.now().millisecondsSinceEpoch % availableImages.length;
     return availableImages[randomIndex];
   }
 
-  // Genera una imagen PNG simple para el marcador de propiedades
-  Future<Uint8List> _generateDefaultMarker() async {
-    const double size = 64.0;
+  // Genera un marcador tipo "Pin" (Gota invertida) con círculo blanco y un ícono dentro
+  Future<Uint8List> _generateMarkerWithIcon(IconData iconData) async {
+    const double width = 96.0;
+    const double height = 110.0;
 
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
 
-    // Fondo transparente
-    final bgPaint = Paint()..color = const Color(0x00000000);
-    canvas.drawRect(const Rect.fromLTWH(0, 0, size, size), bgPaint);
-
-    // Círculo principal del marcador (amarillo como el tema)
-    final circlePaint = Paint()
-      ..color = AppTheme.primaryColor.withValues(alpha: 0.95)
+    // 1. Pincel del Cuerpo (Amarillo)
+    final paint = Paint()
+      ..color = AppTheme.accentMint
       ..style = PaintingStyle.fill;
-    const center = Offset(size / 2, size / 2);
-    canvas.drawCircle(center, size * 0.36, circlePaint);
 
-    // Borde sutil
-    final borderPaint = Paint()
-      ..color = AppTheme.whiteColor.withValues(alpha: 0.8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-    canvas.drawCircle(center, size * 0.36, borderPaint);
+    // 2. Pincel del Círculo Interior (Blanco)
+    final whiteCirclePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
 
-    // Renderiza imagen y devuelve PNG en bytes
+    // 3. Sombra
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+
+    // Definir la forma del Pin (Gota invertida)
+    final path = Path();
+    const double radius = width / 2;
+    const double centerX = width / 2;
+    const double centerY = radius;
+
+    // Empezar desde la punta inferior
+    path.moveTo(centerX, height);
+    // Curva suave hacia la izquierda
+    path.quadraticBezierTo(centerX - 10, height - 25, 0, centerY);
+    // Arco superior
+    path.arcTo(
+        Rect.fromCircle(center: const Offset(centerX, centerY), radius: radius),
+        pi,
+        pi,
+        false);
+    // Curva suave hacia la derecha y regreso a la punta
+    path.lineTo(width, centerY);
+    path.quadraticBezierTo(centerX + 10, height - 25, centerX, height);
+    path.close();
+
+    // Dibujar sombra
+    canvas.drawPath(path.shift(const Offset(0, 5)), shadowPaint);
+
+    // Dibujar cuerpo amarillo
+    canvas.drawPath(path, paint);
+
+    // Dibujar círculo blanco interior
+    canvas.drawCircle(
+        const Offset(centerX, centerY), radius * 0.65, whiteCirclePaint);
+
+    // Dibujar Ícono en el centro del círculo blanco
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(iconData.codePoint),
+      style: TextStyle(
+        fontSize: 36.0,
+        fontFamily: iconData.fontFamily,
+        color: AppTheme.primaryColor,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        centerX - textPainter.width / 2,
+        centerY - textPainter.height / 2,
+      ),
+    );
+
+    // Renderizar imagen
     final picture = recorder.endRecording();
-    final img = await picture.toImage(size.toInt(), size.toInt());
+    final img = await picture.toImage(width.toInt(), height.toInt());
     final byteData = await img.toByteData(format: ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
+  }
+
+  // Mantenemos este método por si acaso, aunque ya no se use directamente
+  Future<Uint8List> _generateDefaultMarker() async {
+    return _generateMarkerWithIcon(Icons.place);
   }
 
   // Genera avatar para la ubicación del usuario

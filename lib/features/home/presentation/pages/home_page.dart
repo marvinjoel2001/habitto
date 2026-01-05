@@ -3,6 +3,7 @@ import '../../../../shared/widgets/custom_network_image.dart';
 import '../../../../shared/widgets/match_modal.dart';
 import '../../../../shared/widgets/ai_chat_widget.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:geolocator/geolocator.dart';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import '../../../../shared/widgets/custom_bottom_navigation.dart';
@@ -618,6 +619,18 @@ class _HomeContentState extends State<HomeContent> {
       _error = null;
     });
 
+    // 1. Obtener ubicación actual (mejor esfuerzo)
+    Position? currentPosition;
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission != LocationPermission.denied &&
+          permission != LocationPermission.deniedForever) {
+        currentPosition = await Geolocator.getCurrentPosition();
+      }
+    } catch (_) {
+      // Ignorar errores de ubicación, simplemente no mostraremos distancia real
+    }
+
     final propsRes = await _propertyService.getProperties(
         orderByMatch: true, matchScore: 0, pageSize: 50);
     if (propsRes['success'] == true && propsRes['data'] != null) {
@@ -639,6 +652,21 @@ class _HomeContentState extends State<HomeContent> {
             ? _capitalize(p.address)
             : S.of(context).propertyLabel;
         final formattedTitle = "$typeLabel · $addressLabel";
+
+        // Calcular distancia
+        double dist = 0.0;
+        if (currentPosition != null &&
+            p.latitude != null &&
+            p.longitude != null) {
+          final dMeters = Geolocator.distanceBetween(
+            currentPosition.latitude,
+            currentPosition.longitude,
+            p.latitude!,
+            p.longitude!,
+          );
+          dist = dMeters / 1000.0; // convertir a km
+        }
+
         cards.add(HomePropertyCardData(
           id: p.id,
           title: formattedTitle,
@@ -646,7 +674,7 @@ class _HomeContentState extends State<HomeContent> {
               ? S.of(context).pricePerMonth(p.price.toStringAsFixed(0))
               : '—',
           images: initialImages,
-          distanceKm: 0.0,
+          distanceKm: dist,
           tags: [p.type.isNotEmpty ? _capitalize(p.type) : ''],
         ));
       }
