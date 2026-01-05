@@ -310,21 +310,11 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Background Image with Blur
-        ImageFiltered(
-          imageFilter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            height: double.infinity,
-            width: double.infinity,
-            decoration: AppTheme.getProfileBackground(
-                variant: _backgroundVariantForIndex()),
-          ),
-        ),
-        // Dark Overlay
+        // Background - Solid White
         Container(
           height: double.infinity,
           width: double.infinity,
-          color: Colors.black.withValues(alpha: 0.5),
+          color: Colors.white,
         ),
         // Content
         Scaffold(
@@ -519,23 +509,19 @@ class _CircleActionButtonState extends State<_CircleActionButton>
           width: widget.size,
           height: widget.size,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: widget.borderColor, // Fill with the color
             shape: BoxShape.circle,
-            border: Border.all(
-              color: widget.borderColor,
-              width: 1.5,
-            ),
             boxShadow: [
               BoxShadow(
-                color: widget.borderColor.withValues(alpha: 0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: widget.borderColor.withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Icon(
             widget.icon,
-            color: widget.iconColor,
+            color: Colors.white, // White icon
             size: widget.size * 0.45,
           ),
         ),
@@ -773,43 +759,43 @@ class _HomeContentState extends State<HomeContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Filter button at the top
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.filter_list, color: Colors.black),
-                      onPressed: widget.onFilterTap ??
-                          () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const CreateSearchProfilePage(),
-                              ),
-                            );
-                          },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Filter button removed as requested
+          // SafeArea(
+          //   child: Padding(
+          //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          //     child: Row(
+          //       mainAxisAlignment: MainAxisAlignment.end,
+          //       children: [
+          //         Container(
+          //           decoration: BoxDecoration(
+          //             color: Colors.white.withValues(alpha: 0.9),
+          //             borderRadius: BorderRadius.circular(20),
+          //             boxShadow: [
+          //               BoxShadow(
+          //                 color: Colors.black.withValues(alpha: 0.1),
+          //                 blurRadius: 10,
+          //                 offset: const Offset(0, 2),
+          //               ),
+          //             ],
+          //           ),
+          //           child: IconButton(
+          //             icon: const Icon(Icons.filter_list, color: Colors.black),
+          //             onPressed: widget.onFilterTap ??
+          //                 () {
+          //                   Navigator.push(
+          //                     context,
+          //                     MaterialPageRoute(
+          //                       builder: (context) =>
+          //                           const CreateSearchProfilePage(),
+          //                     ),
+          //                   );
+          //                 },
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
@@ -840,7 +826,7 @@ class _HomeContentState extends State<HomeContent> {
                         children: [
                           SizedBox(
                             height: cardHeight,
-                            child: PropertyCardSkeleton(
+                            child: const PropertyCardSkeleton(
                               overlayBottomSpace: -(actionRowHeight / 2),
                               outerHorizontalPadding: 16.0,
                               outerTopPadding: 16.0,
@@ -885,8 +871,8 @@ class _HomeContentState extends State<HomeContent> {
                                   (pad.bottom > 0 ? pad.bottom : 0.0);
 
                               // Altura disponible para el área principal
-                              const double topAreaHeight =
-                                  100.0; // Espacio superior para filtros/header
+                              // Reducimos topAreaHeight ya que quitamos el filtro
+                              const double topAreaHeight = 20.0;
 
                               // Reducimos un poco más para asegurar que los botones no tapen información vital
                               const double sizeReduction = 20.0;
@@ -907,6 +893,9 @@ class _HomeContentState extends State<HomeContent> {
                                   properties: _cards,
                                   // Pasar el padding inferior negativo para que la card se solape con los botones
                                   overlayBottomSpace: -(actionRowHeight / 2),
+                                  // Pass the outerHorizontalPadding to PropertySwipeDeck
+                                  outerHorizontalPadding:
+                                      12.0, // Reduced from 16.0
                                   onLike: (p) async {
                                     final res = await _matchingService
                                         .likeProperty(p.id);
@@ -988,8 +977,10 @@ class _HomeContentState extends State<HomeContent> {
                     const SizedBox(width: 18),
                     _CircleActionButton(
                       icon: Icons.favorite,
-                      iconColor: AppTheme.secondaryColor,
-                      borderColor: AppTheme.secondaryColor,
+                      iconColor: Colors
+                          .white, // Not used anymore as per new implementation
+                      borderColor:
+                          AppTheme.primaryColor, // Changed to primary pink
                       size: 78,
                       onTap: () {
                         final p = _currentTopProperty;
@@ -1200,6 +1191,7 @@ class PropertySwipeDeck extends StatefulWidget {
   final ValueChanged<HomePropertyCardData>? onLike;
   final ValueChanged<HomePropertyCardData>? onReject;
   final double overlayBottomSpace;
+  final double outerHorizontalPadding;
   const PropertySwipeDeck({
     super.key,
     required this.properties,
@@ -1207,6 +1199,7 @@ class PropertySwipeDeck extends StatefulWidget {
     this.onLike,
     this.onReject,
     this.overlayBottomSpace = 0.0,
+    this.outerHorizontalPadding = 16.0,
   });
 
   @override
@@ -1400,6 +1393,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                             _openFullScreen(property.images, index),
                         outerTopPadding: 0.0,
                         overlayBottomSpace: widget.overlayBottomSpace,
+                        outerHorizontalPadding: widget.outerHorizontalPadding,
                       ),
                     ),
                   ),
@@ -1417,6 +1411,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                       _openFullScreen(property.images, index),
                   outerTopPadding: 0.0,
                   overlayBottomSpace: widget.overlayBottomSpace,
+                  outerHorizontalPadding: widget.outerHorizontalPadding,
                 ),
         ),
       );

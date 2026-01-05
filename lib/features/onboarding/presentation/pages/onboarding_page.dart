@@ -65,10 +65,13 @@ class _OnboardingPageState extends State<OnboardingPage>
   void _initializeVideo() {
     _videoController = VideoPlayerController.asset('assets/videos/splash.mp4')
       ..initialize().then((_) {
+        if (!mounted) return;
         setState(() {});
         _videoController!.play();
         _videoController!.setLooping(true);
         _videoController!.setVolume(1.0); // Sonido inicial activado
+      }).catchError((error) {
+        debugPrint("Error initializing video: $error");
       });
   }
 
