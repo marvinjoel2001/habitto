@@ -13,6 +13,7 @@ import 'package:habitto/core/services/api_service.dart';
 import 'package:habitto/features/properties/data/services/property_service.dart';
 import 'package:habitto/features/properties/domain/entities/property.dart'
     as domain;
+import '../../data/services/zone_service.dart';
 import 'package:habitto/features/properties/presentation/pages/property_detail_page.dart';
 import 'package:habitto/config/app_config.dart';
 import '../../../../../generated/l10n.dart';
@@ -50,12 +51,20 @@ class _SearchPageState extends State<SearchPage> {
   final List<PropertyData> _properties = [];
   late final ApiService _apiService;
   late final PropertyService _propertyService;
+  late final ZoneService _zoneService;
+
+  // Estado de zonas
+  bool _showingZones = false;
+  final String _zoneSourceId = "zones-source";
+  final String _zoneFillLayerId = "zones-fill-layer";
+  final String _zoneLineLayerId = "zones-line-layer";
 
   @override
   void initState() {
     super.initState();
     _apiService = ApiService();
     _propertyService = PropertyService(apiService: _apiService);
+    _zoneService = ZoneService(apiService: _apiService);
     // Inicializar el token de Mapbox - igual que en add_property_page.dart
     MapboxOptions.setAccessToken(
         "pk.eyJ1IjoibWFydmluMjAwMSIsImEiOiJjbWdpaDRicTQwOTc3Mm9wcmd3OW5lNzExIn0.ISPECxmLq_6xhipoygxtFg");
@@ -575,7 +584,7 @@ class _SearchPageState extends State<SearchPage> {
         decoration: InputDecoration(
           hintText: S.of(context).searchPlaceholder,
           border: InputBorder.none,
-          icon: Icon(Icons.search,
+          prefixIcon: Icon(Icons.search,
               color: AppTheme.blackColor.withValues(alpha: 0.7)),
           hintStyle:
               TextStyle(color: AppTheme.blackColor.withValues(alpha: 0.6)),
@@ -594,7 +603,11 @@ class _SearchPageState extends State<SearchPage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _buildFilterChip(S.of(context).filterZone, true),
+          _buildFilterChip(
+            S.of(context).filterZone,
+            _showingZones,
+            onTap: _toggleZones,
+          ),
           const SizedBox(width: 8),
           _buildFilterChip(S.of(context).filterPrice, false),
           const SizedBox(width: 8),
@@ -606,35 +619,197 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildFilterChip(String label, bool isSelected) {
+  Widget _buildFilterChip(String label, bool isSelected,
+      {VoidCallback? onTap}) {
     final primary = Theme.of(context).colorScheme.primary;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(25),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Chip(
-          label: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? AppTheme.blackColor : AppTheme.blackColor,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Chip(
+            label: Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppTheme.blackColor,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
             ),
-          ),
-          backgroundColor: isSelected
-              ? primary.withValues(alpha: 0.85)
-              : AppTheme.whiteColor.withValues(alpha: 0.85),
-          shape: StadiumBorder(
-            side: BorderSide(
-              color: isSelected
-                  ? primary.withValues(alpha: 0.9)
-                  : AppTheme.whiteColor.withValues(alpha: 0.9),
-              width: 1.5,
+            backgroundColor: isSelected
+                ? primary.withValues(alpha: 0.85)
+                : AppTheme.whiteColor.withValues(alpha: 0.85),
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: isSelected
+                    ? primary.withValues(alpha: 0.9)
+                    : AppTheme.whiteColor.withValues(alpha: 0.9),
+                width: 1.5,
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _toggleZones() async {
+    if (_mapboxMap == null) return;
+
+    setState(() {
+      _showingZones = !_showingZones;
+    });
+
+    if (_showingZones) {
+      await _loadAndShowZones();
+    } else {
+      await _hideZones();
+    }
+  }
+
+  Future<void> _loadAndShowZones() async {
+    try {
+      final response = await _zoneService.getZonesGeoJson();
+      if (response['success'] == true && response['data'] != null) {
+        final geoJsonData = response['data'];
+
+        // Lista de puntos para calcular los límites y centrar el mapa
+        final List<Point> allPoints = [];
+
+        // Procesar GeoJSON para asignar colores si no tienen
+        if (geoJsonData['features'] != null) {
+          final List features = geoJsonData['features'];
+          final colors = [
+            '#FF5733', // Rojo anaranjado
+            '#33FF57', // Verde
+            '#3357FF', // Azul
+            '#FF33F6', // Magenta
+            '#33FFF6', // Cian
+            '#F6FF33', // Amarillo
+            '#FF8333', // Naranja
+            '#8333FF', // Violeta
+          ];
+
+          for (int i = 0; i < features.length; i++) {
+            final feature = features[i];
+            if (feature['properties'] == null) {
+              feature['properties'] = {};
+            }
+            // Asignar color basado en índice o ID
+            final color = colors[i % colors.length];
+            feature['properties']['fill_color'] = color;
+
+            // Recolectar puntos para el bounding box
+            try {
+              if (feature['geometry'] != null &&
+                  feature['geometry']['coordinates'] != null) {
+                final geometry = feature['geometry'];
+                if (geometry['type'] == 'Polygon') {
+                  final coordinates = geometry['coordinates'] as List;
+                  for (final ring in coordinates) {
+                    for (final point in ring) {
+                      if (point is List && point.length >= 2) {
+                        allPoints.add(Point(
+                            coordinates: Position(
+                          (point[0] as num).toDouble(),
+                          (point[1] as num).toDouble(),
+                        )));
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              debugPrint('Error parseando coordenadas de zona: $e');
+            }
+          }
+          debugPrint('Cargando zonas GeoJSON: ${features.length} features');
+        }
+
+        final String geoJsonString = jsonEncode(geoJsonData);
+
+        // Eliminar capas anteriores si existen
+        await _removeZonesLayerImpl();
+
+        // Añadir fuente
+        await _mapboxMap!.style
+            .addSource(GeoJsonSource(id: _zoneSourceId, data: geoJsonString));
+
+        // Añadir capa de relleno (Fill Layer) - Efecto "Humito"
+        await _mapboxMap!.style.addStyleLayer(
+          jsonEncode({
+            "id": _zoneFillLayerId,
+            "type": "fill",
+            "source": _zoneSourceId,
+            "paint": {
+              "fill-color": ['get', 'fill_color'],
+              "fill-opacity": 0.45,
+              "fill-outline-color": ['get', 'fill_color']
+            }
+          }),
+          null,
+        );
+
+        // Añadir capa de línea (Line Layer) para bordes definidos
+        await _mapboxMap!.style.addStyleLayer(
+          jsonEncode({
+            "id": _zoneLineLayerId,
+            "type": "line",
+            "source": _zoneSourceId,
+            "paint": {
+              "line-color": ['get', 'fill_color'],
+              "line-width": 3.0,
+              "line-opacity": 0.8
+            }
+          }),
+          null,
+        );
+
+        // Hacer zoom a las zonas si hay puntos
+        if (allPoints.isNotEmpty) {
+          final camera = await _mapboxMap!.cameraForCoordinates(
+            allPoints,
+            MbxEdgeInsets(top: 50, left: 50, bottom: 50, right: 50),
+            null, // bearing
+            null, // pitch
+          );
+
+          await _mapboxMap!.flyTo(
+            camera,
+            MapAnimationOptions(duration: 1500, startDelay: 0),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error mostrando zonas: $e');
+      // Revertir estado si falla
+      setState(() {
+        _showingZones = false;
+      });
+    }
+  }
+
+  Future<void> _hideZones() async {
+    await _removeZonesLayerImpl();
+  }
+
+  Future<void> _removeZonesLayerImpl() async {
+    if (_mapboxMap == null) return;
+
+    try {
+      if (await _mapboxMap!.style.styleLayerExists(_zoneLineLayerId)) {
+        await _mapboxMap!.style.removeStyleLayer(_zoneLineLayerId);
+      }
+      if (await _mapboxMap!.style.styleLayerExists(_zoneFillLayerId)) {
+        await _mapboxMap!.style.removeStyleLayer(_zoneFillLayerId);
+      }
+      if (await _mapboxMap!.style.styleSourceExists(_zoneSourceId)) {
+        await _mapboxMap!.style.removeStyleSource(_zoneSourceId);
+      }
+    } catch (e) {
+      debugPrint('Error removiendo capas de zonas: $e');
+    }
   }
 
   // Columna de acciones del mapa (glass) - mejorada para 3D

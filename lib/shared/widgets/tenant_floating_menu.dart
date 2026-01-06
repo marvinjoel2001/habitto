@@ -94,7 +94,8 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
           ),
           // Menu positioned exactly above the navigation button
           Positioned(
-            bottom: 100 + bottomPadding, // Positioned exactly above navigation bar
+            bottom:
+                100 + bottomPadding, // Positioned exactly above navigation bar
             left: 0,
             right: 0,
             child: AnimatedBuilder(
@@ -158,14 +159,6 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                                   color: AppTheme.secondaryColor,
                                   onTap: widget.onSwipeRight,
                                   label: S.of(context).actionLike,
-                                  buttonSize: buttonSize,
-                                  iconSize: iconSize,
-                                ),
-                                _buildActionButton(
-                                  icon: Icons.star,
-                                  color: Colors.blueAccent,
-                                  onTap: widget.onAddFavorite,
-                                  label: S.of(context).actionFavorite,
                                   buttonSize: buttonSize,
                                   iconSize: iconSize,
                                 ),

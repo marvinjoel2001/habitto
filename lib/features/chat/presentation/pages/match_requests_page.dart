@@ -339,20 +339,16 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                                 children: [
                                   _CircleActionButton(
                                     icon: Icons.rotate_left,
-                                    bgColor: Colors.transparent,
-                                    iconColor: Colors.amber,
+                                    color: Colors.amber,
                                     size: 54,
-                                    opacity: 0.15,
                                     onTap: () =>
                                         _deckKey.currentState?.goBack(),
                                   ),
                                   const SizedBox(width: 18),
                                   _CircleActionButton(
                                     icon: Icons.close,
-                                    bgColor: Colors.transparent,
-                                    iconColor: Colors.redAccent,
+                                    color: Colors.redAccent,
                                     size: 54,
-                                    opacity: 0.15,
                                     onTap: () async {
                                       final p = _currentTopProperty;
                                       if (p != null) {
@@ -369,10 +365,8 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                                   const SizedBox(width: 18),
                                   _CircleActionButton(
                                     icon: Icons.favorite,
-                                    bgColor: Colors.transparent,
-                                    iconColor: AppTheme.secondaryColor,
+                                    color: AppTheme.secondaryColor,
                                     size: 78,
-                                    opacity: 0.32,
                                     onTap: () async {
                                       final messenger =
                                           ScaffoldMessenger.of(context);
@@ -419,19 +413,15 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
 
 class _CircleActionButton extends StatefulWidget {
   final IconData icon;
-  final Color bgColor;
-  final Color iconColor;
+  final Color color;
   final VoidCallback? onTap;
   final double size;
-  final double opacity;
 
   const _CircleActionButton({
     required this.icon,
-    required this.bgColor,
-    required this.iconColor,
+    required this.color,
     this.onTap,
     this.size = 64.0,
-    this.opacity = 0.28,
   });
 
   @override
@@ -474,31 +464,22 @@ class _CircleActionButtonState extends State<_CircleActionButton>
       onTap: _handleTap,
       child: ScaleTransition(
         scale: _scale,
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              width: widget.size,
-              height: widget.size,
-              decoration: BoxDecoration(
-                color: widget.bgColor.withValues(alpha: widget.opacity),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.bgColor.withValues(alpha: 0.2),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            color: widget.color,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: widget.color.withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
-              child: Icon(widget.icon,
-                  color: widget.iconColor, size: widget.size * 0.45),
-            ),
+            ],
           ),
+          child:
+              Icon(widget.icon, color: Colors.white, size: widget.size * 0.45),
         ),
       ),
     );
