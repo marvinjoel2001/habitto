@@ -199,6 +199,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
     final Size size = MediaQuery.of(context).size;
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
     const double navHeight = 70.0;
+    final bool showCenterButton = widget.userMode != 'inquilino';
 
     return SizedBox(
       height: navHeight + bottomPadding + 40, // Extra space for floating button
@@ -221,6 +222,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                   painter: _NavCurvePainter(
                     color: Colors.white.withValues(alpha: 0.85),
                     shadowColor: Colors.black.withValues(alpha: 0.1),
+                    hasNotch: showCenterButton,
                   ),
                 ),
               ),
@@ -272,7 +274,8 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                         : widget.userMode == 'propietario'
                             ? S.of(context).navProperties
                             : S.of(context).navPortfolio),
-                const SizedBox(width: 56), // Space for center button
+                if (showCenterButton)
+                  const SizedBox(width: 56), // Space for center button
                 _buildNavItem(
                     context,
                     2,
@@ -293,13 +296,12 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
             ),
           ),
 
-          // Center Button (Floating)
-          Positioned(
-            top: 10, // Adjust to sit in the notch
-            child: widget.userMode == 'inquilino'
-                ? _buildCenterButtonForTenants(context)
-                : _buildCenterButtonForOwners(context),
-          ),
+          // Center Button (Floating) - Only for owners/agents
+          if (showCenterButton)
+            Positioned(
+              top: 10, // Adjust to sit in the notch
+              child: _buildCenterButtonForOwners(context),
+            ),
         ],
       ),
     );
@@ -337,38 +339,6 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
           child: Center(
             child: Icon(
               _isFloatingMenuVisible ? Icons.close : Icons.home,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCenterButtonForTenants(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: S.of(context).navChat,
-      child: GestureDetector(
-        onTap: widget.onAiChatTap,
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const Center(
-            child: Icon(
-              Icons.auto_awesome,
               color: Colors.white,
               size: 28,
             ),
@@ -433,20 +403,18 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                 color: isSelected ? activeColor : inactiveColor,
                 size: 24,
               ),
-              if (isSelected) ...[
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: activeColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? activeColor : inactiveColor,
+                  fontSize: isSelected ? 11 : 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
-              ]
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),
@@ -458,8 +426,13 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
 class _NavCurvePainter extends CustomPainter {
   final Color color;
   final Color shadowColor;
+  final bool hasNotch;
 
-  _NavCurvePainter({required this.color, required this.shadowColor});
+  _NavCurvePainter({
+    required this.color,
+    required this.shadowColor,
+    this.hasNotch = true,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -468,27 +441,30 @@ class _NavCurvePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
-    // Aumentamos el radio de influencia para suavizar la curva (hacerla menos "puntiaguda")
-    const double curveWidth = 55.0;
-    final double center = size.width / 2;
-    const double notchDepth = 38.0;
-
     path.moveTo(0, 0);
-    // Empezar la curva más lejos del centro
-    path.lineTo(center - curveWidth * 1.6, 0);
 
-    // Cubic bezier más suave y amplio
-    path.cubicTo(
-      center - curveWidth, 0, // CP1: Mantiene la horizontalidad más tiempo
-      center - curveWidth * 0.5, notchDepth, // CP2: Baja suavemente
-      center, notchDepth, // End: Centro fondo
-    );
+    if (hasNotch) {
+      // Aumentamos el radio de influencia para suavizar la curva (hacerla menos "puntiaguda")
+      const double curveWidth = 55.0;
+      final double center = size.width / 2;
+      const double notchDepth = 38.0;
 
-    path.cubicTo(
-      center + curveWidth * 0.5, notchDepth, // CP1: Sube suavemente
-      center + curveWidth, 0, // CP2: Recupera horizontalidad
-      center + curveWidth * 1.6, 0, // End: Fin de la curva
-    );
+      // Empezar la curva más lejos del centro
+      path.lineTo(center - curveWidth * 1.6, 0);
+
+      // Cubic bezier más suave y amplio
+      path.cubicTo(
+        center - curveWidth, 0, // CP1: Mantiene la horizontalidad más tiempo
+        center - curveWidth * 0.5, notchDepth, // CP2: Baja suavemente
+        center, notchDepth, // End: Centro fondo
+      );
+
+      path.cubicTo(
+        center + curveWidth * 0.5, notchDepth, // CP1: Sube suavemente
+        center + curveWidth, 0, // CP2: Recupera horizontalidad
+        center + curveWidth * 1.6, 0, // End: Fin de la curva
+      );
+    }
 
     path.lineTo(size.width, 0);
     path.lineTo(size.width, size.height);
@@ -503,5 +479,8 @@ class _NavCurvePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _NavCurvePainter oldDelegate) =>
+      color != oldDelegate.color ||
+      shadowColor != oldDelegate.shadowColor ||
+      hasNotch != oldDelegate.hasNotch;
 }

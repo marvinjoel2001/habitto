@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:habitto/core/services/ai_service.dart';
 import 'package:habitto/shared/theme/app_theme.dart';
+import 'package:habitto/shared/models/ai_conversation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../generated/l10n.dart';
 
@@ -10,14 +12,16 @@ import 'package:permission_handler/permission_handler.dart';
 
 class AiChatWidget extends StatefulWidget {
   final String userName;
-  final Function(Map<String, dynamic>)? onProfileCreated;
-  final VoidCallback? onClose;
+  final VoidCallback onClose;
+  final Function(Map<String, dynamic>) onProfileCreated;
+  final String? contextString;
 
   const AiChatWidget({
     super.key,
     required this.userName,
-    this.onProfileCreated,
-    this.onClose,
+    required this.onClose,
+    required this.onProfileCreated,
+    this.contextString,
   });
 
   @override
@@ -34,8 +38,151 @@ class _AiChatWidgetState extends State<AiChatWidget> {
   bool _isListening = false;
 
   // Message history: each item is {role: 'user'|'assistant', content: '...'}
-  final List<Map<String, String>> _messages = [];
+  List<Map<String, String>> _messages = [];
   bool _isLoading = false;
+
+  // Persistence
+  String? _currentConversationId;
+  List<AiConversation> _savedConversations = [];
+  static const String _prefsKey = 'ai_conversations';
+
+  @override
+  void initState() {
+    super.initState();
+    _initSpeech();
+    _loadHistory();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _initSuggestions();
+        _addInitialMessage();
+      }
+    });
+  }
+
+  Future<void> _loadHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? jsonString = prefs.getString(_prefsKey);
+      if (jsonString != null) {
+        final List<dynamic> jsonList = json.decode(jsonString);
+        setState(() {
+          _savedConversations = jsonList
+              .map((e) => AiConversation.fromMap(e))
+              .toList()
+            ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        });
+      }
+    } catch (e) {
+      print('Error loading chat history: $e');
+    }
+  }
+
+  Future<void> _saveCurrentConversation() async {
+    if (_messages.isEmpty) return;
+
+    // Don't save if it's just the initial greeting
+    if (_messages.length == 1 && _messages.first['role'] == 'assistant') return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Determine title from first user message
+      String title = 'Nueva conversación';
+      final firstUserMsg = _messages.firstWhere(
+        (m) => m['role'] == 'user',
+        orElse: () => {},
+      );
+      if (firstUserMsg.isNotEmpty) {
+        title = firstUserMsg['content'] ?? 'Conversación';
+        if (title.length > 30) {
+          title = '${title.substring(0, 30)}...';
+        }
+      }
+
+      final now = DateTime.now();
+      _currentConversationId ??= now.millisecondsSinceEpoch.toString();
+
+      final currentConversation = AiConversation(
+        id: _currentConversationId!,
+        title: title,
+        messages: _messages,
+        timestamp: now,
+      );
+
+      setState(() {
+        // Remove existing version of this conversation if exists
+        _savedConversations.removeWhere((c) => c.id == _currentConversationId);
+        // Add updated version at top
+        _savedConversations.insert(0, currentConversation);
+      });
+
+      final jsonList = _savedConversations.map((c) => c.toMap()).toList();
+      await prefs.setString(_prefsKey, json.encode(jsonList));
+    } catch (e) {
+      print('Error saving chat: $e');
+    }
+  }
+
+  Future<void> _deleteConversation(String id) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _savedConversations.removeWhere((c) => c.id == id);
+        if (_currentConversationId == id) {
+          _startNewConversation();
+        }
+      });
+      final jsonList = _savedConversations.map((c) => c.toMap()).toList();
+      await prefs.setString(_prefsKey, json.encode(jsonList));
+    } catch (e) {
+      print('Error deleting chat: $e');
+    }
+  }
+
+  void _startNewConversation() {
+    setState(() {
+      _messages = [];
+      _currentConversationId = null;
+      _controller.clear();
+      _addInitialMessage();
+    });
+  }
+
+  void _loadConversation(AiConversation conversation) {
+    setState(() {
+      _messages = List.from(conversation.messages);
+      _currentConversationId = conversation.id;
+    });
+    Navigator.pop(context); // Close modal
+    _scrollToBottom();
+  }
+
+  void _initSuggestions() {
+    setState(() {
+      _currentSuggestions = [
+        S.of(context).searchApartmentSuggestion,
+        S.of(context).searchRoomieSuggestion,
+        S.of(context).createProfileSuggestion,
+        'Publicar propiedad',
+      ];
+    });
+  }
+
+  void _addInitialMessage() {
+    if (_messages.isNotEmpty) return;
+
+    String greeting = S.of(context).aiAssistantGreeting(widget.userName);
+    if (widget.contextString != null) {
+      greeting += "\n\n${widget.contextString}";
+    }
+
+    setState(() {
+      _messages.add({
+        'role': 'assistant',
+        'content': greeting,
+      });
+    });
+  }
 
   // Quick suggestions
   final List<String> _defaultSuggestions = [
@@ -44,33 +191,6 @@ class _AiChatWidgetState extends State<AiChatWidget> {
     'Crear perfil de búsqueda',
   ];
   List<String> _currentSuggestions = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _initSpeech();
-
-    // Initial greeting if history is empty
-    if (_messages.isEmpty) {
-      // Defer greeting until we have context for localization
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _currentSuggestions = [
-          S.of(context).searchApartmentSuggestion,
-          S.of(context).searchRoomieSuggestion,
-          S.of(context).createProfileSuggestion,
-          'Publicar propiedad', // TODO: Usar S.of(context).createPropertySuggestion
-        ];
-        if (mounted && _messages.isEmpty) {
-          setState(() {
-            _messages.add({
-              'role': 'assistant',
-              'content': S.of(context).aiAssistantGreeting(widget.userName)
-            });
-          });
-        }
-      });
-    }
-  }
 
   void _initSpeech() async {
     try {
@@ -181,7 +301,8 @@ class _AiChatWidgetState extends State<AiChatWidget> {
 
     // Intercept property creation intent
     final lowerText = text.toLowerCase();
-    if (lowerText == 'publicar propiedad' || // TODO: Usar S.of(context).createPropertySuggestion
+    if (lowerText ==
+            'publicar propiedad' || // TODO: Usar S.of(context).createPropertySuggestion
         (lowerText.contains('propiedad') &&
             (lowerText.contains('crear') ||
                 lowerText.contains('agregar') ||
@@ -190,7 +311,8 @@ class _AiChatWidgetState extends State<AiChatWidget> {
         _messages.add({'role': 'user', 'content': text});
         _messages.add({
           'role': 'assistant',
-          'content': '¡Claro! Te ayudo a publicar tu propiedad. Abriendo el formulario...'
+          'content':
+              '¡Claro! Te ayudo a publicar tu propiedad. Abriendo el formulario...'
         });
         _controller.clear();
         _currentSuggestions = [];
@@ -212,6 +334,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
       _currentSuggestions = []; // Clear suggestions while thinking
     });
     _scrollToBottom();
+    _saveCurrentConversation(); // Save user message
 
     // Prepare history for API
     final historyForApi = _messages
@@ -256,6 +379,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
       }
     });
     _scrollToBottom();
+    _saveCurrentConversation(); // Save assistant response
   }
 
   void _handleProfileData(String response) {
@@ -271,9 +395,7 @@ class _AiChatWidgetState extends State<AiChatWidget> {
         final jsonMap = json.decode(jsonStr);
         if (jsonMap is Map<String, dynamic> &&
             jsonMap.containsKey('PROFILE_DATA')) {
-          if (widget.onProfileCreated != null) {
-            widget.onProfileCreated!(jsonMap['PROFILE_DATA']);
-          }
+          widget.onProfileCreated(jsonMap['PROFILE_DATA']);
         }
       }
     } catch (e) {
@@ -291,6 +413,111 @@ class _AiChatWidgetState extends State<AiChatWidget> {
         );
       }
     });
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showHistoryModal() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxHeight: 500),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white, width: 1),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Historial',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  if (_savedConversations.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(
+                        'No hay conversaciones guardadas',
+                        style: TextStyle(
+                          color: Colors.black.withOpacity(0.5),
+                        ),
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: _savedConversations.length,
+                        separatorBuilder: (c, i) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final conv = _savedConversations[index];
+                          final isCurrent = conv.id == _currentConversationId;
+                          return ListTile(
+                            title: Text(
+                              conv.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                color: isCurrent ? AppTheme.primaryColor : Colors.black87,
+                              ),
+                            ),
+                            subtitle: Text(
+                              _formatDate(conv.timestamp),
+                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                              onPressed: () {
+                                _deleteConversation(conv.id);
+                                // Refresh modal by popping and pushing?
+                                // Or better, make modal stateful or use StatefulBuilder.
+                                // Since we are in parent setState, this rebuilds the parent, but the dialog is a separate route.
+                                // We need to close and reopen or use StatefulBuilder.
+                                Navigator.pop(context);
+                                _showHistoryModal();
+                              },
+                            ),
+                            onTap: () => _loadConversation(conv),
+                            tileColor: isCurrent ? AppTheme.primaryColor.withOpacity(0.1) : null,
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -408,18 +635,17 @@ class _AiChatWidgetState extends State<AiChatWidget> {
                         ),
                       ],
                     ),
-                    if (widget.onClose != null)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.close, size: 20),
-                          color: Colors.white,
-                          onPressed: widget.onClose,
-                        ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
                       ),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        color: Colors.white,
+                        onPressed: widget.onClose,
+                      ),
+                    ),
                   ],
                 ),
               ),

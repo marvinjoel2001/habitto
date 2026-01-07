@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../shared/widgets/custom_network_image.dart';
 import '../../../../shared/widgets/match_modal.dart';
 import '../../../../shared/widgets/ai_chat_widget.dart';
@@ -170,7 +171,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _openAiChat() {
+  void _openAiChat({String? contextString}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -184,6 +185,7 @@ class _HomePageState extends State<HomePage> {
           margin: const EdgeInsets.only(top: 40),
           child: AiChatWidget(
             userName: _userName,
+            contextString: contextString,
             onClose: () => Navigator.pop(context),
             onProfileCreated: (data) async {
               Navigator.pop(context);
@@ -394,6 +396,46 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
+              if (_userMode == profile.UserMode.inquilino)
+                Positioned(
+                  bottom: 90 + MediaQuery.of(context).padding.bottom,
+                  right: _currentIndex == 1 ? null : 16,
+                  left: _currentIndex == 1 ? 16 : null,
+                  child: GestureDetector(
+                    onTap: () {
+                      String contextMsg = '';
+                      if (_currentIndex == 0) {
+                        contextMsg = 'El usuario está explorando propiedades.';
+                      } else if (_currentIndex == 1) {
+                        contextMsg = 'El usuario está buscando en el mapa.';
+                      } else if (_currentIndex == 2) {
+                        contextMsg =
+                            'El usuario está en su bandeja de mensajes.';
+                      } else if (_currentIndex == 3) {
+                        contextMsg = 'El usuario está viendo su perfil.';
+                      }
+                      _openAiChat(contextString: contextMsg);
+                    },
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: SvgPicture.asset(
+                        'assets/icons/ai_chat_icon.svg',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

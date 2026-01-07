@@ -1,0 +1,36 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg"> 
+   <defs> 
+     <linearGradient id="insta_grad" x1="0%" y1="100%" x2="100%" y2="0%"> 
+       <stop offset="0%" stop-color="#f09433" /> <stop offset="25%" stop-color="#e6683c" /> <stop offset="50%" stop-color="#dc2743" /> <stop offset="75%" stop-color="#cc2366" /> <stop offset="100%" stop-color="#bc1888" /> </linearGradient> 
+ 
+     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%"> 
+       <feGaussianBlur stdDeviation="5" result="blur" /> 
+       <feComposite in="SourceGraphic" in2="blur" operator="over" /> 
+     </filter> 
+   </defs> 
+ 
+   <path d="M120 120C120 86.8629 146.863 60 180 60H332C365.137 60 392 86.8629 392 120V300C392 333.137 365.137 360 332 360H200L120 420V360V120Z" 
+         fill="url(#insta_grad)" 
+         fill-opacity="0.9" 
+         stroke="white" 
+         stroke-width="4" 
+         stroke-opacity="0.3" /> 
+ 
+   <path d="M206 240L256 200L306 240V300H276V260H236V300H206V240Z" 
+         stroke="white" 
+         stroke-width="12" 
+         stroke-linecap="round" 
+         stroke-linejoin="round" 
+         fill="none" /> 
+   <path d="M190 245L256 190L322 245" 
+         stroke="white" 
+         stroke-width="12" 
+         stroke-linecap="round" 
+         stroke-linejoin="round" /> 
+ 
+   <path d="M420 80L425 100L445 105L425 110L420 130L415 110L395 105L415 100L420 80Z" fill="white" filter="url(#glow)" /> 
+   <path d="M450 150L453 162L465 165L453 168L450 180L447 168L435 165L447 162L450 150Z" fill="white" fill-opacity="0.8" /> 
+   <path d="M80 180L85 200L105 205L85 210L80 230L75 210L55 205L75 200L80 180Z" fill="white" filter="url(#glow)" /> 
+   <path d="M100 80L102 88L110 90L102 92L100 100L98 92L90 90L98 88L100 80Z" fill="white" fill-opacity="0.7" /> 
+ 
+ </svg>
