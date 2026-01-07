@@ -391,9 +391,37 @@ class AuthService {
 
   /// Verificar si el usuario está autenticado
   /// Verifica la existencia y validez del token local
+  /// Si el token expiró pero existe refresh token, intenta refrescar la sesión
   Future<bool> isAuthenticated() async {
     final accessToken = await _tokenStorage.getAccessToken();
-    return accessToken != null && await _tokenStorage.isTokenValid();
+    if (accessToken == null) return false;
+
+    // 1. Verificar si el token es válido localmente (no expirado)
+    if (await _tokenStorage.isTokenValid()) {
+      return true;
+    }
+
+    // 2. Si expiró, verificar si tenemos refresh token
+    final refreshToken = await _tokenStorage.getRefreshToken();
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      print(
+          'AuthService: Token expirado localmente, intentando refrescar sesión...');
+
+      // 3. Intentar validar sesión haciendo una petición autenticada.
+      // Si el token está expirado, ApiService interceptará el 401
+      // e intentará usar el refresh token automáticamente.
+      final result = await getCurrentUser();
+
+      if (result['success']) {
+        print('AuthService: Sesión recuperada exitosamente vía refresh');
+        return true;
+      } else {
+        print(
+            'AuthService: Falló la recuperación de sesión: ${result['error']}');
+      }
+    }
+
+    return false;
   }
 
   /// Inicializar autenticación al arrancar la app
