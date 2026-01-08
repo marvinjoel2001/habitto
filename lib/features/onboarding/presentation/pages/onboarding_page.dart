@@ -63,7 +63,7 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 
   void _initializeVideo() {
-    _videoController = VideoPlayerController.asset('assets/videos/splash.mp4')
+    _videoController = VideoPlayerController.asset('assets/videos/intro.mp4')
       ..initialize().then((_) {
         if (!mounted) return;
         setState(() {});
@@ -200,16 +200,65 @@ class _OnboardingPageState extends State<OnboardingPage>
                                     ),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.3),
+                                      color:
+                                          Colors.white.withValues(alpha: 0.3),
                                       width: 1,
                                     ),
                                   ),
-                                  child: CustomButton(
-                                    text: S.of(context).nextButton,
-                                    onPressed: _nextPage,
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.primary,
-                                    textColor: Colors.white,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        S.of(context).onboardingTitle1,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineMedium
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          fontSize: 32,
+                                          shadows: [
+                                            Shadow(
+                                              offset: const Offset(0, 2),
+                                              blurRadius: 4,
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.3),
+                                            ),
+                                          ],
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        S.of(context).onboardingSubtitle1,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.copyWith(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.9),
+                                          fontSize: 18,
+                                          shadows: [
+                                            Shadow(
+                                              offset: const Offset(0, 1),
+                                              blurRadius: 2,
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.3),
+                                            ),
+                                          ],
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 24),
+                                      CustomButton(
+                                        text: S.of(context).nextButton,
+                                        onPressed: _nextPage,
+                                        backgroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        textColor: Colors.white,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -298,112 +347,6 @@ class _OnboardingPageState extends State<OnboardingPage>
                 child: VideoPlayer(_videoController!),
               ),
             ),
-          ),
-
-        // NUEVO: Contenido que aparece después de 10 segundos con animación
-        if (_showContent)
-          AnimatedBuilder(
-            animation: _fadeAnimation,
-            builder: (context, child) {
-              return Opacity(
-                opacity: _fadeAnimation.value,
-                child: Transform.translate(
-                  offset: Offset(0, 50 * (1 - _fadeAnimation.value)),
-                  child: Container(
-                    // Overlay con degradado glassmorphic (solo cuando aparece el contenido)
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.3 * _fadeAnimation.value),
-                          Colors.black.withValues(alpha: 0.7 * _fadeAnimation.value),
-                        ],
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                              height:
-                                  MediaQuery.of(context).size.height * 0.20),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(25),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                              child: Container(
-                                padding: const EdgeInsets.all(30),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Colors.white.withValues(alpha: 0.25),
-                                      Colors.white.withValues(alpha: 0.1),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(25),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.4),
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      S.of(context).onboardingTitle1,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineMedium
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        fontSize: 32,
-                                        shadows: [
-                                          Shadow(
-                                            offset: const Offset(0, 2),
-                                            blurRadius: 4,
-                                            color:
-                                                Colors.black.withValues(alpha: 0.3),
-                                          ),
-                                        ],
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      S.of(context).onboardingSubtitle1,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge
-                                          ?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.9),
-                                        fontSize: 18,
-                                        shadows: [
-                                          Shadow(
-                                            offset: const Offset(0, 1),
-                                            blurRadius: 2,
-                                            color:
-                                                Colors.black.withValues(alpha: 0.3),
-                                          ),
-                                        ],
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
           ),
       ],
     );

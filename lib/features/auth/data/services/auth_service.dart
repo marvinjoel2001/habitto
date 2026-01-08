@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart' as gsi;
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -104,23 +105,54 @@ class AuthService {
     }
   }
 
-  /// Login con Google usando google_sign_in y backend dj-rest-auth
+  /// Login con Google usando google_sign_in, Firebase Auth y backend dj-rest-auth
   Future<Map<String, dynamic>> loginWithGoogle() async {
     try {
-      final googleSignIn = gsi.GoogleSignIn(scopes: ['email', 'profile']);
+      final googleSignIn = gsi.GoogleSignIn(
+        scopes: ['email', 'profile', 'openid'],
+        serverClientId: AppConfig.googleWebClientId,
+      );
+
+      // Forzar cierre de sesión anterior para permitir elegir cuenta
+      await googleSignIn.signOut();
+
       final account = await googleSignIn.signIn();
       if (account == null) {
         return {'success': false, 'error': 'Inicio de sesión cancelado'};
       }
       final auth = await account.authentication;
       final accessToken = auth.accessToken;
-      if (accessToken == null || accessToken.isEmpty) {
+      final idToken = auth.idToken;
+
+      print('AuthService: AccessToken: ${accessToken?.substring(0, 10)}...');
+      print(
+          'AuthService: IDToken: ${idToken != null ? "Presente (${idToken.substring(0, 10)}...)" : "NULL"}');
+
+      if (accessToken == null) {
         return {'success': false, 'error': 'Google no entregó access_token'};
       }
+
+      // Autenticación en Firebase
+      try {
+        final credential = fb_auth.GoogleAuthProvider.credential(
+          accessToken: accessToken,
+          idToken: idToken,
+        );
+        await fb_auth.FirebaseAuth.instance.signInWithCredential(credential);
+        print('AuthService: Login en Firebase exitoso');
+      } catch (e) {
+        print('AuthService: Error en Firebase login: $e');
+        return {
+          'success': false,
+          'error': 'Error autenticando con Firebase: $e'
+        };
+      }
+
       final url =
           '${AppConfig.socialBaseUrl()}${AppConfig.socialGoogleEndpoint}';
       final payload = {
         'access_token': accessToken,
+        'id_token': idToken,
       };
       final response = await _apiService.post(url, payload);
       return _handleSocialLoginResponse(response);

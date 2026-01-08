@@ -25,9 +25,14 @@ class AppConfig {
   static const String refreshTokenEndpoint = '/api/refresh/';
 
   // Social Auth Endpoints (dj-rest-auth)
-  static const String socialGoogleEndpoint = '/dj-rest-auth/google/';
-  static const String socialFacebookEndpoint = '/dj-rest-auth/facebook/';
-  static const String socialAppleEndpoint = '/dj-rest-auth/apple/';
+  static const String socialGoogleEndpoint = 'dj-rest-auth/google/';
+  static const String socialFacebookEndpoint = 'dj-rest-auth/facebook/';
+  static const String socialAppleEndpoint = 'dj-rest-auth/apple/';
+  
+  // Google Web Client ID (Requerido para obtener id_token válido para el backend)
+  // DEBE coincidir con el Client ID de tipo "Web Application" en Google Cloud Console
+  // y con el usado en el backend (settings.py).
+  static const String? googleWebClientId = null; // TODO: Reemplazar con el ID real si no se usa google-services.json actualizado
 
   // Endpoints alternativos (compatibilidad                               con documentación nueva)
   // Algunos despliegues usan SimpleJWT por defecto:

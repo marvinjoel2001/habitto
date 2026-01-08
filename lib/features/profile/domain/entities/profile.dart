@@ -29,18 +29,23 @@ class Profile extends BaseModel {
       final s = v?.toString() ?? '';
       return s.replaceAll('`', '').replaceAll('"', '').trim();
     }
+
     return Profile(
       id: json['id'],
       user: User.fromJson(json['user']),
-      userType: json['user_type'],
-      phone: json['phone'],
-      isVerified: json['is_verified'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      userType: (json['user_type'] ?? '').toString(),
+      phone: (json['phone'] ?? '').toString(),
+      isVerified: json['is_verified'] ?? false,
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+          DateTime.now(),
       favorites: List<int>.from(json['favorites'] ?? []),
-      profileImage: clean(json['profile_picture_url']).isNotEmpty 
-          ? clean(json['profile_picture_url']) 
-          : (clean(json['profile_picture']).isNotEmpty ? clean(json['profile_picture']) : null),
+      profileImage: clean(json['profile_picture_url']).isNotEmpty
+          ? clean(json['profile_picture_url'])
+          : (clean(json['profile_picture']).isNotEmpty
+              ? clean(json['profile_picture'])
+              : null),
     );
   }
 

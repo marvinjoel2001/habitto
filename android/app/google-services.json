@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "608765066646",
+    "project_id": "habitto-95685",
+    "storage_bucket": "habitto-95685.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:608765066646:android:d3614b885df9617a4f31b7",
+        "android_client_info": {
+          "package_name": "com.example.habitto"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "608765066646-7c9onrlrn4ui4rh67qkato8b3c34s1dp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.habitto",
+            "certificate_hash": "f05cb326f86025a4d33fa64e6a3554b7f7889fcc"
+          }
+        },
+        {
+          "client_id": "608765066646-i4bvpr3capmr9ioujludr8ohc3s96mp5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5kSDkZXJkTWXY2kFJJ4uZ_41tZaerztk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "608765066646-i4bvpr3capmr9ioujludr8ohc3s96mp5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
