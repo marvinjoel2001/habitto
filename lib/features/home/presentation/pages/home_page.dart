@@ -118,9 +118,11 @@ class _HomePageState extends State<HomePage> {
 
   // Callback para recibir cambios de modo desde ProfilePage
   void _onUserModeChanged(profile.UserMode mode) {
-    setState(() {
-      _userMode = mode;
-    });
+    if (_userMode != mode) {
+      setState(() {
+        _userMode = mode;
+      });
+    }
   }
 
   // Tenant floating menu handlers

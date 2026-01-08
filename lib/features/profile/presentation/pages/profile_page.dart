@@ -67,6 +67,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Future<void> _loadUserProperties() async {
+    if (!mounted) return;
     setState(() {
       _isLoadingProperties = true;
     });
@@ -78,6 +79,8 @@ class _ProfilePageState extends State<ProfilePage>
       result = await _propertyService.getMyProperties();
     }
 
+    if (!mounted) return;
+
     if (result['success']) {
       final properties = result['data']['properties'] as List<Property>;
       setState(() {
@@ -87,6 +90,7 @@ class _ProfilePageState extends State<ProfilePage>
 
       // Cargar fotos para cada propiedad
       for (final property in properties) {
+        if (!mounted) return;
         _loadPropertyPhotos(property.id);
       }
     } else {
@@ -99,6 +103,8 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _loadPropertyPhotos(int propertyId) async {
     final result = await _photoService.getPropertyPhotos(propertyId);
 
+    if (!mounted) return;
+
     if (result['success']) {
       final photos = result['data']['photos'] as List<Photo>;
       setState(() {
@@ -109,11 +115,14 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _loadCurrentProfile() async {
     try {
+      if (!mounted) return;
       setState(() {
         _isLoading = true;
       });
 
       final response = await _profileService.getCurrentProfile();
+
+      if (!mounted) return;
 
       if (response['success'] == true) {
         // Extract both profile and user data from the response
@@ -146,14 +155,18 @@ class _ProfilePageState extends State<ProfilePage>
       }
     } catch (e) {
       print('Error cargando perfil: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.of(context).profileLoadError(e.toString()))),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context).profileLoadError(e.toString()))),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
-      _animationController.forward();
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _animationController.forward();
+      }
     }
   }
 
