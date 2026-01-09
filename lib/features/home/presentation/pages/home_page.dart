@@ -26,6 +26,7 @@ import '../../../profile/data/services/profile_service.dart';
 import '../../../properties/data/services/property_service.dart';
 import '../../../properties/data/services/photo_service.dart';
 import '../../../properties/domain/entities/property.dart' as domain;
+import '../../../properties/domain/entities/amenity.dart';
 import '../../../properties/domain/entities/photo.dart' as domain_photo;
 import '../../../../core/services/api_service.dart';
 import '../../../../config/app_config.dart';
@@ -556,6 +557,7 @@ class _HomeContentState extends State<HomeContent> {
   List<HomePropertyCardData> _cards = [];
   final Map<int, List<String>> _photoUrlsByProperty = {};
   final Map<int, int> _matchIdByPropertyId = {};
+  Map<int, String> _amenityMap = {};
   HomePropertyCardData? _currentTopProperty;
   String _currentUserImageUrl = 'assets/images/userempty.png';
   // El deck se controla desde HomePage a través de widget.deckKey
@@ -616,11 +618,30 @@ class _HomeContentState extends State<HomeContent> {
     }
   }
 
+  Future<void> _loadAmenities() async {
+    try {
+      final result = await _propertyService.getAmenities();
+      if (result['success'] == true && result['data'] != null) {
+        final list = result['data'] as List<Amenity>;
+        setState(() {
+          _amenityMap = {for (var a in list) a.id: a.name};
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading amenities: $e');
+    }
+  }
+
   Future<void> _loadAllProperties() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
+
+    // Cargar amenities si no están cargadas
+    if (_amenityMap.isEmpty) {
+      await _loadAmenities();
+    }
 
     // 1. Obtener ubicación actual (mejor esfuerzo)
     Position? currentPosition;
@@ -838,7 +859,7 @@ class _HomeContentState extends State<HomeContent> {
                       final pad = MediaQuery.of(ctx).padding;
                       // Mismos cálculos de dimensiones que en la vista normal
                       const double actionRowHeight = 80.0;
-                      const double extraBottomSpacing = 85.0;
+                      const double extraBottomSpacing = 10.0;
                       final double reservedBottom = actionRowHeight +
                           extraBottomSpacing +
                           (pad.bottom > 0 ? pad.bottom : 0.0);
@@ -859,7 +880,7 @@ class _HomeContentState extends State<HomeContent> {
                             height: cardHeight,
                             child: PropertyCardSkeleton(
                               overlayBottomSpace: -(actionRowHeight / 2),
-                              outerHorizontalPadding: 12.0,
+                              outerHorizontalPadding: 4.0,
                               outerTopPadding: pad.top + 10.0,
                             ),
                           ),
@@ -893,7 +914,7 @@ class _HomeContentState extends State<HomeContent> {
                               // Altura de la fila de botones de acción
                               const double actionRowHeight = 80.0;
                               // Espacio para el bottom spacing que hemos aumentado (para levantar botones)
-                              const double extraBottomSpacing = 85.0;
+                              const double extraBottomSpacing = 10.0;
 
                               // Ajustamos reservedBottom considerando el nuevo espaciado inferior
                               // para que la card se reduzca y no haya overflow.
@@ -926,7 +947,7 @@ class _HomeContentState extends State<HomeContent> {
                                   overlayBottomSpace: -(actionRowHeight / 2),
                                   // Pass the outerHorizontalPadding to PropertySwipeDeck
                                   outerHorizontalPadding:
-                                      12.0, // Reduced from 16.0
+                                      4.0, // Reduced from 6.0
                                   outerTopPadding: pad.top + 10.0,
                                   onLike: (p) async {
                                     final res = await _matchingService
@@ -1032,27 +1053,6 @@ class _HomeContentState extends State<HomeContent> {
                               );
                             }
                           });
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 18),
-                    _CircleActionButton(
-                      icon: Icons.star,
-                      iconColor: Colors.blueAccent,
-                      borderColor: Colors.blueAccent,
-                      size: 54,
-                      onTap: () async {
-                        final p = _currentTopProperty;
-                        if (p != null) {
-                          final res =
-                              await _profileService.addFavoriteViaApi(p.id);
-                          if (res['success'] != true && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(res['error'] ??
-                                      'Error al agregar favorito')),
-                            );
-                          }
                         }
                       },
                     ),
@@ -2015,8 +2015,8 @@ class _HeartsBurstOverlayState extends State<_HeartsBurstOverlay>
                           shaderCallback: (Rect bounds) {
                             return LinearGradient(
                               colors: [
-                                AppTheme.secondaryColor.withValues(alpha: 0.95),
-                                AppTheme.secondaryColor.withValues(alpha: 0.7),
+                                AppTheme.primaryColor.withValues(alpha: 0.95),
+                                AppTheme.primaryColor.withValues(alpha: 0.7),
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -2126,7 +2126,7 @@ class _BigXOverlayState extends State<_BigXOverlay>
                             ],
                           ),
                           child: Icon(
-                            Icons.close,
+                            Icons.thumb_down_rounded,
                             color: Colors.redAccent,
                             size: size.width * 0.3,
                           ),

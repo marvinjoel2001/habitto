@@ -8,7 +8,7 @@ class ZoneService {
 
   Future<Map<String, dynamic>> getZonesGeoJson() async {
     try {
-      final response = await _apiService.get('/api/zones/geojson/');
+      final response = await _apiService.get('/api/map/zones/');
       return response;
     } catch (e) {
       return {

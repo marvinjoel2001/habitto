@@ -677,29 +677,12 @@ class _SearchPageState extends State<SearchPage> {
         // Lista de puntos para calcular los límites y centrar el mapa
         final List<Point> allPoints = [];
 
-        // Procesar GeoJSON para asignar colores si no tienen
+        // Procesar GeoJSON solo para calcular bounding box
         if (geoJsonData['features'] != null) {
           final List features = geoJsonData['features'];
-          final colors = [
-            '#FF5733', // Rojo anaranjado
-            '#33FF57', // Verde
-            '#3357FF', // Azul
-            '#FF33F6', // Magenta
-            '#33FFF6', // Cian
-            '#F6FF33', // Amarillo
-            '#FF8333', // Naranja
-            '#8333FF', // Violeta
-          ];
-
           for (int i = 0; i < features.length; i++) {
             final feature = features[i];
-            if (feature['properties'] == null) {
-              feature['properties'] = {};
-            }
-            // Asignar color basado en índice o ID
-            final color = colors[i % colors.length];
-            feature['properties']['fill_color'] = color;
-
+            
             // Recolectar puntos para el bounding box
             try {
               if (feature['geometry'] != null &&
@@ -736,16 +719,26 @@ class _SearchPageState extends State<SearchPage> {
         await _mapboxMap!.style
             .addSource(GeoJsonSource(id: _zoneSourceId, data: geoJsonString));
 
-        // Añadir capa de relleno (Fill Layer) - Efecto "Humito"
+        // Definición de colores basada en price_category
+        final fillColorExpression = [
+          'match',
+          ['get', 'price_category'],
+          'Barata', '#00ff00',
+          'Promedio', '#ffff00',
+          'Cara', '#ff0000',
+          '#cccccc' // Default color
+        ];
+
+        // Añadir capa de relleno (Fill Layer)
         await _mapboxMap!.style.addStyleLayer(
           jsonEncode({
             "id": _zoneFillLayerId,
             "type": "fill",
             "source": _zoneSourceId,
             "paint": {
-              "fill-color": ['get', 'fill_color'],
-              "fill-opacity": 0.45,
-              "fill-outline-color": ['get', 'fill_color']
+              "fill-color": fillColorExpression,
+              "fill-opacity": 0.5,
+              "fill-outline-color": fillColorExpression
             }
           }),
           null,
@@ -758,8 +751,8 @@ class _SearchPageState extends State<SearchPage> {
             "type": "line",
             "source": _zoneSourceId,
             "paint": {
-              "line-color": ['get', 'fill_color'],
-              "line-width": 3.0,
+              "line-color": fillColorExpression,
+              "line-width": 2.0,
               "line-opacity": 0.8
             }
           }),
