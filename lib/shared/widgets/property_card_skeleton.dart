@@ -68,6 +68,13 @@ class _PropertyCardSkeletonState extends State<PropertyCardSkeleton>
                   BorderSide(color: Colors.white, width: 2),
                 ),
                 color: Colors.black.withValues(alpha: 0.2), // Base color
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),

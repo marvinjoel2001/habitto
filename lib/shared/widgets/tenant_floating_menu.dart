@@ -8,7 +8,6 @@ class TenantFloatingMenu extends StatefulWidget {
   final VoidCallback onSwipeLeft;
   final VoidCallback onSwipeRight;
   final VoidCallback onGoBack;
-  final VoidCallback onAddFavorite;
 
   const TenantFloatingMenu({
     super.key,
@@ -17,7 +16,6 @@ class TenantFloatingMenu extends StatefulWidget {
     required this.onSwipeLeft,
     required this.onSwipeRight,
     required this.onGoBack,
-    required this.onAddFavorite,
   });
 
   @override

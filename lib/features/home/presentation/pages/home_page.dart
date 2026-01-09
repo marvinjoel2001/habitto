@@ -375,7 +375,6 @@ class _HomePageState extends State<HomePage> {
                   onSwipeLeft: _handleSwipeLeft,
                   onSwipeRight: _handleSwipeRight,
                   onGoBack: _handleGoBack,
-                  onAddFavorite: _handleAddFavorite,
                   onAiChatTap: _openAiChat,
                   onTap: (index) {
                     setState(() {
@@ -398,46 +397,6 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
-              if (_userMode == profile.UserMode.inquilino)
-                Positioned(
-                  bottom: 90 + MediaQuery.of(context).padding.bottom,
-                  right: _currentIndex == 1 ? null : 16,
-                  left: _currentIndex == 1 ? 16 : null,
-                  child: GestureDetector(
-                    onTap: () {
-                      String contextMsg = '';
-                      if (_currentIndex == 0) {
-                        contextMsg = 'El usuario está explorando propiedades.';
-                      } else if (_currentIndex == 1) {
-                        contextMsg = 'El usuario está buscando en el mapa.';
-                      } else if (_currentIndex == 2) {
-                        contextMsg =
-                            'El usuario está en su bandeja de mensajes.';
-                      } else if (_currentIndex == 3) {
-                        contextMsg = 'El usuario está viendo su perfil.';
-                      }
-                      _openAiChat(contextString: contextMsg);
-                    },
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: SvgPicture.asset(
-                        'assets/icons/ai_chat_icon.svg',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
@@ -883,7 +842,7 @@ class _HomeContentState extends State<HomeContent> {
                       final double reservedBottom = actionRowHeight +
                           extraBottomSpacing +
                           (pad.bottom > 0 ? pad.bottom : 0.0);
-                      const double topAreaHeight = 100.0;
+                      const double topAreaHeight = 20.0;
                       const double sizeReduction = 20.0;
                       final double availableHeight = sz.height -
                           topAreaHeight -
@@ -898,10 +857,10 @@ class _HomeContentState extends State<HomeContent> {
                         children: [
                           SizedBox(
                             height: cardHeight,
-                            child: const PropertyCardSkeleton(
+                            child: PropertyCardSkeleton(
                               overlayBottomSpace: -(actionRowHeight / 2),
-                              outerHorizontalPadding: 16.0,
-                              outerTopPadding: 16.0,
+                              outerHorizontalPadding: 12.0,
+                              outerTopPadding: pad.top + 10.0,
                             ),
                           ),
                         ],
@@ -968,6 +927,7 @@ class _HomeContentState extends State<HomeContent> {
                                   // Pass the outerHorizontalPadding to PropertySwipeDeck
                                   outerHorizontalPadding:
                                       12.0, // Reduced from 16.0
+                                  outerTopPadding: pad.top + 10.0,
                                   onLike: (p) async {
                                     final res = await _matchingService
                                         .likeProperty(p.id);
@@ -1264,6 +1224,7 @@ class PropertySwipeDeck extends StatefulWidget {
   final ValueChanged<HomePropertyCardData>? onReject;
   final double overlayBottomSpace;
   final double outerHorizontalPadding;
+  final double outerTopPadding;
   const PropertySwipeDeck({
     super.key,
     required this.properties,
@@ -1272,6 +1233,7 @@ class PropertySwipeDeck extends StatefulWidget {
     this.onReject,
     this.overlayBottomSpace = 0.0,
     this.outerHorizontalPadding = 16.0,
+    this.outerTopPadding = 0.0,
   });
 
   @override
@@ -1463,7 +1425,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                         dragDx: dragDx,
                         onOpenImage: (index) =>
                             _openFullScreen(property.images, index),
-                        outerTopPadding: 0.0,
+                        outerTopPadding: widget.outerTopPadding,
                         overlayBottomSpace: widget.overlayBottomSpace,
                         outerHorizontalPadding: widget.outerHorizontalPadding,
                       ),
@@ -1481,7 +1443,7 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                   dragDx: 0.0,
                   onOpenImage: (index) =>
                       _openFullScreen(property.images, index),
-                  outerTopPadding: 0.0,
+                  outerTopPadding: widget.outerTopPadding,
                   overlayBottomSpace: widget.overlayBottomSpace,
                   outerHorizontalPadding: widget.outerHorizontalPadding,
                 ),

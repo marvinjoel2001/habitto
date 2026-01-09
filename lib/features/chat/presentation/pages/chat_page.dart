@@ -51,6 +51,7 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final matchingService = MatchingService();
       final result = await matchingService.getPendingMatchRequests();
+      if (!mounted) return;
       if (result['success'] && result['data'] != null) {
         final requests = result['data'] as List<dynamic>;
         setState(() {
@@ -64,20 +65,26 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _loadUnreadNotificationsCount() async {
     final count = await _notificationService.unreadCount();
-    setState(() {
-      _unreadNotificationsCount = count;
-    });
+    if (mounted) {
+      setState(() {
+        _unreadNotificationsCount = count;
+      });
+    }
   }
 
   Future<void> _loadMessages() async {
     try {
-      setState(() {
-        _isLoading = true;
-        _error = '';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+          _error = '';
+        });
+      }
 
       // Obtener el ID del usuario actual
       final currentUserIdStr = await _tokenStorage.getCurrentUserId();
+      if (!mounted) return;
+
       final currentUserId =
           currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
 
@@ -96,6 +103,7 @@ class _ChatPageState extends State<ChatPage> {
 
       print('Loading conversations for user: $currentUserId');
       Map<String, dynamic> result = await _messageService.getConversations();
+      if (!mounted) return;
       print('Conversations service result: $result');
 
       if (result['success']) {
@@ -164,18 +172,22 @@ class _ChatPageState extends State<ChatPage> {
         }
       } else {
         // Manejar error
+        if (mounted) {
+          setState(() {
+            _error = S.of(context).errorMessage(result['error']);
+            _isLoading = false;
+            _messages = [];
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _error = S.of(context).errorMessage(result['error']);
+          _error = S.of(context).errorMessage(e.toString());
           _isLoading = false;
           _messages = [];
         });
       }
-    } catch (e) {
-      setState(() {
-        _error = S.of(context).errorMessage(e.toString());
-        _isLoading = false;
-        _messages = [];
-      });
     }
   }
 
@@ -234,6 +246,7 @@ class _ChatPageState extends State<ChatPage> {
     if (ch == null) return;
     _inboxChannel = ch;
     ch.stream.listen((raw) {
+      if (!mounted) return;
       try {
         final data = raw is String ? _tryParseJson(raw) : raw;
         if (data is Map<String, dynamic>) {
@@ -341,6 +354,7 @@ class _ChatPageState extends State<ChatPage> {
     if (ch == null) return;
     _propertyNotifChannel = ch;
     ch.stream.listen((raw) async {
+      if (!mounted) return;
       try {
         final data = raw is String ? _tryParseJson(raw) : raw;
         if (data is Map<String, dynamic>) {
@@ -928,11 +942,14 @@ class _NotificationsPageState extends State<_NotificationsPage> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = '';
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = '';
+      });
+    }
     final resp = await _notifications.list(pageSize: 50);
+    if (!mounted) return;
     if (resp['success'] == true && resp['data'] != null) {
       final results = List<Map<String, dynamic>>.from((resp['data'] as List)
           .map((e) => Map<String, dynamic>.from(e as Map)));
@@ -950,6 +967,7 @@ class _NotificationsPageState extends State<_NotificationsPage> {
 
   Future<void> _markRead(int id) async {
     final result = await _notifications.markAsRead(id);
+    if (!mounted) return;
     if (result['success'] == true) {
       setState(() {
         final idx = _items.indexWhere((n) => (n['id'] as int?) == id);
@@ -1129,11 +1147,14 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
 
   Future<void> _loadMatchRequests() async {
     try {
-      setState(() {
-        _isLoading = true;
-        _error = '';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+          _error = '';
+        });
+      }
       final result = await _matchingService.getPendingMatchRequests();
+      if (!mounted) return;
       if (result['success']) {
         final requests = (result['data'] as List<dynamic>?) ?? [];
         setState(() {
@@ -1147,10 +1168,12 @@ class _MatchRequestsPageState extends State<_MatchRequestsPage> {
         });
       }
     } catch (e) {
-      setState(() {
-        _error = S.of(context).errorMessage(e.toString());
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = S.of(context).errorMessage(e.toString());
+          _isLoading = false;
+        });
+      }
     }
   }
 

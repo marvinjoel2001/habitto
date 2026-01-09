@@ -19,7 +19,6 @@ class CustomBottomNavigation extends StatefulWidget {
   final VoidCallback onSwipeLeft;
   final VoidCallback onSwipeRight;
   final VoidCallback onGoBack;
-  final VoidCallback onAddFavorite;
   final VoidCallback? onAiChatTap;
   final String userMode; // 'inquilino' | 'propietario' | 'agente'
 
@@ -36,7 +35,6 @@ class CustomBottomNavigation extends StatefulWidget {
     required this.onSwipeLeft,
     required this.onSwipeRight,
     required this.onGoBack,
-    required this.onAddFavorite,
     this.onAiChatTap,
     required this.userMode,
   });
@@ -151,10 +149,6 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
         onGoBack: () {
           _hideTenantOverlay();
           widget.onGoBack();
-        },
-        onAddFavorite: () {
-          _hideTenantOverlay();
-          widget.onAddFavorite();
         },
       ),
     );
@@ -476,6 +470,38 @@ class _NavCurvePainter extends CustomPainter {
 
     // Draw Shape
     canvas.drawPath(path, paint);
+
+    // Draw Top Border
+    final borderPaint = Paint()
+      ..color = Colors.grey.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+
+    final borderPath = Path();
+    borderPath.moveTo(0, 0);
+
+    if (hasNotch) {
+      const double curveWidth = 55.0;
+      final double center = size.width / 2;
+      const double notchDepth = 38.0;
+
+      borderPath.lineTo(center - curveWidth * 1.6, 0);
+
+      borderPath.cubicTo(
+        center - curveWidth, 0,
+        center - curveWidth * 0.5, notchDepth,
+        center, notchDepth,
+      );
+
+      borderPath.cubicTo(
+        center + curveWidth * 0.5, notchDepth,
+        center + curveWidth, 0,
+        center + curveWidth * 1.6, 0,
+      );
+    }
+
+    borderPath.lineTo(size.width, 0);
+    canvas.drawPath(borderPath, borderPaint);
   }
 
   @override
