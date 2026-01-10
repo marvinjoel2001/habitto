@@ -713,6 +713,7 @@ class _HomeContentState extends State<HomeContent> {
         await _loadPhotosForProperty(c.id);
       }
     } else {
+      if (!mounted) return;
       setState(() {
         _error = propsRes['error'] ?? S.of(context).propertiesLoadError;
         _isLoading = false;
@@ -849,218 +850,227 @@ class _HomeContentState extends State<HomeContent> {
           //   ),
           // ),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await _loadAllProperties();
-              },
-              child: _isLoading
-                  ? Builder(builder: (ctx) {
-                      final sz = MediaQuery.of(ctx).size;
-                      final pad = MediaQuery.of(ctx).padding;
-                      // Mismos cálculos de dimensiones que en la vista normal
-                      const double actionRowHeight = 80.0;
-                      const double extraBottomSpacing = 10.0;
-                      final double reservedBottom = actionRowHeight +
-                          extraBottomSpacing +
-                          (pad.bottom > 0 ? pad.bottom : 0.0);
-                      const double topAreaHeight = 20.0;
-                      const double sizeReduction = 20.0;
-                      final double availableHeight = sz.height -
-                          topAreaHeight -
-                          reservedBottom -
-                          sizeReduction;
-                      final double cardHeight =
-                          math.max(availableHeight, 400.0);
+            child: Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: () async {
+                    await _loadAllProperties();
+                  },
+                  child: _isLoading
+                      ? Builder(builder: (ctx) {
+                          final sz = MediaQuery.of(ctx).size;
+                          final pad = MediaQuery.of(ctx).padding;
+                          const double actionRowHeight = 80.0;
+                          // Reduced extraBottomSpacing as requested
+                          const double extraBottomSpacing = 20.0;
+                          final double reservedBottom = extraBottomSpacing +
+                              (pad.bottom > 0 ? pad.bottom : 0.0);
+                          const double topAreaHeight = 20.0;
+                          const double sizeReduction = 20.0;
+                          final double availableHeight = sz.height -
+                              topAreaHeight -
+                              reservedBottom -
+                              sizeReduction;
+                          final double cardHeight =
+                              math.max(availableHeight, 400.0);
 
-                      return ListView(
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.zero,
-                        children: [
-                          SizedBox(
-                            height: cardHeight,
-                            child: PropertyCardSkeleton(
-                              overlayBottomSpace: -(actionRowHeight / 2),
-                              outerHorizontalPadding: 4.0,
-                              outerTopPadding: pad.top + 10.0,
-                            ),
-                          ),
-                        ],
-                      );
-                    })
-                  : (_cards.isEmpty
-                      ? LayoutBuilder(
-                          builder: (context, constraints) {
-                            return SingleChildScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minHeight: constraints.maxHeight,
-                                ),
-                                child: Center(
-                                  child: _EmptyMatches(),
+                          return ListView(
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.zero,
+                            children: [
+                              SizedBox(
+                                height: cardHeight,
+                                child: PropertyCardSkeleton(
+                                  overlayBottomSpace: 180.0,
+                                  outerHorizontalPadding: 4.0,
+                                  outerTopPadding: pad.top + 10.0,
                                 ),
                               ),
-                            );
-                          },
-                        )
-                      : ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: EdgeInsets.zero,
-                          children: [
-                            Builder(builder: (ctx) {
-                              final sz = MediaQuery.of(ctx).size;
-                              final pad = MediaQuery.of(ctx).padding;
+                            ],
+                          );
+                        })
+                      : (_cards.isEmpty
+                          ? LayoutBuilder(
+                              builder: (context, constraints) {
+                                return SingleChildScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minHeight: constraints.maxHeight,
+                                    ),
+                                    child: Center(
+                                      child: _EmptyMatches(),
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: EdgeInsets.zero,
+                              children: [
+                                Builder(builder: (ctx) {
+                                  final sz = MediaQuery.of(ctx).size;
+                                  final pad = MediaQuery.of(ctx).padding;
 
-                              // Altura de la fila de botones de acción
-                              const double actionRowHeight = 80.0;
-                              // Espacio para el bottom spacing que hemos aumentado (para levantar botones)
-                              const double extraBottomSpacing = 10.0;
+                                  const double actionRowHeight = 80.0;
+                                  // We want the card to end at the middle of the buttons.
+                                  // Buttons are at `extraBottomSpacing` (80.0) from bottom + padding.
+                                  // Button height is ~80. Middle is ~40.
+                                  // So reservedBottom should be around 80 + 40 = 120.0
+                                  const double extraBottomSpacingForButtons = 80.0;
+                                  final double buttonsBottomPos = extraBottomSpacingForButtons + (pad.bottom > 0 ? pad.bottom : 0.0);
+                                  // Middle of buttons (approx height 80)
+                                  final double reservedBottom = buttonsBottomPos + (actionRowHeight / 2);
 
-                              // Ajustamos reservedBottom considerando el nuevo espaciado inferior
-                              // para que la card se reduzca y no haya overflow.
-                              final double reservedBottom = actionRowHeight +
-                                  extraBottomSpacing +
-                                  (pad.bottom > 0 ? pad.bottom : 0.0);
+                                  const double topAreaHeight = 20.0;
+                                  const double sizeReduction = 20.0;
 
-                              // Altura disponible para el área principal
-                              // Reducimos topAreaHeight ya que quitamos el filtro
-                              const double topAreaHeight = 20.0;
+                                  final double availableHeight = sz.height -
+                                      topAreaHeight -
+                                      reservedBottom -
+                                      sizeReduction;
 
-                              // Reducimos un poco más para asegurar que los botones no tapen información vital
-                              const double sizeReduction = 20.0;
+                                  final double cardHeight =
+                                      math.max(availableHeight, 400.0);
 
-                              final double availableHeight = sz.height -
-                                  topAreaHeight -
-                                  reservedBottom -
-                                  sizeReduction;
-
-                              // Altura dinámica de la card
-                              final double cardHeight =
-                                  math.max(availableHeight, 400.0);
-
-                              return SizedBox(
-                                height: cardHeight,
-                                child: PropertySwipeDeck(
-                                  key: widget.deckKey,
-                                  properties: _cards,
-                                  // Pasar el padding inferior negativo para que la card se solape con los botones
-                                  overlayBottomSpace: -(actionRowHeight / 2),
-                                  // Pass the outerHorizontalPadding to PropertySwipeDeck
-                                  outerHorizontalPadding:
-                                      4.0, // Reduced from 6.0
-                                  outerTopPadding: pad.top + 10.0,
-                                  onLike: (p) async {
-                                    final res = await _matchingService
-                                        .likeProperty(p.id);
-                                    if (res['success'] != true) {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(res['error'] ??
-                                                  S.of(context).likeError)),
+                                  return SizedBox(
+                                    height: cardHeight,
+                                    child: PropertySwipeDeck(
+                                      key: widget.deckKey,
+                                      properties: _cards,
+                                      // Reduce overlay space to be compact, just enough for amenities.
+                                      // Since card ends at middle of buttons, we need enough padding
+                                      // so text doesn't overlap with the top half of buttons (approx 40px).
+                                      // 60.0 gives 40px clearance + 20px padding.
+                                      overlayBottomSpace: 60.0,
+                                      outerHorizontalPadding: 4.0,
+                                      outerTopPadding: pad.top + 10.0,
+                                      onLike: (p) async {
+                                        final res = await _matchingService
+                                            .likeProperty(p.id);
+                                        if (res['success'] != true) {
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(res['error'] ??
+                                                      S.of(context).likeError)),
+                                            );
+                                          }
+                                          return;
+                                        }
+                                        _spawnHeartsBurst();
+                                        final userImage = _currentUserImageUrl;
+                                        final propertyImage =
+                                            (p.images.isNotEmpty)
+                                                ? p.images[0]
+                                                : 'assets/images/empty.jpg';
+                                        MatchModal.show(
+                                          context,
+                                          userImageUrl: userImage,
+                                          propertyImageUrl: propertyImage,
+                                          propertyTitle: p.title,
                                         );
-                                      }
-                                      return;
-                                    }
-                                    _spawnHeartsBurst();
-                                    final userImage = _currentUserImageUrl;
-                                    final propertyImage = (p.images.isNotEmpty)
-                                        ? p.images[0]
-                                        : 'assets/images/empty.jpg';
-                                    MatchModal.show(
-                                      context,
-                                      userImageUrl: userImage,
-                                      propertyImageUrl: propertyImage,
-                                      propertyTitle: p.title,
-                                    );
-                                  },
-                                  onReject: (p) async {
-                                    final res = await _matchingService
-                                        .rejectProperty(p.id);
+                                      },
+                                      onReject: (p) async {
+                                        final res = await _matchingService
+                                            .rejectProperty(p.id);
+                                        if (res['success'] != true &&
+                                            mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(res['error'] ??
+                                                    S.of(context).rejectError)),
+                                          );
+                                        }
+                                      },
+                                      onTopChange: (p) => setState(
+                                          () => _currentTopProperty = p),
+                                    ),
+                                  );
+                                }),
+                                const SizedBox(height: 100),
+                              ],
+                            )),
+                ),
+                if (!_isLoading &&
+                    _currentTopProperty != null &&
+                    _cards.isNotEmpty)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Builder(builder: (context) {
+                      final pad = MediaQuery.of(context).padding;
+                      // Lift buttons above CustomBottomNavigation (height ~70 + padding)
+                      const double extraBottomSpacing = 80.0;
+                      return Container(
+                        color: Colors.transparent,
+                        margin: EdgeInsets.zero,
+                        padding: EdgeInsets.only(
+                            bottom: extraBottomSpacing +
+                                (pad.bottom > 0 ? pad.bottom : 0.0)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _CircleActionButton(
+                              icon: Icons.replay,
+                              iconColor: Colors.amber,
+                              borderColor: Colors.amber,
+                              size: 54,
+                              onTap: () =>
+                                  widget.deckKey.currentState?.goBack(),
+                            ),
+                            const SizedBox(width: 18),
+                            _CircleActionButton(
+                              icon: Icons.thumb_down_rounded,
+                              iconColor: Colors.redAccent,
+                              borderColor: Colors.redAccent,
+                              size: 54,
+                              onTap: () async {
+                                final p = _currentTopProperty;
+                                if (p != null) {
+                                  await _matchingService.rejectProperty(p.id);
+                                }
+                                _spawnBigXAndSwipeLeft();
+                              },
+                            ),
+                            const SizedBox(width: 18),
+                            _CircleActionButton(
+                              icon: Icons.favorite,
+                              iconColor: Colors.white,
+                              borderColor: AppTheme.primaryColor,
+                              size: 78,
+                              onTap: () {
+                                final p = _currentTopProperty;
+                                if (p != null) {
+                                  _spawnHeartsBurst();
+                                  widget.deckKey.currentState?.swipeRight();
+                                  _matchingService
+                                      .likeProperty(p.id)
+                                      .then((res) {
                                     if (res['success'] != true && mounted) {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         SnackBar(
                                             content: Text(res['error'] ??
-                                                S.of(context).rejectError)),
+                                                S.of(context).likeError)),
                                       );
                                     }
-                                  },
-                                  onTopChange: (p) =>
-                                      setState(() => _currentTopProperty = p),
-                                ),
-                              );
-                            }),
+                                  });
+                                }
+                              },
+                            ),
                           ],
-                        )),
+                        ),
+                      );
+                    }),
+                  ),
+              ],
             ),
           ),
-          if (!_isLoading && _currentTopProperty != null && _cards.isNotEmpty)
-            Transform.translate(
-              offset: const Offset(0, -40.0),
-              child: Container(
-                color: Colors.transparent,
-                margin: EdgeInsets.zero,
-                padding: EdgeInsets.zero,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _CircleActionButton(
-                      icon: Icons.replay,
-                      iconColor: Colors.amber,
-                      borderColor: Colors.amber,
-                      size: 54,
-                      onTap: () => widget.deckKey.currentState?.goBack(),
-                    ),
-                    const SizedBox(width: 18),
-                    _CircleActionButton(
-                      icon: Icons.thumb_down_rounded,
-                      iconColor: Colors.redAccent,
-                      borderColor: Colors.redAccent,
-                      size: 54,
-                      onTap: () async {
-                        final p = _currentTopProperty;
-                        if (p != null) {
-                          await _matchingService.rejectProperty(p.id);
-                        }
-                        _spawnBigXAndSwipeLeft();
-                      },
-                    ),
-                    const SizedBox(width: 18),
-                    _CircleActionButton(
-                      icon: Icons.favorite,
-                      iconColor: Colors
-                          .white, // Not used anymore as per new implementation
-                      borderColor:
-                          AppTheme.primaryColor, // Changed to primary pink
-                      size: 78,
-                      onTap: () {
-                        final p = _currentTopProperty;
-                        if (p != null) {
-                          // Acción inmediata para fluidez
-                          _spawnHeartsBurst();
-                          widget.deckKey.currentState?.swipeRight();
-
-                          // Solicitud en background sin bloquear UI
-                          _matchingService.likeProperty(p.id).then((res) {
-                            if (res['success'] != true && mounted) {
-                              // Solo mostrar error si falla
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(res['error'] ??
-                                        S.of(context).likeError)),
-                              );
-                            }
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          const SizedBox(height: 85),
         ],
       ),
     );

@@ -32,7 +32,7 @@ class AppConfig {
   // Google Web Client ID (Requerido para obtener id_token válido para el backend)
   // DEBE coincidir con el Client ID de tipo "Web Application" en Google Cloud Console
   // y con el usado en el backend (settings.py).
-  static const String? googleWebClientId = null; // TODO: Reemplazar con el ID real si no se usa google-services.json actualizado
+  static const String? googleWebClientId = '608765066646-i4bvpr3capmr9ioujludr8ohc3s96mp5.apps.googleusercontent.com';
 
   // Endpoints alternativos (compatibilidad                               con documentación nueva)
   // Algunos despliegues usan SimpleJWT por defecto:
