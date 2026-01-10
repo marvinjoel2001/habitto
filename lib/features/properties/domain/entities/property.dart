@@ -1,4 +1,5 @@
 import '../../../../core/models/base_model.dart';
+import '../../../profile/domain/entities/profile.dart';
 
 class Property extends BaseModel {
   final int id;
@@ -22,6 +23,7 @@ class Property extends BaseModel {
   final DateTime? availabilityDate;
   // URL de la primera foto asociada, provista por el backend en listados
   final String? mainPhoto;
+  final Profile? tenant;
 
   Property({
     required this.id,
@@ -44,6 +46,7 @@ class Property extends BaseModel {
     required this.acceptedPaymentMethods,
     this.availabilityDate,
     this.mainPhoto,
+    this.tenant,
   });
 
   factory Property.fromJson(Map<String, dynamic> json) {
@@ -89,7 +92,8 @@ class Property extends BaseModel {
       type: json['type']?.toString() ?? '',
       address: json['address']?.toString() ?? '',
       latitude: json['latitude'] != null ? parseDouble(json['latitude']) : null,
-      longitude: json['longitude'] != null ? parseDouble(json['longitude']) : null,
+      longitude:
+          json['longitude'] != null ? parseDouble(json['longitude']) : null,
       price: parseDouble(json['price']),
       guarantee: parseDouble(json['guarantee']),
       description: json['description']?.toString() ?? '',
@@ -97,20 +101,27 @@ class Property extends BaseModel {
       bedrooms: parseInt(json['bedrooms']),
       bathrooms: parseInt(json['bathrooms']),
       isActive: parseBool(json['is_active'], defaultValue: true),
-      createdAt: json['created_at'] != null ? parseDate(json['created_at']) : DateTime.now(),
-      updatedAt: json['updated_at'] != null ? parseDate(json['updated_at']) : DateTime.now(),
+      createdAt: json['created_at'] != null
+          ? parseDate(json['created_at'])
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? parseDate(json['updated_at'])
+          : DateTime.now(),
       owner: parseInt(json['owner']),
       agent: json['agent'] != null ? parseInt(json['agent']) : null,
-      amenities: List<int>.from((json['amenities'] ?? []).map((e) => parseInt(e))),
-      acceptedPaymentMethods: List<int>.from((json['accepted_payment_methods'] ?? []).map((e) => parseInt(e))),
+      amenities:
+          List<int>.from((json['amenities'] ?? []).map((e) => parseInt(e))),
+      acceptedPaymentMethods: List<int>.from(
+          (json['accepted_payment_methods'] ?? []).map((e) => parseInt(e))),
       availabilityDate: json['availability_date'] != null
           ? parseDate(json['availability_date'])
           : null,
-      mainPhoto: (clean(json['main_photo_url']).isNotEmpty) 
-          ? clean(json['main_photo_url']) 
+      mainPhoto: (clean(json['main_photo_url']).isNotEmpty)
+          ? clean(json['main_photo_url'])
           : ((clean(json['main_photo']).isNotEmpty)
               ? clean(json['main_photo'])
               : null),
+      tenant: json['tenant'] != null ? Profile.fromJson(json['tenant']) : null,
     );
   }
 

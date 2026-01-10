@@ -262,25 +262,33 @@ class _PropertiesListPageState extends State<PropertiesListPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: property.isActive
-                              ? const Color(0xFFE8F5E9)
-                              : const Color(0xFFFFEBEE),
+                          color: property.tenant != null
+                              ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                              : (property.isActive
+                                  ? const Color(0xFFE8F5E9)
+                                  : const Color(0xFFFFEBEE)),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: property.isActive
-                                ? Colors.green.withValues(alpha: 0.5)
-                                : Colors.red.withValues(alpha: 0.5),
+                            color: property.tenant != null
+                                ? AppTheme.primaryColor.withValues(alpha: 0.5)
+                                : (property.isActive
+                                    ? Colors.green.withValues(alpha: 0.5)
+                                    : Colors.red.withValues(alpha: 0.5)),
                             width: 1,
                           ),
                         ),
                         child: Text(
-                          property.isActive
-                              ? S.of(context).activeStatus
-                              : S.of(context).inactiveStatus,
+                          property.tenant != null
+                              ? "Ocupada"
+                              : (property.isActive
+                                  ? S.of(context).activeStatus
+                                  : S.of(context).inactiveStatus),
                           style: TextStyle(
-                            color: property.isActive
-                                ? Colors.green[700]
-                                : Colors.red[700],
+                            color: property.tenant != null
+                                ? AppTheme.primaryColor
+                                : (property.isActive
+                                    ? Colors.green[700]
+                                    : Colors.red[700]),
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
