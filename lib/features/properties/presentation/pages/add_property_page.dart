@@ -122,6 +122,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         },
       ];
 
+  // Scroll controller to detect scroll position for transparency
+  final ScrollController _scrollController = ScrollController();
+  bool _isScrolled = false;
+
   @override
   void initState() {
     super.initState();
@@ -133,6 +137,19 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     _loadMarkerImage();
     _priceController.text = '0';
     _guaranteeController.text = '0';
+
+    // Listener para el scroll
+    _scrollController.addListener(() {
+      if (_scrollController.offset > 10 && !_isScrolled) {
+        setState(() {
+          _isScrolled = true;
+        });
+      } else if (_scrollController.offset <= 10 && _isScrolled) {
+        setState(() {
+          _isScrolled = false;
+        });
+      }
+    });
   }
 
   @override
@@ -150,6 +167,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     _longitudeController.dispose();
     _availabilityDateController.dispose();
     _pageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -286,6 +304,12 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   }
 
   void _nextStep() {
+    if (_currentStep == 0) {
+      if (!_validateStep1()) return;
+    } else if (_currentStep == 1) {
+      if (!_validateStep2()) return;
+    }
+
     if (_currentStep < 2) {
       setState(() {
         _currentStep++;
@@ -294,6 +318,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
+      // Reset scroll for next step
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
     } else {
       _saveProperty();
     }
@@ -308,7 +336,39 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
+      // Reset scroll for previous step
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
     }
+  }
+
+  // Validación suave con foco para Paso 1
+  bool _validateStep1() {
+    // Área es importante pero técnicamente opcional en la API (aunque aquí se valida)
+    // Si está vacío, hacemos foco y mostramos snackbar
+    if (_areaController.text.isEmpty && _sizeController.text.isEmpty) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.of(context).enterAreaError)),
+      );
+      // No hay un FocusNode explícito en _buildProfileStyledField, pero podríamos
+      // implementarlo si fuera crítico. Por ahora, el mensaje es suficiente
+      // o podríamos permitir avanzar si el usuario insiste (segundo clic)
+      // Para este requerimiento, bloquearemos si falta algo "esencial"
+      return false; 
+    }
+    return true;
+  }
+
+  // Validación suave con foco para Paso 2
+  bool _validateStep2() {
+    if (_priceController.text.isEmpty || _priceController.text == '0') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.of(context).enterPriceError)),
+      );
+      return false;
+    }
+    return true;
   }
 
   Future<void> _saveProperty() async {
@@ -483,22 +543,33 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                       AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                 ),
               )
-            : Column(
+            : Stack(
                 children: [
-                  _buildHeader(),
-                  _buildStepIndicator(),
-                  Expanded(
-                    child: PageView(
-                      controller: _pageController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        _buildStep1(),
-                        _buildStep2(),
-                        _buildStep3(),
-                      ],
-                    ),
+                  Column(
+                    children: [
+                      _buildHeader(),
+                      // Eliminamos el SizedBox fijo y usamos padding en el contenido
+                      // para que el scroll fluya detrás del indicador
+                      Expanded(
+                        child: PageView(
+                          controller: _pageController,
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: [
+                            _buildStep1(),
+                            _buildStep2(),
+                            _buildStep3(),
+                          ],
+                        ),
+                      ),
+                      _buildBottomButtons(),
+                    ],
                   ),
-                  _buildBottomButtons(),
+                  Positioned(
+                    top: 80 + MediaQuery.of(context).padding.top,
+                    left: 0,
+                    right: 0,
+                    child: _buildStepIndicator(),
+                  ),
                 ],
               ),
       ),
@@ -538,15 +609,85 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   }
 
   Widget _buildStepIndicator() {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.all(16),
-      child: StepProgressIndicator(
-        currentStep: _currentStep,
-        totalSteps: 3,
-        stepTitles: [
-          S.of(context).stepBasic,
-          S.of(context).stepDetails,
-          S.of(context).stepLocation
+      color: _isScrolled
+          ? Colors.white.withOpacity(0.6) // Fondo semitransparente
+          : Colors.white, // Fondo sólido
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: _isScrolled ? 0.6 : 1.0, // Opacidad también al contenido
+        child: StepProgressIndicator(
+          currentStep: _currentStep,
+          totalSteps: 3,
+          stepTitles: [
+            S.of(context).stepBasic,
+            S.of(context).stepDetails,
+            S.of(context).stepLocation
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Funciones auxiliares para sliders no lineales
+  // Convierte valor real (precio) a posición del slider (0.0 - 1.0)
+  double _priceToSliderValue(double price) {
+    if (price <= 10000) {
+      // De 0 a 10,000 mapea a 0.0 - 0.5 del slider
+      return (price / 10000) * 0.5;
+    } else {
+      // De 10,000 a 100,000 mapea a 0.5 - 1.0 del slider
+      // Normalizamos el rango restante (90,000) al 0.5 restante del slider
+      return 0.5 + ((price - 10000) / 90000) * 0.5;
+    }
+  }
+
+  // Convierte posición del slider (0.0 - 1.0) a valor real (precio)
+  double _sliderValueToPrice(double value) {
+    if (value <= 0.5) {
+      // Mapear 0.0 - 0.5 a 0 - 10,000 (pasos de 50)
+      double rawPrice = (value / 0.5) * 10000;
+      return (rawPrice / 50).round() * 50.0;
+    } else {
+      // Mapear 0.5 - 1.0 a 10,000 - 100,000 (pasos de 1,000)
+      double normalizedValue = (value - 0.5) / 0.5;
+      double rawPrice = 10000 + (normalizedValue * 90000);
+      return (rawPrice / 1000).round() * 1000.0;
+    }
+  }
+
+  void _showEditPriceDialog(
+      String title, TextEditingController controller, Function(double) onSave) {
+    final tempController = TextEditingController(text: controller.text);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: tempController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            prefixText: 'Bs ',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(S.of(context).cancelButton),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final val = double.tryParse(tempController.text);
+              if (val != null) {
+                onSave(val);
+                Navigator.pop(context);
+              }
+            },
+            child: Text(S.of(context).saveChangesButton),
+          ),
         ],
       ),
     );
@@ -554,7 +695,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
   Widget _buildStep1() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      controller: _scrollController,
+      // Padding superior ajustado para dejar espacio al indicador flotante
+      padding: const EdgeInsets.only(top: 100, left: 24, right: 24, bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -726,7 +869,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
   Widget _buildStep2() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      controller: _scrollController,
+      // Padding superior ajustado para dejar espacio al indicador flotante
+      padding: const EdgeInsets.only(top: 100, left: 24, right: 24, bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -760,22 +905,41 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                             style: const TextStyle(color: Colors.black87)),
                       ],
                     ),
-                    Text('BS ${_priceValue.round()}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, color: Colors.black)),
+                    Row(
+                      children: [
+                        Text('BS ${_priceValue.round()}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, color: Colors.black)),
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 18, color: AppTheme.primaryColor),
+                          onPressed: () {
+                            _showEditPriceDialog(
+                              S.of(context).rentPriceLabel,
+                              _priceController,
+                              (val) {
+                                setState(() {
+                                  _priceValue = val;
+                                  _priceController.text = val.round().toString();
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Slider(
-                  value: _priceValue,
-                  min: 0,
-                  max: 100000,
-                  divisions: 2000,
+                  value: _priceToSliderValue(_priceValue),
+                  min: 0.0,
+                  max: 1.0,
+                  divisions: 100, // divisiones aproximadas
                   label: _priceValue.round().toString(),
                   activeColor: AppTheme.primaryColor,
                   onChanged: (v) {
                     setState(() {
-                      _priceValue = v;
+                      _priceValue = _sliderValueToPrice(v);
                       _priceController.text = _priceValue.round().toString();
                     });
                   },
@@ -808,22 +972,41 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                             style: const TextStyle(color: Colors.black87)),
                       ],
                     ),
-                    Text('BS ${_guaranteeValue.round()}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, color: Colors.black)),
+                    Row(
+                      children: [
+                        Text('BS ${_guaranteeValue.round()}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, color: Colors.black)),
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 18, color: AppTheme.primaryColor),
+                          onPressed: () {
+                            _showEditPriceDialog(
+                              S.of(context).guaranteeLabel,
+                              _guaranteeController,
+                              (val) {
+                                setState(() {
+                                  _guaranteeValue = val;
+                                  _guaranteeController.text = val.round().toString();
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Slider(
-                  value: _guaranteeValue,
-                  min: 0,
-                  max: 100000,
-                  divisions: 2000,
+                  value: _priceToSliderValue(_guaranteeValue),
+                  min: 0.0,
+                  max: 1.0,
+                  divisions: 100,
                   label: _guaranteeValue.round().toString(),
                   activeColor: AppTheme.secondaryColor,
                   onChanged: (v) {
                     setState(() {
-                      _guaranteeValue = v;
+                      _guaranteeValue = _sliderValueToPrice(v);
                       _guaranteeController.text =
                           _guaranteeValue.round().toString();
                     });
@@ -1232,7 +1415,9 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
   Widget _buildStep3() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      controller: _scrollController,
+      // Padding superior ajustado para dejar espacio al indicador flotante
+      padding: const EdgeInsets.only(top: 100, left: 24, right: 24, bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
