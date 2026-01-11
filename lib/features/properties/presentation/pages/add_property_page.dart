@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart' as geo;
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../domain/entities/amenity.dart';
 import '../../domain/entities/payment_method.dart';
@@ -968,25 +969,97 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     await _pointAnnotationManager!.createMulti(options);
   }
 
+  // Actualizar dirección basada en coordenadas (Reverse Geocoding)
+  Future<void> _updateAddressFromCoordinates(double lat, double lng) async {
+    try {
+      List<geocoding.Placemark> placemarks =
+          await geocoding.placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        geocoding.Placemark place = placemarks[0];
+        // Construir dirección: Calle + Número (o Calle sola)
+        String street = place.thoroughfare ?? '';
+        String number = place.subThoroughfare ?? '';
+        String locality = place.locality ?? '';
+        
+        String fullAddress = street;
+        if (number.isNotEmpty) fullAddress += ' $number';
+        if (locality.isNotEmpty) fullAddress += ', $locality';
+        
+        if (fullAddress.trim().isEmpty) {
+           fullAddress = place.street ?? '';
+        }
+
+        setState(() {
+          _addressController.text = fullAddress;
+        });
+      }
+    } catch (e) {
+      print('Error en reverse geocoding: $e');
+    }
+  }
+
+  // Actualizar coordenadas basadas en dirección (Forward Geocoding)
+  Future<void> _updateCoordinatesFromAddress(String address) async {
+    if (address.trim().isEmpty) return;
+    
+    try {
+      List<geocoding.Location> locations =
+          await geocoding.locationFromAddress(address);
+      
+      if (locations.isNotEmpty) {
+        geocoding.Location loc = locations[0];
+        setState(() {
+          _latitudeController.text = loc.latitude.toStringAsFixed(6);
+          _longitudeController.text = loc.longitude.toStringAsFixed(6);
+        });
+        
+        _updatePropertyMarker();
+        
+        // Mover la cámara del mapa inline si está listo
+        if (_mapboxMap != null) {
+          _mapboxMap!.flyTo(
+            CameraOptions(
+              center: Point(coordinates: Position(loc.longitude, loc.latitude)),
+              zoom: 15,
+            ),
+            MapAnimationOptions(duration: 800),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se encontró la dirección')),
+      );
+    }
+  }
+
   void _openFullScreenMap() {
+    // Usar valores iniciales de los controladores, o la ubicación actual si están vacíos
+    double initialLat;
+    double initialLng;
+    try {
+      initialLat = double.parse(_latitudeController.text);
+      initialLng = double.parse(_longitudeController.text);
+    } catch (_) {
+      initialLat = _currentPosition?.latitude ?? -16.5000;
+      initialLng = _currentPosition?.longitude ?? -68.1500;
+    }
+
+    // Variables de estado local para el modal
+    // Se inicializan fuera del builder para mantener el estado
+    double tempLat = initialLat;
+    double tempLng = initialLng;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: false,
       backgroundColor: Colors.black,
       builder: (ctx) {
-        double tempLat;
-        double tempLng;
-        try {
-          tempLat = double.parse(_latitudeController.text);
-          tempLng = double.parse(_longitudeController.text);
-        } catch (_) {
-          tempLat = _currentPosition?.latitude ?? -16.5000;
-          tempLng = _currentPosition?.longitude ?? -68.1500;
-        }
-
         PointAnnotationManager? sheetAnnotationManager;
         MapboxMap? sheetMap;
 
+        // Función auxiliar para dibujar marcador en el mapa del modal
         Future<void> drawMarker(double lat, double lng) async {
           if (sheetAnnotationManager == null || _markerImage == null) return;
           await sheetAnnotationManager!.deleteAll();
@@ -1011,10 +1084,11 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                             LocationComponentSettings(enabled: true));
                         sheetAnnotationManager =
                             await m.annotations.createPointAnnotationManager();
+                        
+                        // Mover cámara a la ubicación inicial
                         await m.flyTo(
                           CameraOptions(
-                            center:
-                                Point(coordinates: Position(tempLng, tempLat)),
+                            center: Point(coordinates: Position(tempLng, tempLat)),
                             zoom: 15,
                           ),
                           MapAnimationOptions(duration: 800),
@@ -1032,12 +1106,47 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                         zoom: 15,
                       ),
                       onTapListener: (gestureContext) async {
+                        // IMPORTANTE: Usar las coordenadas del punto tocado en el mapa
                         final c = gestureContext.point.coordinates;
+                        
+                        print("Map tapped at: ${c.lat}, ${c.lng}");
+                        
+                        // Actualizar variables temporales
                         tempLat = c.lat.toDouble();
                         tempLng = c.lng.toDouble();
+                        
+                        // Redibujar marcador en la nueva posición
                         await drawMarker(tempLat, tempLng);
+                        
+                        // Reconstruir UI del modal para mostrar nuevas coordenadas
                         setSheetState(() {});
                       },
+                    ),
+                    // Capa transparente para gestos que permite scroll vertical en los bordes
+                    // pero prioriza el mapa en el centro
+                    Positioned(
+                      top: 0,
+                      bottom: 0,
+                      left: 0,
+                      width: 20, // Zona segura izquierda para arrastrar modal
+                      child: Container(color: Colors.transparent),
+                    ),
+                    Positioned(
+                      top: 0,
+                      bottom: 0,
+                      right: 0,
+                      width: 20, // Zona segura derecha para arrastrar modal
+                      child: Container(color: Colors.transparent),
+                    ),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 60, // Zona segura superior para arrastrar modal
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        child: Container(color: Colors.transparent),
+                      ),
                     ),
                     Positioned(
                       top: 16,
@@ -1075,11 +1184,19 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                                 backgroundColor: Colors.transparent,
                                 textColor: Colors.white,
                                 onPressed: () {
-                                  _latitudeController.text =
-                                      tempLat.toStringAsFixed(6);
-                                  _longitudeController.text =
-                                      tempLng.toStringAsFixed(6);
+                                  setState(() {
+                                    _latitudeController.text =
+                                        tempLat.toStringAsFixed(6);
+                                    _longitudeController.text =
+                                        tempLng.toStringAsFixed(6);
+                                  });
+                                  
+                                  // Actualizar marcador en el mapa pequeño
                                   _updatePropertyMarker();
+                                  
+                                  // Actualizar dirección
+                                  _updateAddressFromCoordinates(tempLat, tempLng);
+                                  
                                   Navigator.pop(ctx);
                                 },
                               ),
@@ -1125,20 +1242,8 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 fontSize: 16, color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 32),
-          Text(
-            S.of(context).addressLabel,
-            style: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
-          ),
-          const SizedBox(height: 12),
-          _buildProfileStyledField(
-            controller: _addressController,
-            hintText: S.of(context).addressHint,
-            icon: Icons.location_on,
-          ),
-          const SizedBox(height: 24),
-
-          // Mapa para seleccionar ubicación
+          
+          // Mapa para seleccionar ubicación (PRIMERO)
           Text(
             S.of(context).mapLocationLabel,
             style: const TextStyle(
@@ -1205,10 +1310,62 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
               ),
             ),
           ),
+          
           const SizedBox(height: 24),
 
-          // Las coordenadas se manejan internamente; no se muestran los campos de lat/long
-
+          // Campo de dirección (DEBAJO DEL MAPA)
+          Text(
+            S.of(context).addressLabel,
+            style: const TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          // Custom field with suffix icon
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: TextFormField(
+              controller: _addressController,
+              onEditingComplete: () {
+                _updateCoordinatesFromAddress(_addressController.text);
+                FocusScope.of(context).unfocus();
+              },
+              style: const TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                hintText: S.of(context).addressHint,
+                floatingLabelBehavior: FloatingLabelBehavior.never,
+                labelStyle: const TextStyle(color: Colors.black54),
+                prefixIcon: const Icon(Icons.location_on, color: AppTheme.primaryColor),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.search, color: AppTheme.primaryColor),
+                  onPressed: () {
+                    _updateCoordinatesFromAddress(_addressController.text);
+                    FocusScope.of(context).unfocus();
+                  },
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                isDense: true,
+                hintStyle: TextStyle(color: Colors.black.withValues(alpha: 0.5)),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+            ),
+          ),
+          
           const SizedBox(height: 24),
           Text(
             S.of(context).availabilityDateLabel,
