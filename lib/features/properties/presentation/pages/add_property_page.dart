@@ -14,6 +14,7 @@ import '../../../../shared/widgets/custom_choice_chip.dart';
 import '../../../../shared/widgets/step_progress_indicator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import 'edit_property_page.dart';
+import 'payment_methods_page.dart';
 import '../../../../../generated/l10n.dart';
 
 class AddPropertyPage extends StatefulWidget {
@@ -42,6 +43,10 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
   final _availabilityDateController = TextEditingController();
+
+  final FocusNode _descriptionFocusNode = FocusNode();
+  bool _hasWarnedDescription = false;
+  bool _hasWarnedAmenities = false;
 
   // Variables para el mapa
   MapboxMap? _mapboxMap;
@@ -166,6 +171,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     _latitudeController.dispose();
     _longitudeController.dispose();
     _availabilityDateController.dispose();
+    _descriptionFocusNode.dispose();
     _pageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -362,13 +368,69 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
 
   // Validación suave con foco para Paso 2
   bool _validateStep2() {
+    // 1. Validar precio (bloqueante)
     if (_priceController.text.isEmpty || _priceController.text == '0') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(S.of(context).enterPriceError)),
       );
       return false;
     }
+
+    // 2. Validar Descripción (Suave - Una vez)
+    if (_descriptionController.text.trim().isEmpty) {
+      if (!_hasWarnedDescription) {
+        _descriptionFocusNode.requestFocus();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Te recomendamos poner una descripción para una mejor notoriedad de la propiedad'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+        setState(() {
+          _hasWarnedDescription = true;
+        });
+        return false; // Detener para que el usuario llene o decida continuar
+      }
+      // Si ya se advirtió, dejamos pasar
+    }
+
+    // 3. Validar Comodidades (Suave - Una vez)
+    if (_selectedAmenityNames.isEmpty) {
+      if (!_hasWarnedAmenities) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Te recomendamos seleccionar algunas comodidades'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+        setState(() {
+          _hasWarnedAmenities = true;
+        });
+        // Intentar scroll hacia comodidades podría ser complejo sin un key específico,
+        // pero el mensaje ya alerta.
+        return false; // Detener para que el usuario seleccione o decida continuar
+      }
+      // Si ya se advirtió, dejamos pasar
+    }
+
     return true;
+  }
+
+  Future<void> _reloadPaymentMethods() async {
+    try {
+      final paymentMethodsResponse = await _propertyService.getPaymentMethods();
+      if (paymentMethodsResponse['success']) {
+        setState(() {
+          _availablePaymentMethods =
+              (paymentMethodsResponse['payment_methods'] as List)
+                  .map<PaymentMethod>((pm) => PaymentMethod.fromJson(pm))
+                  .toList();
+        });
+      }
+    } catch (e) {
+      print('Error recargando métodos de pago: $e');
+    }
   }
 
   Future<void> _saveProperty() async {
@@ -1027,6 +1089,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
             hintText: S.of(context).propertyDescriptionHint,
             icon: Icons.description,
             maxLines: 3,
+            focusNode: _descriptionFocusNode, // Asignar FocusNode
           ),
           const SizedBox(height: 24),
           Text(
@@ -1064,26 +1127,82 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
                 fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _availablePaymentMethods.map((method) {
-              final isSelected = _selectedPaymentMethodIds.contains(method.id);
-              return CustomChoiceChip(
-                label: method.name,
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedPaymentMethodIds.add(method.id);
-                    } else {
-                      _selectedPaymentMethodIds.remove(method.id);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
+          if (_availablePaymentMethods.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(24),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.credit_card_off,
+                      size: 48, color: Colors.grey.shade400),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No tienes métodos de pago configurados o creados',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PaymentMethodsPage(),
+                        ),
+                      ).then((_) => _reloadPaymentMethods());
+                    },
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: const Text('Crear un método de pago'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _availablePaymentMethods.map((method) {
+                final isSelected =
+                    _selectedPaymentMethodIds.contains(method.id);
+                return CustomChoiceChip(
+                  label: method.name,
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedPaymentMethodIds.add(method.id);
+                      } else {
+                        _selectedPaymentMethodIds.remove(method.id);
+                      }
+                    });
+                  },
+                );
+              }).toList(),
+            ),
         ],
       ),
     );
@@ -1605,6 +1724,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
     VoidCallback? onTap,
     bool readOnly = false,
     bool enabled = true,
+    FocusNode? focusNode,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1620,6 +1740,7 @@ class _AddPropertyPageState extends State<AddPropertyPage> {
       ),
       child: TextFormField(
         controller: controller,
+        focusNode: focusNode,
         enabled: enabled,
         readOnly: readOnly,
         onTap: onTap,
