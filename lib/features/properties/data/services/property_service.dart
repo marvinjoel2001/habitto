@@ -285,12 +285,12 @@ class PropertyService {
   }
 
   /// Actualizar propiedad
-  /// Ruta: PUT /api/properties/{id}/
+  /// Ruta: PATCH /api/properties/{id}/
   /// Datos de negocio: ID de la propiedad y datos a actualizar
   /// Retorna: Property entity actualizada
   Future<Map<String, dynamic>> updateProperty(int propertyId, Map<String, dynamic> propertyData) async {
     try {
-      final response = await _apiService.put('${AppConfig.propertiesEndpoint}$propertyId/', propertyData);
+      final response = await _apiService.patch('${AppConfig.propertiesEndpoint}$propertyId/', propertyData);
 
       if (response['success'] && response['data'] != null) {
         // Convertir respuesta JSON a entidad de dominio

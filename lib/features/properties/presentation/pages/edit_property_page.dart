@@ -320,10 +320,10 @@ class _EditPropertyPageState extends State<EditPropertyPage>
         child: Container(
           padding: padding ?? const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: AppTheme.primaryColor.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -339,40 +339,32 @@ class _EditPropertyPageState extends State<EditPropertyPage>
     final displayTitle = "${_property.type} · ${_property.address}";
 
     return Scaffold(
+      backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppTheme.blackColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           S.of(context).editPropertyTitle,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppTheme.blackColor,
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.save_outlined, color: Colors.white),
+            icon: const Icon(Icons.save_outlined, color: AppTheme.blackColor),
             onPressed: _savePropertyDetails,
           ),
         ],
       ),
       body: Stack(
         children: [
-          // Background
-          Container(
-            decoration: AppTheme.getProfileBackground(),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
+          // Background removed as requested (white background set in Scaffold)
 
           // Content
           SafeArea(
@@ -399,8 +391,8 @@ class _EditPropertyPageState extends State<EditPropertyPage>
                   TabBar(
                     controller: _tabController,
                     indicatorColor: AppTheme.primaryColor,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white60,
+                    labelColor: AppTheme.primaryColor,
+                    unselectedLabelColor: Colors.grey,
                     tabs: const [
                       Tab(icon: Icon(Icons.grid_on_outlined)),
                       Tab(icon: Icon(Icons.edit_note_outlined)),
@@ -460,10 +452,11 @@ class _EditPropertyPageState extends State<EditPropertyPage>
           height: 90,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
+            border: Border.all(
+                color: AppTheme.primaryColor.withValues(alpha: 0.3), width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -507,7 +500,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
         Text(
           value,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppTheme.blackColor,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -515,7 +508,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
         Text(
           label,
           style: const TextStyle(
-            color: Colors.white70,
+            color: Colors.black54,
             fontSize: 12,
           ),
         ),
@@ -530,7 +523,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
         Text(
           title,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppTheme.blackColor,
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
@@ -550,7 +543,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            color: Colors.white70,
+            color: Colors.black54,
             fontSize: 13,
           ),
         ),
@@ -569,11 +562,11 @@ class _EditPropertyPageState extends State<EditPropertyPage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.photo_library_outlined,
-                size: 64, color: Colors.white54),
+                size: 64, color: Colors.black38),
             const SizedBox(height: 16),
             Text(
               S.of(context).noPhotosYet,
-              style: const TextStyle(color: Colors.white70),
+              style: const TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 16),
             CustomButton(
@@ -607,7 +600,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
                 loadingBuilder: (ctx, child, progress) {
                   if (progress == null) return child;
                   return Container(
-                    color: Colors.grey[900],
+                    color: Colors.grey[200],
                     child: const Center(
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
@@ -650,11 +643,11 @@ class _EditPropertyPageState extends State<EditPropertyPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.favorite_border, size: 64, color: Colors.white54),
+            const Icon(Icons.favorite_border, size: 64, color: Colors.black38),
             const SizedBox(height: 16),
             Text(
               S.of(context).noInterestsYet,
-              style: const TextStyle(color: Colors.white70),
+              style: const TextStyle(color: Colors.black54),
             ),
           ],
         ),
@@ -686,7 +679,9 @@ class _EditPropertyPageState extends State<EditPropertyPage>
                 height: 50,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                      width: 2),
                   image: DecorationImage(
                     image: (photoUrl != null && photoUrl.isNotEmpty)
                         ? NetworkImage(AppConfig.sanitizeUrl(photoUrl))
@@ -705,7 +700,7 @@ class _EditPropertyPageState extends State<EditPropertyPage>
                     Text(
                       displayName,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.blackColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -863,13 +858,13 @@ class _EditPropertyPageState extends State<EditPropertyPage>
     return _buildGlassContainer(
       child: TextFormField(
         controller: controller,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: AppTheme.blackColor),
         keyboardType: keyboardType,
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white70),
-          prefixIcon: Icon(icon, color: Colors.white70),
+          labelStyle: const TextStyle(color: Colors.black54),
+          prefixIcon: Icon(icon, color: Colors.black54),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
