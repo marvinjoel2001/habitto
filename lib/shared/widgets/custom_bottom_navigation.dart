@@ -229,65 +229,135 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
             left: 0,
             right: 0,
             height: navHeight,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildNavItem(
-                    context,
-                    0,
-                    widget.userMode == 'inquilino'
-                        ? Icons.style_outlined
-                        : widget.userMode == 'propietario'
-                            ? Icons.group_outlined
-                            : Icons.leaderboard_outlined,
-                    widget.userMode == 'inquilino'
-                        ? Icons.style
-                        : widget.userMode == 'propietario'
-                            ? Icons.groups
-                            : Icons.leaderboard,
-                    widget.userMode == 'inquilino'
-                        ? S.of(context).navExplore
-                        : widget.userMode == 'propietario'
-                            ? S.of(context).navCandidates
-                            : S.of(context).navLeads),
-                _buildNavItem(
-                    context,
-                    1,
-                    widget.userMode == 'inquilino'
-                        ? Icons.map_outlined
-                        : widget.userMode == 'propietario'
-                            ? Icons.home_work_outlined
-                            : Icons.domain_outlined,
-                    widget.userMode == 'inquilino'
-                        ? Icons.map
-                        : widget.userMode == 'propietario'
-                            ? Icons.home_work
-                            : Icons.domain,
-                    widget.userMode == 'inquilino'
-                        ? S.of(context).navMap
-                        : widget.userMode == 'propietario'
-                            ? S.of(context).navProperties
-                            : S.of(context).navPortfolio),
-                if (showCenterButton)
-                  const SizedBox(width: 56), // Space for center button
-                _buildNavItem(
-                    context,
-                    2,
-                    Icons.chat_bubble_outline,
-                    Icons.chat_bubble,
-                    widget.userMode == 'agente'
-                        ? S.of(context).navInbox
-                        : S.of(context).navChat),
-                _buildNavItem(
-                    context,
-                    3,
-                    Icons.person_outline,
-                    Icons.person,
-                    widget.userMode == 'agente'
-                        ? S.of(context).navProfProfile
-                        : S.of(context).navProfile),
-              ],
-            ),
+            child: showCenterButton
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildNavItem(
+                                context,
+                                0,
+                                widget.userMode == 'inquilino'
+                                    ? Icons.style_outlined
+                                    : widget.userMode == 'propietario'
+                                        ? Icons.group_outlined
+                                        : Icons.leaderboard_outlined,
+                                widget.userMode == 'inquilino'
+                                    ? Icons.style
+                                    : widget.userMode == 'propietario'
+                                        ? Icons.groups
+                                        : Icons.leaderboard,
+                                widget.userMode == 'inquilino'
+                                    ? S.of(context).navExplore
+                                    : widget.userMode == 'propietario'
+                                        ? S.of(context).navCandidates
+                                        : S.of(context).navLeads),
+                            _buildNavItem(
+                                context,
+                                1,
+                                widget.userMode == 'inquilino'
+                                    ? Icons.map_outlined
+                                    : widget.userMode == 'propietario'
+                                        ? Icons.home_work_outlined
+                                        : Icons.domain_outlined,
+                                widget.userMode == 'inquilino'
+                                    ? Icons.map
+                                    : widget.userMode == 'propietario'
+                                        ? Icons.home_work
+                                        : Icons.domain,
+                                widget.userMode == 'inquilino'
+                                    ? S.of(context).navMap
+                                    : widget.userMode == 'propietario'
+                                        ? S.of(context).navProperties
+                                        : S.of(context).navPortfolio),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 56), // Space for center button
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildNavItem(
+                                context,
+                                2,
+                                Icons.chat_bubble_outline,
+                                Icons.chat_bubble,
+                                widget.userMode == 'agente'
+                                    ? S.of(context).navInbox
+                                    : S.of(context).navChat),
+                            _buildNavItem(
+                                context,
+                                3,
+                                Icons.person_outline,
+                                Icons.person,
+                                widget.userMode == 'agente'
+                                    ? S.of(context).navProfProfile
+                                    : S.of(context).navProfile),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildNavItem(
+                          context,
+                          0,
+                          widget.userMode == 'inquilino'
+                              ? Icons.style_outlined
+                              : widget.userMode == 'propietario'
+                                  ? Icons.group_outlined
+                                  : Icons.leaderboard_outlined,
+                          widget.userMode == 'inquilino'
+                              ? Icons.style
+                              : widget.userMode == 'propietario'
+                                  ? Icons.groups
+                                  : Icons.leaderboard,
+                          widget.userMode == 'inquilino'
+                              ? S.of(context).navExplore
+                              : widget.userMode == 'propietario'
+                                  ? S.of(context).navCandidates
+                                  : S.of(context).navLeads),
+                      _buildNavItem(
+                          context,
+                          1,
+                          widget.userMode == 'inquilino'
+                              ? Icons.map_outlined
+                              : widget.userMode == 'propietario'
+                                  ? Icons.home_work_outlined
+                                  : Icons.domain_outlined,
+                          widget.userMode == 'inquilino'
+                              ? Icons.map
+                              : widget.userMode == 'propietario'
+                                  ? Icons.home_work
+                                  : Icons.domain,
+                          widget.userMode == 'inquilino'
+                              ? S.of(context).navMap
+                              : widget.userMode == 'propietario'
+                                  ? S.of(context).navProperties
+                                  : S.of(context).navPortfolio),
+                      _buildNavItem(
+                          context,
+                          2,
+                          Icons.chat_bubble_outline,
+                          Icons.chat_bubble,
+                          widget.userMode == 'agente'
+                              ? S.of(context).navInbox
+                              : S.of(context).navChat),
+                      _buildNavItem(
+                          context,
+                          3,
+                          Icons.person_outline,
+                          Icons.person,
+                          widget.userMode == 'agente'
+                              ? S.of(context).navProfProfile
+                              : S.of(context).navProfile),
+                    ],
+                  ),
           ),
 
           // Center Button (Floating) - Only for owners/agents
@@ -488,15 +558,21 @@ class _NavCurvePainter extends CustomPainter {
       borderPath.lineTo(center - curveWidth * 1.6, 0);
 
       borderPath.cubicTo(
-        center - curveWidth, 0,
-        center - curveWidth * 0.5, notchDepth,
-        center, notchDepth,
+        center - curveWidth,
+        0,
+        center - curveWidth * 0.5,
+        notchDepth,
+        center,
+        notchDepth,
       );
 
       borderPath.cubicTo(
-        center + curveWidth * 0.5, notchDepth,
-        center + curveWidth, 0,
-        center + curveWidth * 1.6, 0,
+        center + curveWidth * 0.5,
+        notchDepth,
+        center + curveWidth,
+        0,
+        center + curveWidth * 1.6,
+        0,
       );
     }
 
