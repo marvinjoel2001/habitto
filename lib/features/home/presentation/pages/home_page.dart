@@ -861,10 +861,15 @@ class _HomeContentState extends State<HomeContent> {
                           final sz = MediaQuery.of(ctx).size;
                           final pad = MediaQuery.of(ctx).padding;
                           const double actionRowHeight = 80.0;
-                          // Reduced extraBottomSpacing as requested
-                          const double extraBottomSpacing = 20.0;
-                          final double reservedBottom = extraBottomSpacing +
-                              (pad.bottom > 0 ? pad.bottom : 0.0);
+
+                          // Same calculation as loaded state to ensure exact size matching
+                          const double extraBottomSpacingForButtons = 80.0;
+                          final double buttonsBottomPos =
+                              extraBottomSpacingForButtons +
+                                  (pad.bottom > 0 ? pad.bottom : 0.0);
+                          final double reservedBottom =
+                              buttonsBottomPos + (actionRowHeight / 2);
+
                           const double topAreaHeight = 20.0;
                           const double sizeReduction = 20.0;
                           final double availableHeight = sz.height -
@@ -881,7 +886,7 @@ class _HomeContentState extends State<HomeContent> {
                               SizedBox(
                                 height: cardHeight,
                                 child: PropertyCardSkeleton(
-                                  overlayBottomSpace: 180.0,
+                                  overlayBottomSpace: 60.0,
                                   outerHorizontalPadding: 4.0,
                                   outerTopPadding: pad.top + 10.0,
                                 ),
@@ -893,7 +898,8 @@ class _HomeContentState extends State<HomeContent> {
                           ? LayoutBuilder(
                               builder: (context, constraints) {
                                 return SingleChildScrollView(
-                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
                                   child: ConstrainedBox(
                                     constraints: BoxConstraints(
                                       minHeight: constraints.maxHeight,
@@ -918,10 +924,14 @@ class _HomeContentState extends State<HomeContent> {
                                   // Buttons are at `extraBottomSpacing` (80.0) from bottom + padding.
                                   // Button height is ~80. Middle is ~40.
                                   // So reservedBottom should be around 80 + 40 = 120.0
-                                  const double extraBottomSpacingForButtons = 80.0;
-                                  final double buttonsBottomPos = extraBottomSpacingForButtons + (pad.bottom > 0 ? pad.bottom : 0.0);
+                                  const double extraBottomSpacingForButtons =
+                                      80.0;
+                                  final double buttonsBottomPos =
+                                      extraBottomSpacingForButtons +
+                                          (pad.bottom > 0 ? pad.bottom : 0.0);
                                   // Middle of buttons (approx height 80)
-                                  final double reservedBottom = buttonsBottomPos + (actionRowHeight / 2);
+                                  final double reservedBottom =
+                                      buttonsBottomPos + (actionRowHeight / 2);
 
                                   const double topAreaHeight = 20.0;
                                   const double sizeReduction = 20.0;
@@ -976,8 +986,7 @@ class _HomeContentState extends State<HomeContent> {
                                       onReject: (p) async {
                                         final res = await _matchingService
                                             .rejectProperty(p.id);
-                                        if (res['success'] != true &&
-                                            mounted) {
+                                        if (res['success'] != true && mounted) {
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             SnackBar(

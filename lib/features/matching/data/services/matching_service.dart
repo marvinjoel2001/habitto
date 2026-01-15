@@ -8,54 +8,99 @@ class MatchingService {
 
   Future<Map<String, dynamic>> getPropertyRecommendations() async {
     try {
-      final response = await _apiService.get('/api/recommendations/', queryParameters: {'type': 'property'});
+      final response = await _apiService
+          .get('/api/recommendations/', queryParameters: {'type': 'property'});
       if (response['success'] == true) {
         final results = (response['data']?['results'] as List?) ?? [];
-        final items = results.map((e) => {
-          'matchId': e['match']?['id'],
-          'propertyId': e['match']?['subject_id'],
-          'score': e['match']?['score'],
-          'status': e['match']?['status'],
-        }).where((m) => m['matchId'] != null && m['propertyId'] != null).toList();
+        final items = results
+            .map((e) => {
+                  'matchId': e['match']?['id'],
+                  'propertyId': e['match']?['subject_id'],
+                  'score': e['match']?['score'],
+                  'status': e['match']?['status'],
+                })
+            .where((m) => m['matchId'] != null && m['propertyId'] != null)
+            .toList();
         return {'success': true, 'data': items};
       }
-      return {'success': false, 'error': response['error'] ?? 'Error obteniendo recomendaciones', 'data': null};
+      return {
+        'success': false,
+        'error': response['error'] ?? 'Error obteniendo recomendaciones',
+        'data': null
+      };
     } catch (e) {
-      return {'success': false, 'error': 'Error obteniendo recomendaciones: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error obteniendo recomendaciones: $e',
+        'data': null
+      };
     }
   }
 
   Future<Map<String, dynamic>> likeMatch(int matchId) async {
     try {
-      final response = await _apiService.post('/api/matches/$matchId/like/', {});
+      final response =
+          await _apiService.post('/api/matches/$matchId/like/', {});
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
-          : {'success': false, 'error': response['error'] ?? 'Error al hacer like', 'data': null};
+          : {
+              'success': false,
+              'error': response['error'] ?? 'Error al hacer like',
+              'data': null
+            };
     } catch (e) {
-      return {'success': false, 'error': 'Error al hacer like: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error al hacer like: $e',
+        'data': null
+      };
     }
   }
 
   Future<Map<String, dynamic>> rejectMatch(int matchId) async {
     try {
-      final response = await _apiService.post('/api/matches/$matchId/reject/', {});
+      final response =
+          await _apiService.post('/api/matches/$matchId/reject/', {});
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
-          : {'success': false, 'error': response['error'] ?? 'Error al rechazar match', 'data': null};
+          : {
+              'success': false,
+              'error': response['error'] ?? 'Error al rechazar match',
+              'data': null
+            };
     } catch (e) {
-      return {'success': false, 'error': 'Error al rechazar match: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error al rechazar match: $e',
+        'data': null
+      };
     }
   }
 
-  Future<Map<String, dynamic>> sendFeedback({required int matchId, required String feedbackType, String? reason}) async {
+  Future<Map<String, dynamic>> sendFeedback(
+      {required int matchId,
+      required String feedbackType,
+      String? reason}) async {
     try {
-      final payload = {'match': matchId, 'feedback_type': feedbackType, if (reason != null) 'reason': reason};
+      final payload = {
+        'match': matchId,
+        'feedback_type': feedbackType,
+        if (reason != null) 'reason': reason
+      };
       final response = await _apiService.post('/api/match_feedback/', payload);
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
-          : {'success': false, 'error': response['error'] ?? 'Error enviando feedback', 'data': null};
+          : {
+              'success': false,
+              'error': response['error'] ?? 'Error enviando feedback',
+              'data': null
+            };
     } catch (e) {
-      return {'success': false, 'error': 'Error enviando feedback: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error enviando feedback: $e',
+        'data': null
+      };
     }
   }
 
@@ -63,14 +108,22 @@ class MatchingService {
     try {
       final tokenUserId = await TokenStorage().getCurrentUserId();
       if (tokenUserId == null) {
-        return {'success': false, 'error': 'Usuario no autenticado', 'data': null};
+        return {
+          'success': false,
+          'error': 'Usuario no autenticado',
+          'data': null
+        };
       }
-      final resp = await _apiService.get('/api/search_profiles/', queryParameters: {'user_id': int.parse(tokenUserId)});
+      final resp = await _apiService.get('/api/search_profiles/',
+          queryParameters: {'user_id': int.parse(tokenUserId)});
       if (resp['success'] == true && resp['data'] != null) {
         final envelope = resp['data'];
         List<dynamic> results = [];
-        if (envelope is Map && envelope['data'] is Map && (envelope['data'] as Map)['results'] is List) {
-          results = List<dynamic>.from((envelope['data'] as Map)['results'] as List);
+        if (envelope is Map &&
+            envelope['data'] is Map &&
+            (envelope['data'] as Map)['results'] is List) {
+          results =
+              List<dynamic>.from((envelope['data'] as Map)['results'] as List);
         } else if (envelope is Map && envelope['results'] is List) {
           results = List<dynamic>.from(envelope['results'] as List);
         } else if (envelope is List) {
@@ -80,46 +133,81 @@ class MatchingService {
           final id = (results.first as Map)['id'];
           return {'success': true, 'data': id};
         }
-        return {'success': false, 'error': 'No hay SearchProfile', 'data': null};
+        return {
+          'success': false,
+          'error': 'No hay SearchProfile',
+          'data': null
+        };
       }
-      return {'success': false, 'error': resp['error'] ?? 'Error obteniendo SearchProfile', 'data': null};
+      return {
+        'success': false,
+        'error': resp['error'] ?? 'Error obteniendo SearchProfile',
+        'data': null
+      };
     } catch (e) {
-      return {'success': false, 'error': 'Error obteniendo SearchProfile: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error obteniendo SearchProfile: $e',
+        'data': null
+      };
     }
   }
 
   Future<Map<String, dynamic>> likeProperty(int propertyId) async {
     try {
-      final response = await _apiService.post('/api/properties/$propertyId/like/', {});
+      final response =
+          await _apiService.post('/api/properties/$propertyId/like/', {});
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
-          : {'success': false, 'error': response['error'] ?? 'Error al hacer like a la propiedad', 'data': null};
+          : {
+              'success': false,
+              'error':
+                  response['error'] ?? 'Error al hacer like a la propiedad',
+              'data': null
+            };
     } catch (e) {
-      return {'success': false, 'error': 'Error al hacer like a la propiedad: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error al hacer like a la propiedad: $e',
+        'data': null
+      };
     }
   }
 
   Future<Map<String, dynamic>> rejectProperty(int propertyId) async {
     try {
-      final response = await _apiService.post('/api/properties/$propertyId/reject/', {});
+      final response =
+          await _apiService.post('/api/properties/$propertyId/reject/', {});
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
-          : {'success': false, 'error': response['error'] ?? 'Error al rechazar la propiedad', 'data': null};
+          : {
+              'success': false,
+              'error': response['error'] ?? 'Error al rechazar la propiedad',
+              'data': null
+            };
     } catch (e) {
-      return {'success': false, 'error': 'Error al rechazar la propiedad: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error al rechazar la propiedad: $e',
+        'data': null
+      };
     }
   }
 
   Future<Map<String, dynamic>> getPendingMatchRequests() async {
     try {
-      final resp = await _apiService.get('/api/matches/pending_requests/', queryParameters: {
+      final resp = await _apiService
+          .get('/api/matches/pending_requests/', queryParameters: {
         'type': 'property',
       });
       if (resp['success'] == true) {
         final envelope = resp['data'];
         List<dynamic> results = [];
-        if (envelope is Map && envelope['data'] is Map && (envelope['data'] as Map)['results'] is List) {
-          results = List<dynamic>.from((envelope['data'] as Map)['results'] as List);
+        if (envelope is Map &&
+            envelope['data'] is Map &&
+            (envelope['data'] as Map)['results'] is List) {
+          results =
+              List<dynamic>.from((envelope['data'] as Map)['results'] as List);
         } else if (envelope is Map && envelope['results'] is List) {
           results = List<dynamic>.from(envelope['results'] as List);
         } else if (envelope is List) {
@@ -130,7 +218,8 @@ class MatchingService {
         final propertyService = PropertyService();
         final List<Map<String, dynamic>> enriched = [];
         for (final item in results) {
-          final match = (item is Map && item.containsKey('match')) ? item['match'] : item;
+          final match =
+              (item is Map && item.containsKey('match')) ? item['match'] : item;
           Map<String, dynamic> propertyJson = {};
           Map<String, dynamic> interestedUserJson = {};
           // Preferir la propiedad incluida en la respuesta si está disponible
@@ -140,26 +229,67 @@ class MatchingService {
               'title': (prop['address'] ?? '').toString(),
               'address': (prop['address'] ?? '').toString(),
               'id': int.tryParse((prop['id'] ?? '0').toString()) ?? 0,
+              'photos': prop['photos'],
+              'main_photo':
+                  prop['main_photo'], // Ensure main_photo is preserved
+              'price': prop['price'],
+              'currency': prop['currency'],
+              'city': prop['city'],
+              'country': prop['country'],
+              'bedrooms': prop['bedrooms'],
+              'bathrooms': prop['bathrooms'],
+              'area': prop['area'],
             };
           } else if (match is Map && match['subject_id'] != null) {
-            final sid = (match['subject_id'] is num) ? (match['subject_id'] as num).toInt() : int.tryParse(match['subject_id'].toString());
+            final sid = (match['subject_id'] is num)
+                ? (match['subject_id'] as num).toInt()
+                : int.tryParse(match['subject_id'].toString());
             if (sid != null) {
               // Fallback mínimo si el backend no incluyera property
               final pr = await propertyService.getPropertyById(sid);
               if (pr['success'] == true && pr['data'] != null) {
                 final p = pr['data'];
-                propertyJson = {
-                  'title': (p is Property ? p.address : (p['address'] ?? '')).toString(),
-                  'address': (p is Property ? p.address : (p['address'] ?? '')).toString(),
-                  'id': p is Property ? p.id : (int.tryParse((p['id'] ?? '0').toString()) ?? 0),
-                };
+                if (p is Property) {
+                  propertyJson = {
+                    'title': p.address,
+                    'address': p.address,
+                    'id': p.id,
+                    'photos': p.mainPhoto != null
+                        ? [
+                            {'image': p.mainPhoto}
+                          ]
+                        : [],
+                    'price': p.price,
+                    'bedrooms': p.bedrooms,
+                    'bathrooms': p.bathrooms,
+                    'area': p.size,
+                  };
+                } else {
+                  final pm = p as Map<String, dynamic>;
+                  propertyJson = {
+                    'title': (pm['address'] ?? '').toString(),
+                    'address': (pm['address'] ?? '').toString(),
+                    'id': int.tryParse((pm['id'] ?? '0').toString()) ?? 0,
+                    'photos': pm['photos'] ??
+                        (pm['main_photo'] != null
+                            ? [
+                                {'image': pm['main_photo']}
+                              ]
+                            : []),
+                    'price': pm['price'],
+                    'bedrooms': pm['bedrooms'],
+                    'bathrooms': pm['bathrooms'],
+                    'area': pm['size'] ?? pm['area'],
+                  };
+                }
               }
             }
           }
 
           // Usuario interesado incluido por el backend (si existe)
           if (item is Map && item['interested_user'] is Map) {
-            interestedUserJson = Map<String, dynamic>.from(item['interested_user'] as Map);
+            interestedUserJson =
+                Map<String, dynamic>.from(item['interested_user'] as Map);
             // Evitar enriquecimiento adicional: el backend ya retorna nombre y foto
           }
           enriched.add({
@@ -170,47 +300,82 @@ class MatchingService {
         }
         return {'success': true, 'data': enriched};
       }
-      return {'success': false, 'error': resp['error'] ?? 'Error obteniendo solicitudes de match', 'data': null};
+      return {
+        'success': false,
+        'error': resp['error'] ?? 'Error obteniendo solicitudes de match',
+        'data': null
+      };
     } catch (e) {
-      return {'success': false, 'error': 'Error obteniendo solicitudes de match: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error obteniendo solicitudes de match: $e',
+        'data': null
+      };
     }
   }
 
   Future<Map<String, dynamic>> acceptMatchRequest(int matchId) async {
     try {
-      final response = await _apiService.post('/api/matches/$matchId/owner_accept/', {});
+      final response =
+          await _apiService.post('/api/matches/$matchId/owner_accept/', {});
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
-          : {'success': false, 'error': response['error'] ?? 'Error al aceptar solicitud', 'data': null};
+          : {
+              'success': false,
+              'error': response['error'] ?? 'Error al aceptar solicitud',
+              'data': null
+            };
     } catch (e) {
-      return {'success': false, 'error': 'Error al aceptar solicitud: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error al aceptar solicitud: $e',
+        'data': null
+      };
     }
   }
 
   Future<Map<String, dynamic>> rejectMatchRequest(int matchId) async {
     try {
-      final response = await _apiService.post('/api/matches/$matchId/reject/', {});
+      final response =
+          await _apiService.post('/api/matches/$matchId/reject/', {});
       return response['success'] == true
           ? {'success': true, 'data': response['data']}
-          : {'success': false, 'error': response['error'] ?? 'Error al rechazar solicitud', 'data': null};
+          : {
+              'success': false,
+              'error': response['error'] ?? 'Error al rechazar solicitud',
+              'data': null
+            };
     } catch (e) {
-      return {'success': false, 'error': 'Error al rechazar solicitud: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error al rechazar solicitud: $e',
+        'data': null
+      };
     }
   }
 
-  Future<Map<String, dynamic>> getOrCreateMatchIdForProperty(int propertyId) async {
+  Future<Map<String, dynamic>> getOrCreateMatchIdForProperty(
+      int propertyId) async {
     try {
       final sp = await getCurrentSearchProfileId();
       if (sp['success'] != true || sp['data'] == null) {
-        return {'success': false, 'error': sp['error'] ?? 'No se pudo obtener SearchProfile', 'data': null};
+        return {
+          'success': false,
+          'error': sp['error'] ?? 'No se pudo obtener SearchProfile',
+          'data': null
+        };
       }
       final spId = sp['data'] as int;
-      final resp = await _apiService.get('/api/search_profiles/$spId/matches/', queryParameters: {'type': 'property'});
+      final resp = await _apiService.get('/api/search_profiles/$spId/matches/',
+          queryParameters: {'type': 'property'});
       if (resp['success'] == true && resp['data'] != null) {
         final envelope = resp['data'];
         List<dynamic> results = [];
-        if (envelope is Map && envelope['data'] is Map && (envelope['data'] as Map)['results'] is List) {
-          results = List<dynamic>.from((envelope['data'] as Map)['results'] as List);
+        if (envelope is Map &&
+            envelope['data'] is Map &&
+            (envelope['data'] as Map)['results'] is List) {
+          results =
+              List<dynamic>.from((envelope['data'] as Map)['results'] as List);
         } else if (envelope is Map && envelope['results'] is List) {
           results = List<dynamic>.from(envelope['results'] as List);
         } else if (envelope is List) {
@@ -224,7 +389,8 @@ class MatchingService {
           }
         }
         // Si no existe, intentar crearlo
-        final createResp = await _apiService.post('/api/search_profiles/$spId/matches/', {
+        final createResp =
+            await _apiService.post('/api/search_profiles/$spId/matches/', {
           'type': 'property',
           'subject_id': propertyId,
         });
@@ -240,13 +406,22 @@ class MatchingService {
         }
         return {
           'success': false,
-          'error': createResp['error'] ?? 'No se pudo crear match para la propiedad',
+          'error':
+              createResp['error'] ?? 'No se pudo crear match para la propiedad',
           'data': null,
         };
       }
-      return {'success': false, 'error': resp['error'] ?? 'Error obteniendo matches', 'data': null};
+      return {
+        'success': false,
+        'error': resp['error'] ?? 'Error obteniendo matches',
+        'data': null
+      };
     } catch (e) {
-      return {'success': false, 'error': 'Error obteniendo match: $e', 'data': null};
+      return {
+        'success': false,
+        'error': 'Error obteniendo match: $e',
+        'data': null
+      };
     }
   }
 }

@@ -1,12 +1,12 @@
-import 'dart:ui' as ui;
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../features/matching/data/services/matching_service.dart';
-import '../../../../features/home/presentation/pages/home_page.dart';
-import '../../../../shared/widgets/match_modal.dart';
+import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/custom_network_image.dart';
+import 'property_candidates_page.dart';
 import 'package:habitto/config/app_config.dart';
-import 'package:habitto/shared/theme/app_theme.dart';
-import '../../../../generated/l10n.dart';
+
+import '../../../../features/properties/data/services/photo_service.dart';
+import '../../../../core/services/api_service.dart';
 
 class MatchRequestsPage extends StatefulWidget {
   const MatchRequestsPage({super.key});
@@ -17,23 +17,22 @@ class MatchRequestsPage extends StatefulWidget {
 
 class _MatchRequestsPageState extends State<MatchRequestsPage> {
   final MatchingService _matchingService = MatchingService();
+  late final PhotoService _photoService;
 
-  List<HomePropertyCardData> _matchRequests = [];
+  List<Map<String, dynamic>> _groupedRequests = [];
   bool _isLoading = true;
   String _error = '';
-
-  final GlobalKey<PropertySwipeDeckState> _deckKey =
-      GlobalKey<PropertySwipeDeckState>();
-  HomePropertyCardData? _currentTopProperty;
 
   @override
   void initState() {
     super.initState();
+    _photoService = PhotoService(ApiService());
     _loadMatchRequests();
   }
 
   Future<void> _loadMatchRequests() async {
     try {
+      if (!mounted) return;
       setState(() {
         _isLoading = true;
         _error = '';
@@ -41,57 +40,28 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
 
       final result = await _matchingService.getPendingMatchRequests();
 
+      if (!mounted) return;
+
       if (result['success']) {
         final requests = (result['data'] as List<dynamic>?) ?? [];
-        final cards = <HomePropertyCardData>[];
+        final Map<int, Map<String, dynamic>> grouped = {};
 
         for (final req in requests) {
-          final match = req['match'] as Map<String, dynamic>? ?? {};
           final property = req['property'] as Map<String, dynamic>? ?? {};
-          final interestedUser =
-              req['interested_user'] as Map<String, dynamic>? ?? {};
+          final propId = property['id'] as int? ?? 0;
+          if (propId == 0) continue;
 
-          final userName =
-              '${interestedUser['first_name'] ?? ''} ${interestedUser['last_name'] ?? ''}'
-                  .trim();
-          final userUsername =
-              interestedUser['username'] as String? ?? 'Usuario';
-          final displayName = userName.isNotEmpty ? userName : userUsername;
-
-          String resolveAvatar(String? url) {
-            final u =
-                (url ?? '').trim().replaceAll('`', '').replaceAll('"', '');
-            if (u.isEmpty) return '';
-            if (u.startsWith('http://') || u.startsWith('https://')) return u;
-            final base = Uri.parse(AppConfig.baseUrl);
-            final abs = Uri(
-                scheme: base.scheme,
-                host: base.host,
-                port: base.port == 0 ? null : base.port,
-                path: u.startsWith('/') ? u : '/$u');
-            return abs.toString();
+          if (!grouped.containsKey(propId)) {
+            grouped[propId] = {
+              'property': property,
+              'requests': <Map<String, dynamic>>[],
+            };
           }
-
-          final avatarUrl =
-              resolveAvatar(interestedUser['profile_picture'] as String?);
-          final score =
-              match['score'] is num ? (match['score'] as num).round() : 0;
-          final propertyTitle =
-              property['title'] as String? ?? 'Propiedad sin título';
-          final matchId = match['id'] is num ? (match['id'] as num).toInt() : 0;
-
-          cards.add(HomePropertyCardData(
-            id: matchId, // Usamos matchId en lugar de propertyId
-            title: displayName, // Nombre del usuario como título
-            priceLabel: '$score% Match', // Score como subtítulo
-            images: [avatarUrl], // Foto de perfil como imagen principal
-            distanceKm: 0.0,
-            tags: [propertyTitle], // Título de la propiedad como tag
-          ));
+          grouped[propId]!['requests'].add(req);
         }
 
         setState(() {
-          _matchRequests = cards;
+          _groupedRequests = grouped.values.toList();
           _isLoading = false;
         });
       } else {
@@ -101,38 +71,31 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
         });
       }
     } catch (e) {
-      setState(() {
-        _error = 'Error al cargar solicitudes: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Error al cargar solicitudes: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  void _spawnHeartsBurst() {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (ctx) => const _HeartsBurstOverlay(),
-    );
-    overlay.insert(entry);
-    Future.delayed(const Duration(milliseconds: 1750), () {
-      entry.remove();
-    });
-  }
-
-  void _spawnBigXAndSwipeLeft() {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (ctx) => const _BigXOverlay(),
-    );
-    overlay.insert(entry);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      _deckKey.currentState?.swipeLeft();
-    });
-    Future.delayed(const Duration(milliseconds: 800), () {
-      entry.remove();
-    });
+  String _resolveImageUrl(Map<String, dynamic> property) {
+    if (property['photos'] != null && (property['photos'] as List).isNotEmpty) {
+      final photos = property['photos'] as List;
+      final first = photos[0];
+      if (first is Map) {
+        final url = first['image'] as String? ?? first['file'] as String?;
+        if (url != null) return AppConfig.sanitizeUrl(url);
+      } else if (first is String) {
+        return AppConfig.sanitizeUrl(first);
+      }
+    }
+    // Fallback: intentar main_photo si existe en el root
+    if (property['main_photo'] is String) {
+      return AppConfig.sanitizeUrl(property['main_photo']);
+    }
+    return '';
   }
 
   @override
@@ -146,7 +109,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
-          'Solicitudes de Match',
+          'Propiedades con Interés',
           style: TextStyle(
             color: onSurface,
             fontSize: 20,
@@ -172,532 +135,234 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: onSurface.withValues(alpha: 0.6),
-                      ),
+                      Icon(Icons.error_outline,
+                          size: 48, color: onSurface.withOpacity(0.5)),
                       const SizedBox(height: 16),
-                      Text(
-                        _error,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: onSurface.withValues(alpha: 0.8),
-                          fontSize: 16,
-                        ),
-                      ),
+                      Text(_error, style: TextStyle(color: onSurface)),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadMatchRequests,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: AppTheme.darkGrayBase,
-                        ),
                         child: const Text('Reintentar'),
                       ),
                     ],
                   ),
                 )
-              : _matchRequests.isEmpty
+              : _groupedRequests.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.favorite_border,
-                            size: 64,
-                            color: Colors.grey.shade400,
-                          ),
+                          Icon(Icons.home_work_outlined,
+                              size: 64, color: onSurface.withOpacity(0.3)),
                           const SizedBox(height: 16),
                           Text(
-                            'No tienes más solicitudes de match',
+                            'No tienes solicitudes pendientes',
                             style: TextStyle(
-                              color: onSurface.withValues(alpha: 0.8),
-                              fontSize: 18,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Las nuevas solicitudes aparecerán aquí',
-                            style: TextStyle(
-                              color: onSurface.withValues(alpha: 0.6),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed: _loadMatchRequests,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              foregroundColor: AppTheme.darkGrayBase,
-                            ),
-                            child: const Text('Actualizar'),
+                                color: onSurface.withOpacity(0.6),
+                                fontSize: 16),
                           ),
                         ],
                       ),
                     )
-                  : Column(
-                      children: [
-                        Expanded(
-                          child: LayoutBuilder(builder: (ctx, constraints) {
-                            // Altura de la fila de botones de acción
-                            const double actionRowHeight = 80.0;
-                            // Espacio para el bottom spacing que hemos aumentado (para levantar botones)
-                            const double extraBottomSpacing = 85.0;
-                            final pad = MediaQuery.of(ctx).padding;
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(
+                          top: 16, left: 16, right: 16, bottom: 120),
+                      itemCount: _groupedRequests.length,
+                      itemBuilder: (context, index) {
+                        final item = _groupedRequests[index];
+                        final property =
+                            item['property'] as Map<String, dynamic>;
+                        final requests =
+                            item['requests'] as List<Map<String, dynamic>>;
+                        final requestCount = requests.length;
 
-                            // Ajustamos reservedBottom considerando el nuevo espaciado inferior
-                            // para que la card se reduzca y no haya overflow.
-                            final double reservedBottom = actionRowHeight +
-                                extraBottomSpacing +
-                                (pad.bottom > 0 ? pad.bottom : 0.0);
+                        final title =
+                            property['title'] as String? ?? 'Propiedad';
+                        final address = property['address'] as String? ?? '';
+                        final price = property['price']?.toString() ?? '0';
+                        final bedrooms =
+                            property['bedrooms']?.toString() ?? '0';
+                        final bathrooms =
+                            property['bathrooms']?.toString() ?? '0';
+                        final area = property['area']?.toString() ?? '0';
+                        final propertyId = property['id'] as int? ?? 0;
 
-                            // Altura disponible para el área principal
-                            // Reducimos un poco más para asegurar que los botones no tapen información vital
-                            const double sizeReduction = 20.0;
-
-                            final double availableHeight =
-                                constraints.maxHeight -
-                                    reservedBottom -
-                                    sizeReduction;
-
-                            // Altura dinámica de la card
-                            final double cardHeight =
-                                math.max(availableHeight, 400.0);
-
-                            return SizedBox(
-                              height: cardHeight,
-                              child: PropertySwipeDeck(
-                                key: _deckKey,
-                                properties: _matchRequests,
-                                overlayBottomSpace: -(actionRowHeight / 2),
-                                onLike: (p) async {
-                                  final res = await _matchingService
-                                      .acceptMatchRequest(p.id);
-                                  if (res['success'] != true) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                            content: Text(res['error'] ??
-                                                'Error al aceptar')),
-                                      );
-                                    }
-                                    return;
-                                  }
-                                  _spawnHeartsBurst();
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Solicitud aceptada'),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  }
-                                  setState(() {
-                                    _matchRequests.removeWhere(
-                                        (element) => element.id == p.id);
-                                  });
-                                },
-                                onReject: (p) async {
-                                  final res = await _matchingService
-                                      .rejectMatchRequest(p.id);
-                                  if (res['success'] != true && mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text(res['error'] ??
-                                              'Error al rechazar')),
-                                    );
-                                  } else if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Solicitud rechazada'),
-                                        backgroundColor: Colors.orange,
-                                      ),
-                                    );
-                                  }
-                                  setState(() {
-                                    _matchRequests.removeWhere(
-                                        (element) => element.id == p.id);
-                                  });
-                                },
-                                onTopChange: (p) =>
-                                    setState(() => _currentTopProperty = p),
-                              ),
-                            );
-                          }),
-                        ),
-                        if (_matchRequests.isNotEmpty)
-                          Transform.translate(
-                            offset: const Offset(0, -40.0),
-                            child: Container(
-                              color: Colors.transparent,
-                              margin: EdgeInsets.zero,
-                              padding: EdgeInsets.zero,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _CircleActionButton(
-                                    icon: Icons.rotate_left,
-                                    color: Colors.amber,
-                                    size: 54,
-                                    onTap: () =>
-                                        _deckKey.currentState?.goBack(),
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          elevation: 4,
+                          shadowColor: Colors.black.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PropertyCandidatesPage(
+                                    property: property,
+                                    requests: requests,
                                   ),
-                                  const SizedBox(width: 18),
-                                  _CircleActionButton(
-                                    icon: Icons.close,
-                                    color: Colors.redAccent,
-                                    size: 54,
-                                    onTap: () async {
-                                      final p = _currentTopProperty;
-                                      if (p != null) {
-                                        await _matchingService
-                                            .rejectMatchRequest(p.id);
-                                        setState(() {
-                                          _matchRequests.removeWhere(
-                                              (element) => element.id == p.id);
-                                        });
-                                      }
-                                      _spawnBigXAndSwipeLeft();
-                                    },
-                                  ),
-                                  const SizedBox(width: 18),
-                                  _CircleActionButton(
-                                    icon: Icons.favorite,
-                                    color: AppTheme.secondaryColor,
-                                    size: 78,
-                                    onTap: () async {
-                                      final messenger =
-                                          ScaffoldMessenger.of(context);
-                                      final p = _currentTopProperty;
-                                      if (p != null) {
-                                        final res = await _matchingService
-                                            .acceptMatchRequest(p.id);
-                                        if (res['success'] == true) {
-                                          _spawnHeartsBurst();
-                                          messenger.showSnackBar(
-                                            const SnackBar(
-                                              content:
-                                                  Text('Solicitud aceptada'),
-                                              backgroundColor: Colors.green,
-                                              duration: Duration(seconds: 2),
-                                            ),
-                                          );
-                                          _deckKey.currentState?.swipeRight();
-                                          setState(() {
-                                            _matchRequests.removeWhere(
-                                                (element) =>
-                                                    element.id == p.id);
-                                          });
-                                        } else {
-                                          messenger.showSnackBar(
-                                            SnackBar(
-                                                content: Text(res['error'] ??
-                                                    'Error al aceptar')),
-                                          );
+                                ),
+                              ).then((_) => _loadMatchRequests());
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Imagen
+                                SizedBox(
+                                  height: 180,
+                                  width: double.infinity,
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(16)),
+                                    child: FutureBuilder<Map<String, dynamic>>(
+                                      future: _photoService
+                                          .getPropertyPhotos(propertyId),
+                                      builder: (context, snapshot) {
+                                        String imageUrl =
+                                            _resolveImageUrl(property);
+
+                                        if (imageUrl.isEmpty &&
+                                            snapshot.hasData &&
+                                            snapshot.data!['success'] == true) {
+                                          final photos = (snapshot.data!['data']
+                                                      ['photos']
+                                                  as List<dynamic>? ??
+                                              []);
+                                          if (photos.isNotEmpty) {
+                                            final first = photos.first;
+                                            final url =
+                                                (first.image as String?) ?? '';
+                                            if (url.isNotEmpty) {
+                                              imageUrl =
+                                                  AppConfig.sanitizeUrl(url);
+                                            }
+                                          }
                                         }
-                                      }
-                                    },
+
+                                        return imageUrl.isNotEmpty
+                                            ? CustomNetworkImage(
+                                                imageUrl: imageUrl,
+                                                fit: BoxFit.cover,
+                                              )
+                                            : Container(
+                                                color: Colors.grey[200],
+                                                child: const Icon(
+                                                    Icons.image_not_supported,
+                                                    size: 48,
+                                                    color: Colors.grey),
+                                              );
+                                      },
+                                    ),
                                   ),
-                                ],
-                              ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        title,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.location_on_outlined,
+                                              size: 16, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              address,
+                                              style: const TextStyle(
+                                                  color: Colors.grey),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '\$$price USD',
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppTheme.primaryColor,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          _buildFeature(Icons.bed_outlined,
+                                              '$bedrooms habs'),
+                                          const SizedBox(width: 12),
+                                          _buildFeature(Icons.bathtub_outlined,
+                                              '$bathrooms baños'),
+                                          const SizedBox(width: 12),
+                                          _buildFeature(
+                                              Icons.square_foot, '$area m²'),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.favorite,
+                                              color: AppTheme.secondaryColor,
+                                              size: 20),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '$requestCount interesados',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Text(
+                                            'Ver personas',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(Icons.arrow_forward_ios,
+                                              size: 12,
+                                              color: Colors.grey[600]),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        const SizedBox(height: 80),
-                      ],
+                        );
+                      },
                     ),
     );
   }
-}
 
-class _CircleActionButton extends StatefulWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-  final double size;
-
-  const _CircleActionButton({
-    required this.icon,
-    required this.color,
-    this.onTap,
-    this.size = 64.0,
-  });
-
-  @override
-  State<_CircleActionButton> createState() => _CircleActionButtonState();
-}
-
-class _CircleActionButtonState extends State<_CircleActionButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 160),
-      reverseDuration: const Duration(milliseconds: 140),
-    );
-    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleTap() async {
-    await _controller.forward();
-    await _controller.reverse();
-    widget.onTap?.call();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _handleTap,
-      child: ScaleTransition(
-        scale: _scale,
-        child: Container(
-          width: widget.size,
-          height: widget.size,
-          decoration: BoxDecoration(
-            color: widget.color,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: widget.color.withValues(alpha: 0.4),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child:
-              Icon(widget.icon, color: Colors.white, size: widget.size * 0.45),
+  Widget _buildFeature(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey[600]),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey[600], fontSize: 12),
         ),
-      ),
-    );
-  }
-}
-
-// Overlay de burst de corazones al presionar el botón de like
-class _HeartsBurstOverlay extends StatefulWidget {
-  const _HeartsBurstOverlay();
-
-  @override
-  State<_HeartsBurstOverlay> createState() => _HeartsBurstOverlayState();
-}
-
-class _HeartsBurstOverlayState extends State<_HeartsBurstOverlay>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final List<_HeartParticle> _particles;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    )..forward();
-
-    final rand = math.Random();
-    _particles = List.generate(22, (i) {
-      // Ángulos hacia arriba (de -π a 0), más disperso
-      final angle = -math.pi * rand.nextDouble();
-      final speed = 140 + rand.nextDouble() * 180; // px/s
-      final size = 18 + rand.nextDouble() * 16; // px
-      final drift = (rand.nextDouble() * 160) - 80; // px lateral extra
-      final delay = rand.nextDouble() * 0.25; // pequeño desfase
-      return _HeartParticle(
-        angle: angle,
-        speed: speed,
-        baseSize: size,
-        driftX: drift,
-        startDelay: delay,
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final startX =
-        size.width / 2; // alineado al centro, donde están los botones
-    final startY = size.height - 140; // justo encima de la fila de acciones
-
-    return IgnorePointer(
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          final tGlobal = _controller.value; // 0..1
-          return Positioned.fill(
-            child: Stack(
-              children: _particles.map((p) {
-                final t = (tGlobal - p.startDelay).clamp(0.0, 1.0);
-                // Movimiento radial con drift lateral
-                final vx = math.cos(p.angle) * p.speed;
-                final vy = math.sin(p.angle) * p.speed +
-                    220; // empuje superior adicional
-                final x = startX + (vx * t) + (p.driftX * t);
-                final y = startY - (vy * t);
-                final opacity = (1.0 - t).clamp(0.0, 1.0);
-                final scale = 1.0 + 0.4 * t;
-
-                return Positioned(
-                  left: x,
-                  top: y,
-                  child: Opacity(
-                    opacity: opacity,
-                    child: Transform.scale(
-                      scale: scale,
-                      child: Container(
-                        width: p.baseSize,
-                        height: p.baseSize,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                        ),
-                        child: ShaderMask(
-                          shaderCallback: (Rect bounds) {
-                            return LinearGradient(
-                              colors: [
-                                AppTheme.secondaryColor.withValues(alpha: 0.95),
-                                AppTheme.secondaryColor.withValues(alpha: 0.7),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ).createShader(bounds);
-                          },
-                          child: Icon(
-                            Icons.favorite,
-                            color: Colors.white,
-                            size: p.baseSize,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _HeartParticle {
-  final double angle;
-  final double speed;
-  final double baseSize;
-  final double driftX;
-  final double startDelay;
-
-  _HeartParticle({
-    required this.angle,
-    required this.speed,
-    required this.baseSize,
-    required this.driftX,
-    required this.startDelay,
-  });
-}
-
-// Overlay de X grande antes de avanzar
-class _BigXOverlay extends StatefulWidget {
-  const _BigXOverlay();
-
-  @override
-  State<_BigXOverlay> createState() => _BigXOverlayState();
-}
-
-class _BigXOverlayState extends State<_BigXOverlay>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
-  late final Animation<double> _opacity;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
-    _scale = Tween<double>(begin: 0.9, end: 1.15).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
-    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    return IgnorePointer(
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          return Positioned.fill(
-            child: Stack(
-              children: [
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: size.height * 0.38,
-                  child: Center(
-                    child: Opacity(
-                      opacity: _opacity.value,
-                      child: Transform.scale(
-                        scale: _scale.value,
-                        child: Container(
-                          width: size.width * 0.5,
-                          height: size.width * 0.5,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.85),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.25),
-                                blurRadius: 24,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.redAccent,
-                            size: size.width * 0.3,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+      ],
     );
   }
 }

@@ -418,12 +418,12 @@ class _ProfilePageState extends State<ProfilePage>
         children: [
           IconButton(
             onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+            icon: const Icon(Icons.arrow_back, color: Colors.black, size: 28),
           ),
           IconButton(
             onPressed: _showSettingsModal,
             icon: const Icon(Icons.settings_outlined,
-                color: Colors.white, size: 28),
+                color: Colors.black, size: 28),
           ),
         ],
       ),
