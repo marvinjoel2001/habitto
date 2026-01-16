@@ -114,8 +114,8 @@ class _SearchPageState extends State<SearchPage> {
 
   // Genera un marcador tipo "Pin" (Gota invertida) con círculo blanco y un ícono dentro
   Future<Uint8List> _generateMarkerWithIcon(IconData iconData) async {
-    const double width = 96.0;
-    const double height = 110.0;
+    const double width = 144.0;
+    const double height = 165.0;
 
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
@@ -144,7 +144,7 @@ class _SearchPageState extends State<SearchPage> {
     // Empezar desde la punta inferior
     path.moveTo(centerX, height);
     // Curva suave hacia la izquierda
-    path.quadraticBezierTo(centerX - 10, height - 25, 0, centerY);
+    path.quadraticBezierTo(centerX - 15, height - 38, 0, centerY);
     // Arco superior
     path.arcTo(
         Rect.fromCircle(center: const Offset(centerX, centerY), radius: radius),
@@ -153,7 +153,7 @@ class _SearchPageState extends State<SearchPage> {
         false);
     // Curva suave hacia la derecha y regreso a la punta
     path.lineTo(width, centerY);
-    path.quadraticBezierTo(centerX + 10, height - 25, centerX, height);
+    path.quadraticBezierTo(centerX + 15, height - 38, centerX, height);
     path.close();
 
     // Dibujar sombra
@@ -171,7 +171,7 @@ class _SearchPageState extends State<SearchPage> {
     textPainter.text = TextSpan(
       text: String.fromCharCode(iconData.codePoint),
       style: TextStyle(
-        fontSize: 36.0,
+        fontSize: 54.0,
         fontFamily: iconData.fontFamily,
         color: AppTheme.primaryColor,
         fontWeight: FontWeight.bold,
@@ -682,7 +682,7 @@ class _SearchPageState extends State<SearchPage> {
           final List features = geoJsonData['features'];
           for (int i = 0; i < features.length; i++) {
             final feature = features[i];
-            
+
             // Recolectar puntos para el bounding box
             try {
               if (feature['geometry'] != null &&
