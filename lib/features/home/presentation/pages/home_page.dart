@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:convert';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/widgets/custom_network_image.dart';
 import '../../../../shared/widgets/match_modal.dart';
 import '../../../../shared/widgets/ai_chat_widget.dart';
@@ -29,6 +32,7 @@ import '../../../properties/domain/entities/property.dart' as domain;
 import '../../../properties/domain/entities/amenity.dart';
 import '../../../properties/domain/entities/photo.dart' as domain_photo;
 import '../../../../core/services/api_service.dart';
+import '../../../../core/services/token_storage.dart';
 import '../../../../config/app_config.dart';
 import 'more_page.dart';
 import '../../../../generated/l10n.dart';
@@ -550,6 +554,7 @@ class _HomeContentState extends State<HomeContent> {
   late final MatchingService _matchingService;
   late final PhotoService _photoService;
   late final ProfileService _profileService;
+  late final TokenStorage _tokenStorage;
 
   bool _isLoading = true;
   String? _error;
@@ -560,6 +565,10 @@ class _HomeContentState extends State<HomeContent> {
   Map<int, String> _amenityMap = {};
   HomePropertyCardData? _currentTopProperty;
   String _currentUserImageUrl = 'assets/images/userempty.png';
+  WebSocketChannel? _tenantNotifChannel;
+  int? _currentUserId;
+  DateTime? _lastSeenMatchAcceptedAt;
+  final Set<String> _processedTenantEventIds = {};
   // El deck se controla desde HomePage a través de widget.deckKey
 
   void _spawnHeartsBurst() {
@@ -597,8 +606,17 @@ class _HomeContentState extends State<HomeContent> {
     _matchingService = MatchingService();
     _photoService = PhotoService(_apiService);
     _profileService = ProfileService(apiService: _apiService);
+    _tokenStorage = TokenStorage();
     _loadAllProperties();
     _loadCurrentUserImage();
+    _initTenantMatchFlow();
+  }
+
+  @override
+  void dispose() {
+    _tenantNotifChannel?.sink.close();
+    _tenantNotifChannel = null;
+    super.dispose();
   }
 
   Future<void> _loadCurrentUserImage() async {
@@ -615,6 +633,231 @@ class _HomeContentState extends State<HomeContent> {
       }
     } catch (_) {
       // Mantener imagen por defecto
+    }
+  }
+
+  Future<void> _initTenantMatchFlow() async {
+    final userIdStr = await _tokenStorage.getCurrentUserId();
+    final userId = userIdStr != null ? int.tryParse(userIdStr) : null;
+    if (userId == null) return;
+    _currentUserId = userId;
+    await _restoreLastSeenMatchAcceptedAt();
+    _openTenantNotificationsSocket();
+    await _checkInitialAcceptedMatches();
+  }
+
+  Future<void> _restoreLastSeenMatchAcceptedAt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _matchAcceptedPrefsKey();
+    final raw = prefs.getString(key);
+    if (raw == null || raw.isEmpty) return;
+    final parsed = DateTime.tryParse(raw);
+    if (parsed != null) {
+      _lastSeenMatchAcceptedAt = parsed;
+    }
+  }
+
+  Future<void> _saveLastSeenMatchAcceptedAt(DateTime value) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _matchAcceptedPrefsKey();
+    await prefs.setString(key, value.toIso8601String());
+    _lastSeenMatchAcceptedAt = value;
+  }
+
+  String _matchAcceptedPrefsKey() {
+    final uid = _currentUserId?.toString() ?? 'unknown';
+    return 'tenant_last_match_accepted_at_$uid';
+  }
+
+  Future<void> _checkInitialAcceptedMatches() async {
+    final res = await _matchingService.getMyMatches(
+      type: 'property',
+      status: 'accepted',
+      pageSize: 20,
+    );
+    if (res['success'] != true || res['data'] == null) return;
+    final list = List<Map<String, dynamic>>.from(res['data'] as List);
+    if (list.isEmpty) return;
+    list.sort((a, b) {
+      final ad = _parseMatchDate(a);
+      final bd = _parseMatchDate(b);
+      if (ad == null && bd == null) return 0;
+      if (ad == null) return 1;
+      if (bd == null) return -1;
+      return bd.compareTo(ad);
+    });
+    final latest = list.first;
+    final latestDate = _parseMatchDate(latest);
+    if (latestDate != null && _lastSeenMatchAcceptedAt != null) {
+      if (!latestDate.isAfter(_lastSeenMatchAcceptedAt!)) return;
+    }
+    final matchId = latest['id']?.toString() ?? '';
+    if (matchId.isNotEmpty && _processedTenantEventIds.contains(matchId)) {
+      return;
+    }
+    if (matchId.isNotEmpty) {
+      _processedTenantEventIds.add(matchId);
+    }
+    final propertyId = _extractPropertyId(latest);
+    if (propertyId == null) return;
+    final title = latest['property_title']?.toString();
+    await _showMatchModalForProperty(propertyId: propertyId, propertyTitle: title);
+    if (latestDate != null) {
+      await _saveLastSeenMatchAcceptedAt(latestDate);
+    }
+  }
+
+  DateTime? _parseMatchDate(Map<String, dynamic> match) {
+    final updated = match['updated_at']?.toString();
+    final created = match['created_at']?.toString();
+    return DateTime.tryParse(updated ?? '') ?? DateTime.tryParse(created ?? '');
+  }
+
+  int? _extractPropertyId(Map<String, dynamic> match) {
+    final sid = match['subject_id'];
+    if (sid is int) return sid;
+    if (sid is num) return sid.toInt();
+    return int.tryParse(sid?.toString() ?? '');
+  }
+
+  Future<void> _openTenantNotificationsSocket() async {
+    if (_currentUserId == null) return;
+    if (_tenantNotifChannel != null) return;
+    final accessToken = await _tokenStorage.getAccessToken();
+    final userId = _currentUserId!;
+    WebSocketChannel? ch;
+    try {
+      final uri1 = AppConfig.buildWsUri(
+          '/ws/tenant-notifications/$userId/',
+          token: accessToken);
+      ch = WebSocketChannel.connect(uri1);
+    } catch (_) {}
+    if (ch == null) {
+      try {
+        final uri2 = AppConfig.buildWsUri(
+            '/ws/tenant-notifications/$userId',
+            token: accessToken);
+        ch = WebSocketChannel.connect(uri2);
+      } catch (_) {}
+    }
+    if (ch == null) return;
+    _tenantNotifChannel = ch;
+    ch.stream.listen((raw) async {
+      if (!mounted) return;
+      try {
+        final data = raw is String ? _tryParseJson(raw) : raw;
+        if (data is Map<String, dynamic>) {
+          final event = (data['event'] ?? data['type'] ?? '').toString();
+          if (event == 'match_accepted_by_owner') {
+            await _handleTenantMatchAcceptedEvent(data);
+          }
+        }
+      } catch (_) {}
+    }, onError: (_) {
+      _tenantNotifChannel = null;
+      _scheduleTenantNotifReconnect();
+    }, onDone: () {
+      _tenantNotifChannel = null;
+      _scheduleTenantNotifReconnect();
+    }, cancelOnError: false);
+  }
+
+  void _scheduleTenantNotifReconnect() {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && _tenantNotifChannel == null) {
+        _openTenantNotificationsSocket();
+      }
+    });
+  }
+
+  Future<void> _handleTenantMatchAcceptedEvent(
+      Map<String, dynamic> data) async {
+    final id = (data['notification_id'] ?? data['id'] ?? '').toString();
+    if (id.isNotEmpty && _processedTenantEventIds.contains(id)) return;
+    if (id.isNotEmpty) _processedTenantEventIds.add(id);
+    final propertyIdRaw = data['property_id'];
+    final propertyId = propertyIdRaw is int
+        ? propertyIdRaw
+        : int.tryParse(propertyIdRaw?.toString() ?? '');
+    if (propertyId == null) return;
+    final title = data['property_title']?.toString();
+    await _showMatchModalForProperty(propertyId: propertyId, propertyTitle: title);
+    final ts = data['timestamp']?.toString();
+    final dt = ts != null ? DateTime.tryParse(ts) : null;
+    if (dt != null) {
+      await _saveLastSeenMatchAcceptedAt(dt);
+    }
+  }
+
+  Future<void> _showMatchModalForProperty(
+      {required int propertyId, String? propertyTitle}) async {
+    final resolved = await _resolvePropertyMatchData(propertyId, propertyTitle);
+    if (!mounted) return;
+    final userImage = _currentUserImageUrl;
+    MatchModal.show(
+      context,
+      userImageUrl: userImage,
+      propertyImageUrl: resolved['image'] ?? 'assets/images/empty.jpg',
+      propertyTitle: resolved['title'],
+    );
+  }
+
+  Future<Map<String, String>> _resolvePropertyMatchData(
+      int propertyId, String? fallbackTitle) async {
+    String title = (fallbackTitle ?? '').trim();
+    String imageUrl = '';
+    for (final c in _cards) {
+      if (c.id == propertyId) {
+        if (title.isEmpty) title = c.title;
+        if (c.images.isNotEmpty) imageUrl = c.images.first;
+        break;
+      }
+    }
+    if (imageUrl.isEmpty && _photoUrlsByProperty.containsKey(propertyId)) {
+      final photos = _photoUrlsByProperty[propertyId] ?? [];
+      if (photos.isNotEmpty) imageUrl = photos.first;
+    }
+    if (imageUrl.isEmpty || title.isEmpty) {
+      final propRes = await _propertyService.getPropertyById(propertyId);
+      if (propRes['success'] == true && propRes['data'] != null) {
+        final p = propRes['data'] as domain.Property;
+        if (title.isEmpty) {
+          final typeLabel =
+              p.type.isNotEmpty ? _capitalize(p.type) : S.of(context).propertyLabel;
+          final addressLabel = p.address.isNotEmpty
+              ? _capitalize(p.address)
+              : S.of(context).propertyLabel;
+          title = "$typeLabel · $addressLabel";
+        }
+        if (imageUrl.isEmpty && p.mainPhoto != null && p.mainPhoto!.isNotEmpty) {
+          imageUrl = AppConfig.sanitizeUrl(p.mainPhoto!);
+        }
+      }
+    }
+    if (imageUrl.isEmpty) {
+      final pres = await _photoService.getPropertyPhotos(propertyId);
+      if (pres['success'] == true && pres['data'] != null) {
+        final photos = (pres['data']['photos'] as List<domain_photo.Photo>?);
+        final urls = List<String>.from((photos ?? [])
+            .map((ph) => AppConfig.sanitizeUrl(ph.image))
+            .where((u) => u.isNotEmpty)
+            .toSet()
+            .toList());
+        if (urls.isNotEmpty) {
+          imageUrl = urls.first;
+          _photoUrlsByProperty[propertyId] = urls;
+        }
+      }
+    }
+    if (imageUrl.isEmpty) imageUrl = 'assets/images/empty.jpg';
+    return {'title': title, 'image': imageUrl};
+  }
+
+  Map<String, dynamic>? _tryParseJson(String s) {
+    try {
+      return s.isNotEmpty ? Map<String, dynamic>.from(jsonDecode(s) as Map) : null;
+    } catch (_) {
+      return null;
     }
   }
 

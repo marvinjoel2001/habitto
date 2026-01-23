@@ -153,6 +153,52 @@ class MatchingService {
     }
   }
 
+  Future<Map<String, dynamic>> getMyMatches({
+    String type = 'property',
+    String? status,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final qp = <String, String>{
+        'type': type,
+        'page': page.toString(),
+        'page_size': pageSize.toString(),
+      };
+      if (status != null && status.isNotEmpty) {
+        qp['status'] = status;
+      }
+      final resp = await _apiService.get('/api/matches/my/',
+          queryParameters: qp);
+      if (resp['success'] == true) {
+        final envelope = resp['data'];
+        List<dynamic> results = [];
+        if (envelope is Map &&
+            envelope['data'] is Map &&
+            (envelope['data'] as Map)['results'] is List) {
+          results =
+              List<dynamic>.from((envelope['data'] as Map)['results'] as List);
+        } else if (envelope is Map && envelope['results'] is List) {
+          results = List<dynamic>.from(envelope['results'] as List);
+        } else if (envelope is List) {
+          results = List<dynamic>.from(envelope);
+        }
+        return {'success': true, 'data': results};
+      }
+      return {
+        'success': false,
+        'error': resp['error'] ?? 'Error obteniendo matches',
+        'data': null
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error obteniendo matches: $e',
+        'data': null
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> likeProperty(int propertyId) async {
     try {
       final response =
