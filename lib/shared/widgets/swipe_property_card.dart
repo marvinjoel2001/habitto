@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +14,6 @@ class SwipePropertyCard extends StatefulWidget {
   final double? distanceKm;
   final double likeProgress; // 0..1 para overlay corazón
   final bool isDragging; // feedback visual al arrastrar
-  final ValueChanged<int>? onOpenImage; // índice del image tap
   final double dragDx; // posición actual del drag para calcular opacidad
 
   final double sidePadding;
@@ -33,7 +31,6 @@ class SwipePropertyCard extends StatefulWidget {
     this.distanceKm,
     required this.likeProgress,
     this.isDragging = false,
-    this.onOpenImage,
     this.dragDx = 0.0,
     this.sidePadding = 0.0,
     this.imageTopPadding = 0.0,
@@ -194,8 +191,6 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                                           curve: Curves.easeOut,
                                         );
                                       }
-                                    } else {
-                                      widget.onOpenImage?.call(_page);
                                     }
                                   },
                                 );
@@ -295,104 +290,83 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                       ),
                     ),
 
-                  // Overlay inferior: blur + gradiente con mismo padding lateral que la imagen
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    child: GestureDetector(
-                      onTap: () => widget.onOpenImage?.call(_page),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: BackdropFilter(
-                          filter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                          child: Container(
-                            padding: EdgeInsets.only(
-                                top: 16,
-                                // Si es negativo (solapamiento), usamos 0 o un valor positivo pequeño para el padding real,
-                                // ya que el margen visual lo da el Positioned bottom.
-                                // Pero aquí 'overlayBottomSpace' se pasaba como padding bottom directo.
-                                // Si viene negativo, debemos ignorarlo en el padding y manejarlo de otra forma o usar 0.
-                                bottom: widget.overlayBottomSpace < 0
-                                    ? 16.0
-                                    : widget.overlayBottomSpace),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.white.withValues(alpha: 0.25),
-                                  Colors.white.withValues(alpha: 0.05),
-                                ],
-                              ),
-                              border: Border(
-                                top: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.25),
-                                  width: 1,
-                                ),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        padding: EdgeInsets.only(
+                            top: 52,
+                            bottom: widget.overlayBottomSpace < 0
+                                ? 16.0
+                                : widget.overlayBottomSpace),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.0),
+                              Colors.black.withValues(alpha: 0.7),
+                              Colors.black.withValues(alpha: 0.96),
+                            ],
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Padding(
-                                        padding:
-                                            const EdgeInsets.only(left: 16.0),
-                                        child: AutoSizeText(
-                                          widget.title,
-                                          maxLines: 3,
-                                          minFontSize: 18,
-                                          stepGranularity: 1,
-                                          overflow: TextOverflow.visible,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 32,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
+                                Expanded(
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.only(left: 16.0),
+                                    child: AutoSizeText(
+                                      widget.title,
+                                      maxLines: 3,
+                                      minFontSize: 15,
+                                      stepGranularity: 1,
+                                      overflow: TextOverflow.visible,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 16.0),
-                                      child: Text(
-                                        widget.priceLabel,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 16.0),
-                                  child: Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: widget.tags
-                                        .map((t) => _GlassTag(label: t))
-                                        .toList(),
                                   ),
                                 ),
-                                // Si el espacio inferior es negativo (para solapar botones),
-                                // necesitamos asegurar un espacio mínimo para que el contenido no se corte
-                                // pero permitiendo que el overlay "suba" visualmente.
-                                // Usamos math.max para que nunca sea negativo el SizedBox.
-                                SizedBox(
-                                    height: widget.overlayBottomSpace < 0
-                                        ? 16.0 // Padding mínimo visual si hay solapamiento
-                                        : 16.0),
+                                const SizedBox(width: 12),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 16.0),
+                                  child: Text(
+                                    widget.priceLabel,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
-                          ),
+                            const SizedBox(height: 10),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 16.0),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: widget.tags
+                                    .map((t) => _GlassTag(label: t))
+                                    .toList(),
+                              ),
+                            ),
+                            SizedBox(
+                                height: widget.overlayBottomSpace < 0
+                                    ? 16.0
+                                    : 16.0),
+                          ],
                         ),
                       ),
                     ),

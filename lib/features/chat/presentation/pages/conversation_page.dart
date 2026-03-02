@@ -439,10 +439,8 @@ class _ConversationPageState extends State<ConversationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF6F6F8),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
@@ -451,23 +449,73 @@ class _ConversationPageState extends State<ConversationPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              widget.title,
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.black12,
+                  backgroundImage: (_counterpartAvatarUrl ?? '').isNotEmpty
+                      ? NetworkImage(_counterpartAvatarUrl!)
+                      : null,
+                  child: (_counterpartAvatarUrl ?? '').isEmpty
+                      ? const Icon(Icons.person, color: Colors.black54)
+                      : null,
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${S.of(context).activeStatus} ahora',
+                    style: const TextStyle(
+                      color: Colors.black45,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 6),
-            const Icon(Icons.verified, color: Colors.blue, size: 18),
           ],
         ),
-        centerTitle: true,
+        centerTitle: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.call, color: Colors.black),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.videocam, color: Colors.black),
+            onPressed: () {},
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.black),
             onSelected: (value) async {
@@ -485,75 +533,37 @@ class _ConversationPageState extends State<ConversationPage> {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              cs.primary.withValues(alpha: 0.06),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: const Color(0xFFF6F6F8),
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Column(
-                children: [
-                  Text(S.of(context).todayLabel,
-                      style:
-                          const TextStyle(color: Colors.black54, fontSize: 13)),
-                  const SizedBox(height: 10),
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Colors.black12,
-                        backgroundImage:
-                            (_counterpartAvatarUrl ?? '').isNotEmpty
-                                ? NetworkImage(_counterpartAvatarUrl!)
-                                : null,
-                        child: (_counterpartAvatarUrl ?? '').isEmpty
-                            ? const Icon(Icons.person, color: Colors.black54)
-                            : null,
-                      ),
-                      Positioned(
-                        right: 6,
-                        bottom: 6,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                controller: _scrollController,
+                itemCount: _messages.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          S.of(context).todayLabel,
+                          style: const TextStyle(
+                            color: Colors.black45,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.6,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(S.of(context).matchedWithUser(widget.title),
-                      style:
-                          const TextStyle(color: Colors.black54, fontSize: 13)),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                controller: _scrollController,
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  final m = _messages[index];
+                    );
+                  }
+                  final m = _messages[index - 1];
                   final align =
                       m.fromMe ? Alignment.centerRight : Alignment.centerLeft;
-                  final cs = Theme.of(context).colorScheme;
 
                   return KeyedSubtree(
-                    key: _getItemKey(index),
+                    key: _getItemKey(index - 1),
                     child: Align(
                       alignment: align,
                       child: Padding(
@@ -568,9 +578,27 @@ class _ConversationPageState extends State<ConversationPage> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 12),
                               decoration: BoxDecoration(
-                                color:
-                                    m.fromMe ? cs.primary : AppTheme.grayColor,
-                                borderRadius: BorderRadius.circular(18),
+                                color: m.fromMe
+                                    ? null
+                                    : const Color(0xFFEDEFF3),
+                                gradient: m.fromMe
+                                    ? const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Color(0xFFF26B2E),
+                                          Color(0xFFC12A6A),
+                                        ],
+                                      )
+                                    : null,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(18),
+                                  topRight: const Radius.circular(18),
+                                  bottomLeft: Radius.circular(
+                                      m.fromMe ? 18 : 4),
+                                  bottomRight: Radius.circular(
+                                      m.fromMe ? 4 : 18),
+                                ),
                                 boxShadow: const [
                                   BoxShadow(
                                       color: Color(0x11000000),
@@ -581,9 +609,10 @@ class _ConversationPageState extends State<ConversationPage> {
                               child: Text(
                                 m.text,
                                 style: TextStyle(
-                                  color:
-                                      m.fromMe ? cs.onPrimary : Colors.black87,
-                                  fontSize: 14,
+                                  color: m.fromMe
+                                      ? Colors.white
+                                      : Colors.black87,
+                                  fontSize: 13,
                                   height: 1.35,
                                 ),
                               ),
@@ -592,21 +621,20 @@ class _ConversationPageState extends State<ConversationPage> {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  m.time,
-                                  style: const TextStyle(
-                                      fontSize: 11, color: Colors.black45),
-                                ),
-                                if (m.fromMe) ...[
-                                  const SizedBox(width: 6),
-                                  Icon(
-                                    m.status == 'delivered'
-                                        ? Icons.done_all
-                                        : Icons.check,
-                                    size: 16,
-                                    color: Colors.black54,
+                                if (!m.fromMe)
+                                  Text(
+                                    m.time,
+                                    style: const TextStyle(
+                                        fontSize: 11, color: Colors.black45),
                                   ),
-                                ],
+                                if (m.fromMe)
+                                  Text(
+                                    m.status == 'seen'
+                                        ? 'Seen'
+                                        : m.time,
+                                    style: const TextStyle(
+                                        fontSize: 11, color: Colors.black45),
+                                  ),
                               ],
                             ),
                           ],
@@ -621,19 +649,27 @@ class _ConversationPageState extends State<ConversationPage> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Row(
                 children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE23B2E),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
+                          horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFE6E7EB)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.add, color: Colors.black54),
-                          const SizedBox(width: 10),
                           Expanded(
                             child: TextField(
                               controller: _controller,
@@ -646,19 +682,25 @@ class _ConversationPageState extends State<ConversationPage> {
                               style: const TextStyle(color: Colors.black),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          const Icon(Icons.schedule, color: Colors.black54),
+                          const Icon(Icons.emoji_emotions_outlined,
+                              color: Colors.black45),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.camera_alt_outlined,
+                              color: Colors.black45),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Container(
-                    width: 48,
-                    height: 48,
-                    decoration: AppTheme.getMintButtonDecoration(),
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF2F2F35),
+                      shape: BoxShape.circle,
+                    ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_upward, color: Colors.black),
+                      icon: const Icon(Icons.mic, color: Colors.white),
                       onPressed: () async {
                         await _sendMessage();
                       },

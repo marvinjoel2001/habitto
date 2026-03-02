@@ -37,6 +37,7 @@ class _ChatPageState extends State<ChatPage> {
   final Set<String> _processedMessageIds = <String>{};
   int _inboxReconnectDelayMs = 1000;
   int _pendingMatchRequestsCount = 0;
+  List<Map<String, dynamic>> _pendingMatchRequests = [];
   int _unreadNotificationsCount = 0;
 
   @override
@@ -56,6 +57,8 @@ class _ChatPageState extends State<ChatPage> {
         final requests = result['data'] as List<dynamic>;
         setState(() {
           _pendingMatchRequestsCount = requests.length;
+          _pendingMatchRequests =
+              requests.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         });
       }
     } catch (e) {
@@ -606,7 +609,7 @@ class _ChatPageState extends State<ChatPage> {
                               if (index == 0) {
                                 return _buildNotificationsShortcutTile();
                               } else if (index == 1) {
-                                return _buildMatchRequestsShortcutTile();
+                                return _buildMatchStoriesSection();
                               }
                               final message = _messages[index - 2];
                               return _buildMessageTile(message);
@@ -746,88 +749,130 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildMatchRequestsShortcutTile() {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const _MatchRequestsPage(),
-          ),
-        ).then((_) {
-          _loadPendingMatchRequests();
-        });
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
-          ],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
-              child: const Icon(Icons.favorite, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            S.of(context).matchRequestsTitle,
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black),
-                          ),
-                          const SizedBox(width: 8),
-                          if (_pendingMatchRequestsCount > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                  color: Colors.redAccent,
-                                  borderRadius: BorderRadius.circular(10)),
-                              child: Text('$_pendingMatchRequestsCount',
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600)),
-                            ),
-                        ],
-                      ),
-                      const Icon(Icons.arrow_forward_ios,
-                          color: Color(0xFF9CA3AF), size: 16),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _pendingMatchRequestsCount > 0
-                        ? S.of(context).matchRequestsAction
-                        : S.of(context).noMatchRequests,
-                    style: const TextStyle(fontSize: 14, color: Colors.black54),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+  Widget _buildMatchStoriesSection() {
+    final count = _pendingMatchRequestsCount;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                S.of(context).matchRequestsTitle,
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 8),
+              if (count > 0)
+                Text(
+                  '$count',
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.redAccent),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 96,
+            child: _pendingMatchRequests.isEmpty
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      S.of(context).noMatchRequests,
+                      style: const TextStyle(
+                          fontSize: 13, color: Colors.black45),
+                    ),
+                  )
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _pendingMatchRequests.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final item = _pendingMatchRequests[index];
+                      final user = (item['interested_user'] is Map)
+                          ? Map<String, dynamic>.from(
+                              item['interested_user'] as Map)
+                          : <String, dynamic>{};
+                      final name =
+                          (user['username'] ?? S.of(context).userLabel)
+                              .toString();
+                      final avatar = (user['profile_picture'] ?? '').toString();
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const _MatchRequestsPage(),
+                            ),
+                          ).then((_) {
+                            _loadPendingMatchRequests();
+                          });
+                        },
+                        child: Column(
+                          children: [
+                            Stack(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.redAccent,
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 28,
+                                    backgroundColor: Colors.white,
+                                    backgroundImage: avatar.isNotEmpty
+                                        ? NetworkImage(
+                                            AppConfig.sanitizeUrl(avatar))
+                                        : null,
+                                    child: avatar.isEmpty
+                                        ? const Icon(Icons.person,
+                                            color: Colors.black45)
+                                        : null,
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 4,
+                                  bottom: 4,
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: Colors.white, width: 2),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            SizedBox(
+                              width: 70,
+                              child: Text(
+                                name,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

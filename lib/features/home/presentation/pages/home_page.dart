@@ -11,7 +11,6 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import '../../../../shared/widgets/custom_bottom_navigation.dart';
-import '../../../../shared/widgets/full_screen_image_viewer.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/swipe_property_card.dart';
 import '../../../../shared/widgets/property_card_skeleton.dart';
@@ -1130,7 +1129,7 @@ class _HomeContentState extends State<HomeContent> {
                                 height: cardHeight,
                                 child: PropertyCardSkeleton(
                                   overlayBottomSpace: 60.0,
-                                  outerHorizontalPadding: 4.0,
+                                  outerHorizontalPadding: 0.0,
                                   outerTopPadding: pad.top + 10.0,
                                 ),
                               ),
@@ -1197,7 +1196,7 @@ class _HomeContentState extends State<HomeContent> {
                                       // so text doesn't overlap with the top half of buttons (approx 40px).
                                       // 60.0 gives 40px clearance + 20px padding.
                                       overlayBottomSpace: 60.0,
-                                      outerHorizontalPadding: 4.0,
+                                      outerHorizontalPadding: 0.0,
                                       outerTopPadding: pad.top + 10.0,
                                       onLike: (p) async {
                                         final res = await _matchingService
@@ -1251,6 +1250,20 @@ class _HomeContentState extends State<HomeContent> {
                     _currentTopProperty != null &&
                     _cards.isNotEmpty)
                   Positioned(
+                    right: 16,
+                    top: MediaQuery.of(context).padding.top + 16,
+                    child: _CircleActionButton(
+                      icon: Icons.replay,
+                      iconColor: Colors.white,
+                      borderColor: AppTheme.blackColor.withValues(alpha: 0.6),
+                      size: 44,
+                      onTap: () => widget.deckKey.currentState?.goBack(),
+                    ),
+                  ),
+                if (!_isLoading &&
+                    _currentTopProperty != null &&
+                    _cards.isNotEmpty)
+                  Positioned(
                     left: 0,
                     right: 0,
                     bottom: 0,
@@ -1267,15 +1280,6 @@ class _HomeContentState extends State<HomeContent> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _CircleActionButton(
-                              icon: Icons.replay,
-                              iconColor: Colors.amber,
-                              borderColor: Colors.amber,
-                              size: 54,
-                              onTap: () =>
-                                  widget.deckKey.currentState?.goBack(),
-                            ),
-                            const SizedBox(width: 18),
                             _CircleActionButton(
                               icon: Icons.thumb_down_rounded,
                               iconColor: Colors.redAccent,
@@ -1685,8 +1689,6 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                         ),
                         isDragging: _isDragging,
                         dragDx: dragDx,
-                        onOpenImage: (index) =>
-                            _openFullScreen(property.images, index),
                         outerTopPadding: widget.outerTopPadding,
                         overlayBottomSpace: widget.overlayBottomSpace,
                         outerHorizontalPadding: widget.outerHorizontalPadding,
@@ -1703,8 +1705,6 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
                   likeProgress: 0.0,
                   isDragging: false,
                   dragDx: 0.0,
-                  onOpenImage: (index) =>
-                      _openFullScreen(property.images, index),
                   outerTopPadding: widget.outerTopPadding,
                   overlayBottomSpace: widget.overlayBottomSpace,
                   outerHorizontalPadding: widget.outerHorizontalPadding,
@@ -1725,28 +1725,6 @@ class PropertySwipeDeckState extends State<PropertySwipeDeck>
     final required = width * 0.35; // coincide con nuevo threshold
     final p = (dx / required).clamp(0.0, 1.0);
     return p;
-  }
-
-  void _openFullScreen(List<String> images, int initialIndex) {
-    if (images.isEmpty) return;
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Cerrar',
-      barrierColor: Colors.black.withValues(alpha: 0.98),
-      pageBuilder: (context, anim1, anim2) {
-        return FullScreenImageViewer(
-          images: images,
-          initialIndex: initialIndex,
-          onClose: () {},
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 160),
-      transitionBuilder: (context, anim, secondary, child) {
-        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOut);
-        return FadeTransition(opacity: curved, child: child);
-      },
-    );
   }
 }
 
@@ -1853,7 +1831,6 @@ class _PropertyCardState extends State<PropertyCard> {
                   final url = widget.property.images[i];
                   return GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: () => _openFullScreen(i),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -1936,70 +1913,67 @@ class _PropertyCardState extends State<PropertyCard> {
                 ),
               ),
 
-              // Overlay inferior con blur y gradiente acorde al fondo
               Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                    child: Container(
-                      padding:
-                          const EdgeInsets.fromLTRB(20, 16, 20, bottomSpace),
-                      decoration: BoxDecoration(
-                        // Usar el gradiente de cards para que el fondo plomito
-                        // coincida con el que se percibe detrás del bottom navigation
-                        gradient: AppTheme.getCardGradient(opacity: 0.62),
-                        border: Border(
-                          top: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              width: 0.8),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: AutoSizeText(
-                                  widget.property.title,
-                                  maxLines: 3,
-                                  minFontSize: 18,
-                                  stepGranularity: 1,
-                                  overflow: TextOverflow.visible,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                widget.property.priceLabel,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: widget.property.tags
-                                .map((t) => _GlassTag(label: t))
-                                .toList(),
-                          ),
-                          const SizedBox(height: 16),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.fromLTRB(20, 28, 20, bottomSpace),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.0),
+                          Colors.black.withValues(alpha: 0.3),
+                          Colors.black.withValues(alpha: 0.7),
                         ],
                       ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AutoSizeText(
+                                widget.property.title,
+                                maxLines: 3,
+                                minFontSize: 18,
+                                stepGranularity: 1,
+                                overflow: TextOverflow.visible,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              widget.property.priceLabel,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: widget.property.tags
+                              .map((t) => _GlassTag(label: t))
+                              .toList(),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ),
                   ),
                 ),
@@ -2042,28 +2016,6 @@ class _PropertyCardState extends State<PropertyCard> {
         ),
       ),
     ));
-  }
-
-  void _openFullScreen(int initialIndex) {
-    if (widget.property.images.isEmpty) return;
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Cerrar',
-      barrierColor: Colors.black.withValues(alpha: 0.98),
-      pageBuilder: (context, anim1, anim2) {
-        return FullScreenImageViewer(
-          images: widget.property.images,
-          initialIndex: initialIndex,
-          onClose: () {},
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 160),
-      transitionBuilder: (context, anim, secondary, child) {
-        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOut);
-        return FadeTransition(opacity: curved, child: child);
-      },
-    );
   }
 }
 

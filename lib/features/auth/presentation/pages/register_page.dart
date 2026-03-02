@@ -43,6 +43,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _cameraReady = false;
   List<CameraDescription> _cameras = const [];
   bool _autoCapture = false;
+  static const int _totalSteps = 4;
 
   Future<void> _pickImage() async {
     try {
@@ -259,9 +260,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.of(context).passwordsDoNotMatch)),
-      );
+      _showError(S.of(context).passwordsDoNotMatch);
       return;
     }
 
@@ -365,21 +364,74 @@ class _RegisterPageState extends State<RegisterPage> {
           Navigator.pushReplacementNamed(context, '/login');
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text(response['error'] ?? S.of(context).registrationError)),
-        );
+        _showError(_friendlyRegisterError(response['error']));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.of(context).errorMessage(e.toString()))),
-      );
+      _showError(S.of(context).errorMessage(e.toString()));
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  String _friendlyRegisterError(dynamic error) {
+    if (error == null) return S.of(context).registrationError;
+    if (error is Map) {
+      if (error.containsKey('username')) {
+        return 'El nombre de usuario no está disponible';
+      }
+      if (error.containsKey('email')) {
+        return 'Este correo ya está registrado';
+      }
+      if (error.containsKey('phone')) {
+        return 'Este teléfono ya está registrado';
+      }
+      final msg = error.values.join(' ').toString();
+      if (msg.isNotEmpty) return msg;
+    }
+    final raw = error.toString();
+    final lower = raw.toLowerCase();
+    if (lower.contains('username') && lower.contains('exist')) {
+      return 'El nombre de usuario no está disponible';
+    }
+    if (lower.contains('usuario') && lower.contains('existe')) {
+      return 'El nombre de usuario no está disponible';
+    }
+    if (lower.contains('email') && lower.contains('exist')) {
+      return 'Este correo ya está registrado';
+    }
+    if (lower.contains('correo') && lower.contains('existe')) {
+      return 'Este correo ya está registrado';
+    }
+    if (lower.contains('phone') && lower.contains('exist')) {
+      return 'Este teléfono ya está registrado';
+    }
+    if (lower.contains('telefono') && lower.contains('existe')) {
+      return 'Este teléfono ya está registrado';
+    }
+    return raw.isNotEmpty ? raw : S.of(context).registrationError;
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  bool _validateCurrentStep() {
+    if (_step == 0) {
+      if (_firstNameController.text.isEmpty ||
+          _lastNameController.text.isEmpty) {
+        _showError(S.of(context).requiredField);
+        return false;
+      }
+      return true;
+    }
+    if (_step == 2 || _step == 3) {
+      return _formKey.currentState!.validate();
+    }
+    return true;
   }
 
   void _showAiChatProfileCreation() {
@@ -467,14 +519,41 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
       body: Container(
-        color: Colors.white,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFF6F6F8),
+              Color(0xFFEDEFF5),
+              Color(0xFFF8F9FB),
+            ],
+          ),
+        ),
         child: SafeArea(
           child: Stack(
             children: [
               if (_step == 1)
                 Positioned.fill(child: _buildCameraFull())
               else
-                Center(child: _buildCardContainer(child: _buildStepBody())),
+                Center(
+                  child: _buildCardContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildStepHeader(),
+                        const SizedBox(height: 16),
+                        _buildStepBody(),
+                      ],
+                    ),
+                  ),
+                ),
+              Positioned(
+                left: 20,
+                right: 20,
+                top: 8,
+                child: _buildProgressHeader(),
+              ),
               Positioned(
                 left: 24,
                 right: 24,
@@ -524,6 +603,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   : S.of(context).registerButton,
                               onPressed: _step < 3
                                   ? () {
+                                      if (!_validateCurrentStep()) return;
                                       setState(() => _step++);
                                       if (_step == 1) _initCamera();
                                     }
@@ -544,6 +624,124 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildProgressHeader() {
+    final progress = (_step + 1) / _totalSteps;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: List.generate(_totalSteps, (i) {
+                  final active = i <= _step;
+                  return Expanded(
+                    child: Container(
+                      height: 3,
+                      margin: EdgeInsets.only(right: i == _totalSteps - 1 ? 0 : 6),
+                      decoration: BoxDecoration(
+                        color: active
+                            ? AppTheme.primaryColor
+                            : Colors.black.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Paso ${_step + 1}/$_totalSteps',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    _stepTitle(),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              LinearProgressIndicator(
+                value: progress,
+                minHeight: 2,
+                backgroundColor: Colors.black.withValues(alpha: 0.08),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _stepTitle(),
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _stepSubtitle(),
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.black54,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _stepTitle() {
+    switch (_step) {
+      case 0:
+        return S.of(context).yourNameTitle;
+      case 1:
+        return S.of(context).takePhotoButton;
+      case 2:
+        return S.of(context).contactTitle;
+      default:
+        return S.of(context).accountTitle;
+    }
+  }
+
+  String _stepSubtitle() {
+    switch (_step) {
+      case 0:
+        return 'Usa tu nombre real para personalizar tu perfil';
+      case 1:
+        return 'Agrega una foto clara para generar confianza';
+      case 2:
+        return 'Tu contacto será privado y solo visible en matches';
+      default:
+        return 'Crea tus credenciales para ingresar a Habitto';
+    }
   }
 
   Widget _buildProfileImageSection() {
@@ -584,12 +782,6 @@ class _RegisterPageState extends State<RegisterPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(S.of(context).yourNameTitle,
-                style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black)),
-            const SizedBox(height: 24),
             Row(children: [
               Expanded(
                   child: CustomTextField(
@@ -615,12 +807,6 @@ class _RegisterPageState extends State<RegisterPage> {
         return Form(
           key: _formKey,
           child: Column(children: [
-            Text(S.of(context).contactTitle,
-                style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black)),
-            const SizedBox(height: 24),
             CustomTextField(
                 controller: _emailController,
                 hintText: S.of(context).emailPlaceholder,
@@ -681,12 +867,6 @@ class _RegisterPageState extends State<RegisterPage> {
         return Form(
             key: _formKey,
             child: Column(children: [
-              Text(S.of(context).accountTitle,
-                  style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black)),
-              const SizedBox(height: 24),
               CustomTextField(
                   controller: _usernameController,
                   hintText: S.of(context).usernamePlaceholder,
