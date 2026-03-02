@@ -14,15 +14,10 @@ void main() {
               child: CustomBottomNavigation(
                 currentIndex: 3, // Chat selected - the problematic one
                 onTap: (index) {},
-                showAddButton: false,
-                isOwnerOrAgent: false,
-                onHomeTap: () {},
-                onMoreTap: () {},
                 onTenantMenuClose: () {},
                 onSwipeLeft: () {},
                 onSwipeRight: () {},
                 onGoBack: () {},
-                onAddFavorite: () {},
                 userMode: 'inquilino',
               ),
             ),
@@ -51,15 +46,10 @@ void main() {
               child: CustomBottomNavigation(
                 currentIndex: 3, // Chat selected
                 onTap: (index) {},
-                showAddButton: false,
-                isOwnerOrAgent: false,
-                onHomeTap: () {},
-                onMoreTap: () {},
                 onTenantMenuClose: () {},
                 onSwipeLeft: () {},
                 onSwipeRight: () {},
                 onGoBack: () {},
-                onAddFavorite: () {},
                 userMode: 'inquilino',
               ),
             ),
@@ -83,15 +73,10 @@ void main() {
               child: CustomBottomNavigation(
                 currentIndex: 3, // Chat selected
                 onTap: (index) {},
-                showAddButton: false,
-                isOwnerOrAgent: false,
-                onHomeTap: () {},
-                onMoreTap: () {},
                 onTenantMenuClose: () {},
                 onSwipeLeft: () {},
                 onSwipeRight: () {},
                 onGoBack: () {},
-                onAddFavorite: () {},
                 userMode: 'inquilino',
               ),
             ),
@@ -107,22 +92,17 @@ void main() {
 
     testWidgets('No overflow with different selected items',
         (WidgetTester tester) async {
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 4; i++) {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               bottomNavigationBar: CustomBottomNavigation(
                 currentIndex: i,
                 onTap: (index) {},
-                showAddButton: false,
-                isOwnerOrAgent: false,
-                onHomeTap: () {},
-                onMoreTap: () {},
                 onTenantMenuClose: () {},
                 onSwipeLeft: () {},
                 onSwipeRight: () {},
                 onGoBack: () {},
-                onAddFavorite: () {},
                 userMode: 'inquilino',
               ),
             ),
@@ -137,38 +117,6 @@ void main() {
       }
     });
 
-    testWidgets('No overflow with owner/agent mode',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            bottomNavigationBar: CustomBottomNavigation(
-              currentIndex: 2, // Center position for owner
-              onTap: (index) {},
-              showAddButton: true,
-              isOwnerOrAgent: true,
-              onHomeTap: () {},
-              onMoreTap: () {},
-              onTenantMenuClose: () {},
-              onSwipeLeft: () {},
-              onSwipeRight: () {},
-              onGoBack: () {},
-              onAddFavorite: () {},
-              userMode: 'propietario',
-            ),
-          ),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      // Verify no overflow errors
-      expect(tester.takeException(), isNull);
-
-      // Verify center button is present
-      expect(find.byIcon(Icons.home), findsOneWidget);
-    });
-
     testWidgets('Text scaling works correctly', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -178,15 +126,10 @@ void main() {
               child: CustomBottomNavigation(
                 currentIndex: 1, // Buscar selected
                 onTap: (index) {},
-                showAddButton: false,
-                isOwnerOrAgent: false,
-                onHomeTap: () {},
-                onMoreTap: () {},
                 onTenantMenuClose: () {},
                 onSwipeLeft: () {},
                 onSwipeRight: () {},
                 onGoBack: () {},
-                onAddFavorite: () {},
                 userMode: 'inquilino',
               ),
             ),
@@ -199,8 +142,8 @@ void main() {
       // Verify text is scaled but not overflowing
       expect(tester.takeException(), isNull);
 
-      // Find the Buscar text
-      final buscarText = tester.widget<Text>(find.text('Buscar'));
+      // Find the Propiedades text
+      final buscarText = tester.widget<Text>(find.text('Propiedades'));
       expect(buscarText.style!.fontSize, greaterThan(12));
       expect(buscarText.overflow, equals(TextOverflow.ellipsis));
     });
@@ -214,15 +157,10 @@ void main() {
               child: CustomBottomNavigation(
                 currentIndex: 3, // Chat selected
                 onTap: (index) {},
-                showAddButton: false,
-                isOwnerOrAgent: false,
-                onHomeTap: () {},
-                onMoreTap: () {},
                 onTenantMenuClose: () {},
                 onSwipeLeft: () {},
                 onSwipeRight: () {},
                 onGoBack: () {},
-                onAddFavorite: () {},
                 userMode: 'inquilino',
               ),
             ),
@@ -244,15 +182,10 @@ void main() {
             bottomNavigationBar: CustomBottomNavigation(
               currentIndex: 0,
               onTap: (index) {},
-              showAddButton: false,
-              isOwnerOrAgent: false,
-              onHomeTap: () {},
-              onMoreTap: () {},
               onTenantMenuClose: () {},
               onSwipeLeft: () {},
               onSwipeRight: () {},
               onGoBack: () {},
-              onAddFavorite: () {},
               userMode: 'inquilino',
             ),
           ),
@@ -263,7 +196,7 @@ void main() {
 
       // Find all navigation items
       final items = find.byType(InkWell);
-      expect(items, findsNWidgets(5));
+      expect(items, findsNWidgets(4));
 
       // Verify no overflow
       expect(tester.takeException(), isNull);

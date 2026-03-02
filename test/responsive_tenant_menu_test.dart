@@ -33,7 +33,6 @@ void main() {
                       onSwipeLeft: () {},
                       onSwipeRight: () {},
                       onGoBack: () {},
-                      onAddFavorite: () {},
                     ),
                   ],
                 ),
@@ -76,7 +75,6 @@ void main() {
                     onSwipeLeft: () {},
                     onSwipeRight: () {},
                     onGoBack: () {},
-                    onAddFavorite: () {},
                   ),
                 ],
               ),
@@ -89,7 +87,7 @@ void main() {
 
       // Find all action buttons
       final buttons = find.byType(InkWell);
-      expect(buttons, findsNWidgets(4));
+      expect(buttons, findsNWidgets(3));
 
       // Verify no overflow on small screens
       expect(tester.takeException(), isNull);
@@ -112,7 +110,6 @@ void main() {
                     onSwipeLeft: () {},
                     onSwipeRight: () {},
                     onGoBack: () {},
-                    onAddFavorite: () {},
                   ),
                 ],
               ),
@@ -125,7 +122,7 @@ void main() {
 
       // Find all action buttons
       final buttons = find.byType(InkWell);
-      expect(buttons, findsNWidgets(4));
+      expect(buttons, findsNWidgets(3));
 
       // Verify no overflow on large screens
       expect(tester.takeException(), isNull);
@@ -147,7 +144,6 @@ void main() {
                     onSwipeLeft: () {},
                     onSwipeRight: () {},
                     onGoBack: () {},
-                    onAddFavorite: () {},
                   ),
                 ],
               ),
@@ -182,7 +178,6 @@ void main() {
                   onSwipeLeft: () {},
                   onSwipeRight: () {},
                   onGoBack: () {},
-                  onAddFavorite: () {},
                 ),
               ],
             ),
@@ -205,7 +200,6 @@ void main() {
         'onSwipeLeft': false,
         'onSwipeRight': false,
         'onGoBack': false,
-        'onAddFavorite': false,
       };
 
       await tester.pumpWidget(
@@ -225,9 +219,6 @@ void main() {
                   },
                   onGoBack: () {
                     callbacks['onGoBack'] = true;
-                  },
-                  onAddFavorite: () {
-                    callbacks['onAddFavorite'] = true;
                   },
                 ),
               ],
@@ -251,9 +242,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(callbacks['onSwipeRight'], isTrue);
 
-      await tester.tap(find.byIcon(Icons.star)); // Add favorite
-      await tester.pumpAndSettle();
-      expect(callbacks['onAddFavorite'], isTrue);
     });
   });
 }

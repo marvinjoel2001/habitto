@@ -4,38 +4,27 @@ import 'dart:ui' as ui;
 import '../theme/app_theme.dart';
 import '../../generated/l10n.dart';
 
-import 'floating_action_menu.dart';
 import 'tenant_floating_menu.dart';
 
 class CustomBottomNavigation extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
-  final bool showAddButton;
-  final bool isOwnerOrAgent;
-  final VoidCallback onHomeTap;
-  final VoidCallback onMoreTap;
   final bool showTenantFloatingMenu;
   final VoidCallback onTenantMenuClose;
   final VoidCallback onSwipeLeft;
   final VoidCallback onSwipeRight;
   final VoidCallback onGoBack;
-  final VoidCallback? onAiChatTap;
   final String userMode; // 'inquilino' | 'propietario' | 'agente'
 
   const CustomBottomNavigation({
     super.key,
     required this.currentIndex,
     required this.onTap,
-    this.showAddButton = false,
-    required this.isOwnerOrAgent,
-    required this.onHomeTap,
-    required this.onMoreTap,
     this.showTenantFloatingMenu = false,
     required this.onTenantMenuClose,
     required this.onSwipeLeft,
     required this.onSwipeRight,
     required this.onGoBack,
-    this.onAiChatTap,
     required this.userMode,
   });
 
@@ -44,89 +33,10 @@ class CustomBottomNavigation extends StatefulWidget {
 }
 
 class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
-  bool _isFloatingMenuVisible = false;
-  OverlayEntry? _ownerOverlayEntry;
   OverlayEntry? _tenantOverlayEntry;
-  final Duration _animDuration = const Duration(milliseconds: 220);
-  final Curve _animCurve = Curves.easeOutCubic;
-
-  bool _isWhiteMode() {
-    if (widget.currentIndex == 2) {
-      return true; // Chat/Buzón
-    }
-    if (widget.userMode != 'inquilino') {
-      if (widget.currentIndex == 0) return true; // Candidatos/Leads
-      if (widget.currentIndex == 1) return true; // Propiedades/Portafolio
-    }
-    return false;
-  }
-
-  bool _isLabelBlackMode(int index) {
-    if (index == 2) return true; // Chat
-    if (widget.userMode != 'inquilino' && index == 0) {
-      return true; // Candidatos/Leads
-    }
-    if (widget.userMode == 'propietario' && index == 1) {
-      return true; // Propiedades
-    }
-    return false;
-  }
-
-  void _toggleFloatingMenu() {
-    setState(() {
-      _isFloatingMenuVisible = !_isFloatingMenuVisible;
-    });
-    if (_isFloatingMenuVisible) {
-      _showOwnerOverlay();
-    } else {
-      _hideOwnerOverlay();
-    }
-  }
 
   void _closeFloatingMenu() {
-    if (_isFloatingMenuVisible) {
-      setState(() {
-        _isFloatingMenuVisible = false;
-      });
-    }
-    _hideOwnerOverlay();
     _hideTenantOverlay();
-  }
-
-  void _showOwnerOverlay() {
-    if (_ownerOverlayEntry != null) return;
-    _ownerOverlayEntry = OverlayEntry(
-      builder: (ctx) => FloatingActionMenu(
-        isVisible: true,
-        onHomeTap: () {
-          _closeFloatingMenu();
-          widget.onHomeTap();
-        },
-        onMoreTap: () {
-          _closeFloatingMenu();
-          Navigator.pushNamed(ctx, '/add-property');
-        },
-        onClose: _closeFloatingMenu,
-        onAiChatTap: () {
-          _closeFloatingMenu();
-          widget.onAiChatTap?.call();
-        },
-        onSocialAreasTap: () {
-          _closeFloatingMenu();
-          Navigator.pushNamed(ctx, '/social-areas');
-        },
-        onAlertHistoryTap: () {
-          _closeFloatingMenu();
-          Navigator.pushNamed(ctx, '/alert-history');
-        },
-      ),
-    );
-    Overlay.of(context).insert(_ownerOverlayEntry!);
-  }
-
-  void _hideOwnerOverlay() {
-    _ownerOverlayEntry?.remove();
-    _ownerOverlayEntry = null;
   }
 
   void _showTenantOverlay() {
@@ -163,40 +73,29 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   @override
   void didUpdateWidget(CustomBottomNavigation oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Cerrar cualquier overlay al cambiar de página o estado
     if (oldWidget.currentIndex != widget.currentIndex) {
       _closeFloatingMenu();
     }
-    if (!widget.isOwnerOrAgent) {
-      if (widget.showTenantFloatingMenu && _tenantOverlayEntry == null) {
-        _showTenantOverlay();
-      } else if (!widget.showTenantFloatingMenu &&
-          _tenantOverlayEntry != null) {
-        _hideTenantOverlay();
-      }
-    } else {
-      if (_tenantOverlayEntry != null) {
-        _hideTenantOverlay();
-      }
+    if (widget.showTenantFloatingMenu && _tenantOverlayEntry == null) {
+      _showTenantOverlay();
+    } else if (!widget.showTenantFloatingMenu && _tenantOverlayEntry != null) {
+      _hideTenantOverlay();
     }
   }
 
   @override
   void dispose() {
-    _hideOwnerOverlay();
     _hideTenantOverlay();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
     const double navHeight = 70.0;
-    final bool showCenterButton = widget.userMode != 'inquilino';
 
     return SizedBox(
-      height: navHeight + bottomPadding + 40, // Extra space for floating button
+      height: navHeight + bottomPadding,
       child: Stack(
         alignment: Alignment.bottomCenter,
         clipBehavior: Clip.none,
@@ -216,7 +115,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
                   painter: _NavCurvePainter(
                     color: Colors.white.withValues(alpha: 0.85),
                     shadowColor: Colors.black.withValues(alpha: 0.1),
-                    hasNotch: showCenterButton,
+                    hasNotch: false,
                   ),
                 ),
               ),
@@ -229,218 +128,53 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
             left: 0,
             right: 0,
             height: navHeight,
-            child: showCenterButton
-                ? Row(
-                    children: [
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildNavItem(
-                                context,
-                                0,
-                                widget.userMode == 'inquilino'
-                                    ? Icons.style_outlined
-                                    : widget.userMode == 'propietario'
-                                        ? Icons.group_outlined
-                                        : Icons.leaderboard_outlined,
-                                widget.userMode == 'inquilino'
-                                    ? Icons.style
-                                    : widget.userMode == 'propietario'
-                                        ? Icons.groups
-                                        : Icons.leaderboard,
-                                widget.userMode == 'inquilino'
-                                    ? S.of(context).navExplore
-                                    : widget.userMode == 'propietario'
-                                        ? S.of(context).navCandidates
-                                        : S.of(context).navLeads),
-                            _buildNavItem(
-                                context,
-                                1,
-                                widget.userMode == 'inquilino'
-                                    ? Icons.map_outlined
-                                    : widget.userMode == 'propietario'
-                                        ? Icons.home_work_outlined
-                                        : Icons.domain_outlined,
-                                widget.userMode == 'inquilino'
-                                    ? Icons.map
-                                    : widget.userMode == 'propietario'
-                                        ? Icons.home_work
-                                        : Icons.domain,
-                                widget.userMode == 'inquilino'
-                                    ? S.of(context).navMap
-                                    : widget.userMode == 'propietario'
-                                        ? S.of(context).navProperties
-                                        : S.of(context).navPortfolio),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 56), // Space for center button
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildNavItem(
-                                context,
-                                2,
-                                Icons.chat_bubble_outline,
-                                Icons.chat_bubble,
-                                widget.userMode == 'agente'
-                                    ? S.of(context).navInbox
-                                    : S.of(context).navChat),
-                            _buildNavItem(
-                                context,
-                                3,
-                                Icons.person_outline,
-                                Icons.person,
-                                widget.userMode == 'agente'
-                                    ? S.of(context).navProfProfile
-                                    : S.of(context).navProfile),
-                          ],
-                        ),
-                      ),
-                    ],
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildNavItem(
-                          context,
-                          0,
-                          widget.userMode == 'inquilino'
-                              ? Icons.style_outlined
-                              : widget.userMode == 'propietario'
-                                  ? Icons.group_outlined
-                                  : Icons.leaderboard_outlined,
-                          widget.userMode == 'inquilino'
-                              ? Icons.style
-                              : widget.userMode == 'propietario'
-                                  ? Icons.groups
-                                  : Icons.leaderboard,
-                          widget.userMode == 'inquilino'
-                              ? S.of(context).navExplore
-                              : widget.userMode == 'propietario'
-                                  ? S.of(context).navCandidates
-                                  : S.of(context).navLeads),
-                      _buildNavItem(
-                          context,
-                          1,
-                          widget.userMode == 'inquilino'
-                              ? Icons.map_outlined
-                              : widget.userMode == 'propietario'
-                                  ? Icons.home_work_outlined
-                                  : Icons.domain_outlined,
-                          widget.userMode == 'inquilino'
-                              ? Icons.map
-                              : widget.userMode == 'propietario'
-                                  ? Icons.home_work
-                                  : Icons.domain,
-                          widget.userMode == 'inquilino'
-                              ? S.of(context).navMap
-                              : widget.userMode == 'propietario'
-                                  ? S.of(context).navProperties
-                                  : S.of(context).navPortfolio),
-                      _buildNavItem(
-                          context,
-                          2,
-                          Icons.chat_bubble_outline,
-                          Icons.chat_bubble,
-                          widget.userMode == 'agente'
-                              ? S.of(context).navInbox
-                              : S.of(context).navChat),
-                      _buildNavItem(
-                          context,
-                          3,
-                          Icons.person_outline,
-                          Icons.person,
-                          widget.userMode == 'agente'
-                              ? S.of(context).navProfProfile
-                              : S.of(context).navProfile),
-                    ],
-                  ),
-          ),
-
-          // Center Button (Floating) - Only for owners/agents
-          if (showCenterButton)
-            Positioned(
-              top: 10, // Adjust to sit in the notch
-              child: _buildCenterButtonForOwners(context),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildNavItem(
+                  context,
+                  0,
+                  Icons.favorite_border,
+                  Icons.favorite_border,
+                  S.of(context).menuMatchs,
+                ),
+                _buildNavItem(
+                  context,
+                  1,
+                  Icons.home_work_outlined,
+                  Icons.home_work_outlined,
+                  S.of(context).navProperties,
+                ),
+                _buildNavItem(
+                  context,
+                  2,
+                  Icons.chat_bubble_outline,
+                  Icons.chat_bubble_outline,
+                  S.of(context).navChat,
+                ),
+                _buildNavItem(
+                  context,
+                  3,
+                  Icons.person_outline,
+                  Icons.person_outline,
+                  S.of(context).navProfile,
+                ),
+              ],
             ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCenterButtonForOwners(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: _isFloatingMenuVisible
-          ? S.of(context).closeMenu
-          : S.of(context).openMenu,
-      child: GestureDetector(
-        onTap: () {
-          if (_isFloatingMenuVisible) {
-            _closeFloatingMenu();
-          } else {
-            widget.onTap(2);
-            _toggleFloatingMenu();
-          }
-        },
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Icon(
-              _isFloatingMenuVisible ? Icons.close : Icons.home,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, '/add-property');
-      },
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 24,
-        ),
-      ),
-    );
-  }
 
   Widget _buildNavItem(
     BuildContext context,
     int index,
     IconData inactiveIcon,
     IconData activeIcon,
-    String label, {
-    Color? color,
-  }) {
+    String label,
+  ) {
     final isSelected = widget.currentIndex == index;
     // High contrast for accessibility
     const activeColor = AppTheme.primaryColor;

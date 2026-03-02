@@ -4,7 +4,8 @@ import 'package:habitto/shared/widgets/tenant_floating_menu.dart';
 
 void main() {
   group('TenantFloatingMenu Tests', () {
-    testWidgets('Menu appears with 50% opacity overlay', (WidgetTester tester) async {
+    testWidgets('Menu appears with 50% opacity overlay',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -17,7 +18,6 @@ void main() {
                   onSwipeLeft: () {},
                   onSwipeRight: () {},
                   onGoBack: () {},
-                  onAddFavorite: () {},
                 ),
               ],
             ),
@@ -35,7 +35,8 @@ void main() {
       expect(overlay.color, equals(Colors.black.withValues(alpha: 0.5)));
     });
 
-    testWidgets('Menu buttons are positioned correctly', (WidgetTester tester) async {
+    testWidgets('Menu buttons are positioned correctly',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -48,7 +49,6 @@ void main() {
                   onSwipeLeft: () {},
                   onSwipeRight: () {},
                   onGoBack: () {},
-                  onAddFavorite: () {},
                 ),
               ],
             ),
@@ -62,14 +62,15 @@ void main() {
       expect(find.byIcon(Icons.rotate_left), findsOneWidget);
       expect(find.byIcon(Icons.close), findsOneWidget);
       expect(find.byIcon(Icons.favorite), findsOneWidget);
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsNothing);
 
       // Verify buttons are positioned in a wrap layout
       final wrap = tester.widget<Wrap>(find.byType(Wrap));
       expect(wrap.alignment, equals(WrapAlignment.center));
     });
 
-    testWidgets('Menu appears immediately without delay', (WidgetTester tester) async {
+    testWidgets('Menu appears immediately without delay',
+        (WidgetTester tester) async {
       bool menuVisible = false;
 
       await tester.pumpWidget(
@@ -88,7 +89,6 @@ void main() {
                       onSwipeLeft: () {},
                       onSwipeRight: () {},
                       onGoBack: () {},
-                      onAddFavorite: () {},
                     ),
                     Positioned(
                       bottom: 20,
@@ -116,7 +116,8 @@ void main() {
       expect(find.byIcon(Icons.rotate_left), findsOneWidget);
     });
 
-    testWidgets('Menu closes when overlay is tapped', (WidgetTester tester) async {
+    testWidgets('Menu closes when overlay is tapped',
+        (WidgetTester tester) async {
       bool menuVisible = true;
       bool menuClosed = false;
 
@@ -135,7 +136,6 @@ void main() {
                   onSwipeLeft: () {},
                   onSwipeRight: () {},
                   onGoBack: () {},
-                  onAddFavorite: () {},
                 ),
               ],
             ),
@@ -152,11 +152,11 @@ void main() {
       expect(menuClosed, isTrue);
     });
 
-    testWidgets('All action buttons trigger their callbacks', (WidgetTester tester) async {
+    testWidgets('All action buttons trigger their callbacks',
+        (WidgetTester tester) async {
       bool swipeLeftCalled = false;
       bool swipeRightCalled = false;
       bool goBackCalled = false;
-      bool addFavoriteCalled = false;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -170,7 +170,6 @@ void main() {
                   onSwipeLeft: () => swipeLeftCalled = true,
                   onSwipeRight: () => swipeRightCalled = true,
                   onGoBack: () => goBackCalled = true,
-                  onAddFavorite: () => addFavoriteCalled = true,
                 ),
               ],
             ),
@@ -189,12 +188,10 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.favorite));
       expect(swipeRightCalled, isTrue);
-
-      await tester.tap(find.byIcon(Icons.star));
-      expect(addFavoriteCalled, isTrue);
     });
 
-    testWidgets('Menu positioned correctly above navigation', (WidgetTester tester) async {
+    testWidgets('Menu positioned correctly above navigation',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -207,7 +204,6 @@ void main() {
                   onSwipeLeft: () {},
                   onSwipeRight: () {},
                   onGoBack: () {},
-                  onAddFavorite: () {},
                 ),
               ],
             ),
@@ -224,7 +220,8 @@ void main() {
       expect(positioned.right, equals(0));
     });
 
-    testWidgets('Menu handles visibility changes smoothly', (WidgetTester tester) async {
+    testWidgets('Menu handles visibility changes smoothly',
+        (WidgetTester tester) async {
       bool menuVisible = false;
 
       await tester.pumpWidget(
@@ -243,12 +240,12 @@ void main() {
                       onSwipeLeft: () {},
                       onSwipeRight: () {},
                       onGoBack: () {},
-                      onAddFavorite: () {},
                     ),
                     Positioned(
                       bottom: 20,
                       child: ElevatedButton(
-                        onPressed: () => setState(() => menuVisible = !menuVisible),
+                        onPressed: () =>
+                            setState(() => menuVisible = !menuVisible),
                         child: const Text('Toggle Menu'),
                       ),
                     ),
@@ -274,7 +271,8 @@ void main() {
       expect(find.byIcon(Icons.rotate_left), findsNothing);
     });
 
-    testWidgets('Menu works with different screen sizes', (WidgetTester tester) async {
+    testWidgets('Menu works with different screen sizes',
+        (WidgetTester tester) async {
       // Test with small screen
       await tester.pumpWidget(
         MaterialApp(
@@ -291,7 +289,6 @@ void main() {
                     onSwipeLeft: () {},
                     onSwipeRight: () {},
                     onGoBack: () {},
-                    onAddFavorite: () {},
                   ),
                 ],
               ),
@@ -306,7 +303,7 @@ void main() {
       expect(find.byIcon(Icons.rotate_left), findsOneWidget);
       expect(find.byIcon(Icons.close), findsOneWidget);
       expect(find.byIcon(Icons.favorite), findsOneWidget);
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsNothing);
     });
   });
 }

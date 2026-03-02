@@ -16,12 +16,9 @@ import '../../../../shared/widgets/swipe_property_card.dart';
 import '../../../../shared/widgets/property_card_skeleton.dart';
 import '../../../matching/data/services/matching_service.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
-import '../../../agent/presentation/pages/agent_leads_page.dart';
-import '../../../agent/presentation/pages/agent_portfolio_page.dart';
 import '../../../properties/presentation/pages/properties_list_page.dart';
 import '../../../chat/presentation/pages/match_requests_page.dart';
 import '../../../profile/presentation/pages/create_search_profile_page.dart';
-import '../../../search/presentation/pages/search_page.dart' as search;
 import '../../../chat/presentation/pages/chat_page.dart';
 import '../../../profile/domain/entities/profile.dart';
 import '../../../profile/data/services/profile_service.dart';
@@ -33,7 +30,6 @@ import '../../../properties/domain/entities/photo.dart' as domain_photo;
 import '../../../../core/services/api_service.dart';
 import '../../../../core/services/token_storage.dart';
 import '../../../../config/app_config.dart';
-import 'more_page.dart';
 import '../../../../generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
@@ -58,11 +54,6 @@ class _HomePageState extends State<HomePage> {
       GlobalKey<PropertySwipeDeckState>();
   HomePropertyCardData? _currentTopProperty; // Current property being viewed
 
-  // Keep track of which tab was the main home before the swap
-  int get _homeIndex => 2; // Home is now at the center
-  bool get _isOwnerOrAgent =>
-      _userMode == profile.UserMode.propietario ||
-      _userMode == profile.UserMode.agente;
   bool get _isDirectUser =>
       _userMode == profile.UserMode.inquilino; // Direct users (tenants)
 
@@ -242,38 +233,21 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<Widget> get _pages => [
-        if (_userMode == profile.UserMode.inquilino) ...[
-          // Explorar (Deck)
-          HomeContent(deckKey: _deckKey, onFilterTap: _openAiChat),
-          // Mapa
-          const search.SearchPage(),
-          // Chat
-          const ChatPage(),
-          // Perfil
-          profile.ProfilePage(onModeChanged: _onUserModeChanged),
-        ] else if (_userMode == profile.UserMode.propietario) ...[
-          // Candidatos (solicitudes de match)
-          const MatchRequestsPage(),
-          // Mis Propiedades
-          const PropertiesListPage(),
-          // Chat
-          const ChatPage(),
-          // Perfil
-          profile.ProfilePage(onModeChanged: _onUserModeChanged),
-        ] else ...[
-          // Agente
-          const AgentLeadsPage(),
-          const AgentPortfolioPage(),
-          // Buzón
-          const ChatPage(),
-          // Perfil profesional
-          profile.ProfilePage(onModeChanged: _onUserModeChanged),
-        ]
+        MatchRequestsPage(
+            userMode: _userMode == profile.UserMode.inquilino
+                ? 'inquilino'
+                : _userMode == profile.UserMode.propietario
+                    ? 'propietario'
+                    : 'agente'),
+        PropertiesListPage(
+            userMode: _userMode == profile.UserMode.inquilino
+                ? 'inquilino'
+                : _userMode == profile.UserMode.propietario
+                    ? 'propietario'
+                    : 'agente'),
+        const ChatPage(),
+        profile.ProfilePage(onModeChanged: _onUserModeChanged),
       ];
-
-  bool get _showAddButton =>
-      _userMode == profile.UserMode.propietario ||
-      _userMode == profile.UserMode.agente;
 
   int _backgroundVariantForIndex() {
     if (_userMode == profile.UserMode.inquilino) {
@@ -367,8 +341,6 @@ class _HomePageState extends State<HomePage> {
                 bottom: 0,
                 child: CustomBottomNavigation(
                   currentIndex: _currentIndex,
-                  showAddButton: _showAddButton,
-                  isOwnerOrAgent: _isOwnerOrAgent,
                   userMode: _userMode == profile.UserMode.inquilino
                       ? 'inquilino'
                       : (_userMode == profile.UserMode.propietario
@@ -379,25 +351,12 @@ class _HomePageState extends State<HomePage> {
                   onSwipeLeft: _handleSwipeLeft,
                   onSwipeRight: _handleSwipeRight,
                   onGoBack: _handleGoBack,
-                  onAiChatTap: _openAiChat,
                   onTap: (index) {
                     setState(() {
                       _lastIndex = _currentIndex;
                       _currentIndex = index;
                       _closeTenantFloatingMenu();
                     });
-                  },
-                  onHomeTap: () {
-                    setState(() {
-                      _lastIndex = _currentIndex;
-                      _currentIndex = 0;
-                    });
-                  },
-                  onMoreTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MorePage()),
-                    );
                   },
                 ),
               ),
@@ -700,7 +659,8 @@ class _HomeContentState extends State<HomeContent> {
     final propertyId = _extractPropertyId(latest);
     if (propertyId == null) return;
     final title = latest['property_title']?.toString();
-    await _showMatchModalForProperty(propertyId: propertyId, propertyTitle: title);
+    await _showMatchModalForProperty(
+        propertyId: propertyId, propertyTitle: title);
     if (latestDate != null) {
       await _saveLastSeenMatchAcceptedAt(latestDate);
     }
@@ -726,15 +686,13 @@ class _HomeContentState extends State<HomeContent> {
     final userId = _currentUserId!;
     WebSocketChannel? ch;
     try {
-      final uri1 = AppConfig.buildWsUri(
-          '/ws/tenant-notifications/$userId/',
+      final uri1 = AppConfig.buildWsUri('/ws/tenant-notifications/$userId/',
           token: accessToken);
       ch = WebSocketChannel.connect(uri1);
     } catch (_) {}
     if (ch == null) {
       try {
-        final uri2 = AppConfig.buildWsUri(
-            '/ws/tenant-notifications/$userId',
+        final uri2 = AppConfig.buildWsUri('/ws/tenant-notifications/$userId',
             token: accessToken);
         ch = WebSocketChannel.connect(uri2);
       } catch (_) {}
@@ -780,7 +738,8 @@ class _HomeContentState extends State<HomeContent> {
         : int.tryParse(propertyIdRaw?.toString() ?? '');
     if (propertyId == null) return;
     final title = data['property_title']?.toString();
-    await _showMatchModalForProperty(propertyId: propertyId, propertyTitle: title);
+    await _showMatchModalForProperty(
+        propertyId: propertyId, propertyTitle: title);
     final ts = data['timestamp']?.toString();
     final dt = ts != null ? DateTime.tryParse(ts) : null;
     if (dt != null) {
@@ -821,14 +780,17 @@ class _HomeContentState extends State<HomeContent> {
       if (propRes['success'] == true && propRes['data'] != null) {
         final p = propRes['data'] as domain.Property;
         if (title.isEmpty) {
-          final typeLabel =
-              p.type.isNotEmpty ? _capitalize(p.type) : S.of(context).propertyLabel;
+          final typeLabel = p.type.isNotEmpty
+              ? _capitalize(p.type)
+              : S.of(context).propertyLabel;
           final addressLabel = p.address.isNotEmpty
               ? _capitalize(p.address)
               : S.of(context).propertyLabel;
           title = "$typeLabel · $addressLabel";
         }
-        if (imageUrl.isEmpty && p.mainPhoto != null && p.mainPhoto!.isNotEmpty) {
+        if (imageUrl.isEmpty &&
+            p.mainPhoto != null &&
+            p.mainPhoto!.isNotEmpty) {
           imageUrl = AppConfig.sanitizeUrl(p.mainPhoto!);
         }
       }
@@ -854,7 +816,9 @@ class _HomeContentState extends State<HomeContent> {
 
   Map<String, dynamic>? _tryParseJson(String s) {
     try {
-      return s.isNotEmpty ? Map<String, dynamic>.from(jsonDecode(s) as Map) : null;
+      return s.isNotEmpty
+          ? Map<String, dynamic>.from(jsonDecode(s) as Map)
+          : null;
     } catch (_) {
       return null;
     }
@@ -1920,8 +1884,7 @@ class _PropertyCardState extends State<PropertyCard> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: Container(
-                    padding:
-                        const EdgeInsets.fromLTRB(20, 28, 20, bottomSpace),
+                    padding: const EdgeInsets.fromLTRB(20, 28, 20, bottomSpace),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
