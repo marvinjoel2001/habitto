@@ -18,10 +18,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'generated/l10n.dart';
 
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Cargar variables de entorno
+  await dotenv.load(fileName: ".env");
 
   // Inicializar Firebase
   await Firebase.initializeApp();

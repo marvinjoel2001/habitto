@@ -12,6 +12,7 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../../../profile/data/services/profile_service.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../generated/l10n.dart';
+import '../../../profile/presentation/pages/create_search_profile_page.dart';
 
 import 'dart:ui' as ui;
 
@@ -43,7 +44,8 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _cameraReady = false;
   List<CameraDescription> _cameras = const [];
   bool _autoCapture = false;
-  static const int _totalSteps = 4;
+  static const int _totalSteps = 3;
+  Color get _glassFieldColor => Colors.white.withValues(alpha: 0.7);
 
   Future<void> _pickImage() async {
     try {
@@ -176,28 +178,34 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
       Positioned(
-        bottom: 96,
+        bottom: 84,
         left: 12,
         right: 12,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             CustomButton(
               text: S.of(context).takePhotoButton,
               onPressed: _captureSelfie,
               backgroundColor: Theme.of(context).colorScheme.primary,
+              textColor: Colors.white,
             ),
+            const SizedBox(height: 10),
             CustomButton(
               text: S.of(context).galleryButton,
               onPressed: _pickImage,
               backgroundColor: Theme.of(context).colorScheme.secondary,
+              textColor: Colors.white,
             ),
-            TextButton(
-              onPressed: () {
-                setState(() => _step = 2);
-              },
-              child: Text(S.of(context).skipButton,
-                  style: const TextStyle(color: Colors.white)),
+            const SizedBox(height: 6),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  setState(() => _step = 2);
+                },
+                child: Text(S.of(context).skipButton,
+                    style: const TextStyle(color: Colors.white)),
+              ),
             ),
           ],
         ),
@@ -304,54 +312,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
         if (loginResponse['success']) {
           if (_selectedUserType == 'inquilino') {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.black.withValues(alpha: 0.85),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              builder: (ctx) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(S.of(context).createSearchProfileTitle,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 8),
-                      Text(S.of(context).createSearchProfileDescription,
-                          style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85))),
-                      const SizedBox(height: 16),
-                      Row(children: [
-                        Expanded(
-                            child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.primary,
-                                    foregroundColor: Colors.black),
-                                onPressed: () {
-                                  Navigator.pop(ctx);
-                                  _showAiChatProfileCreation();
-                                },
-                                child: Text(S.of(context).createWithAIButton))),
-                        const SizedBox(width: 12),
-                        Expanded(
-                            child: OutlinedButton(
-                                onPressed: () {
-                                  Navigator.pop(ctx);
-                                  Navigator.pushReplacementNamed(
-                                      context, '/home');
-                                },
-                                child: Text(S.of(context).skipButton))),
-                      ])
-                    ],
-                  ),
-                );
-              },
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CreateSearchProfilePage(),
+              ),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -428,81 +393,10 @@ class _RegisterPageState extends State<RegisterPage> {
       }
       return true;
     }
-    if (_step == 2 || _step == 3) {
+    if (_step == 1 || _step == 2) {
       return _formKey.currentState!.validate();
     }
     return true;
-  }
-
-  void _showAiChatProfileCreation() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.85,
-          margin: const EdgeInsets.only(top: 40),
-          child: AiChatWidget(
-            userName: _firstNameController.text.isNotEmpty
-                ? _firstNameController.text
-                : _usernameController.text,
-            onClose: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/home');
-            },
-            onProfileCreated: (data) async {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(S.of(context).processingProfile),
-                  backgroundColor: AppTheme.primaryColor,
-                ),
-              );
-              try {
-                final result = await _profileService.createSearchProfile(data);
-                if (result['success']) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            Text(S.of(context).searchProfileCreatedSuccess),
-                        backgroundColor: AppTheme.primaryColor,
-                      ),
-                    );
-                    Navigator.pushReplacementNamed(context, '/home');
-                  }
-                } else {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            Text(S.of(context).errorMessage(result['error'])),
-                        backgroundColor: AppTheme.errorColor,
-                      ),
-                    );
-                    Navigator.pushReplacementNamed(context, '/home');
-                  }
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(S.of(context).errorMessage(e.toString())),
-                      backgroundColor: AppTheme.errorColor,
-                    ),
-                  );
-                  Navigator.pushReplacementNamed(context, '/home');
-                }
-              }
-            },
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -565,10 +459,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: Colors.black.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: Colors.black.withValues(alpha: 0.08)),
+                            color: Colors.white.withValues(alpha: 0.35)),
                       ),
                       child: Row(
                         children: [
@@ -583,7 +477,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(
                                       color:
-                                          Colors.black.withValues(alpha: 0.2)),
+                                          Colors.white.withValues(alpha: 0.6)),
+                                  foregroundColor: Colors.white,
+                                  backgroundColor:
+                                      Colors.white.withValues(alpha: 0.08),
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(
@@ -591,25 +488,25 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                                 child: Text(S.of(context).backButton,
                                     style: const TextStyle(
-                                        color: Colors.black,
+                                        color: Colors.white,
                                         fontWeight: FontWeight.w600)),
                               ),
                             ),
                           if (_step > 0) const SizedBox(width: 12),
                           Expanded(
                             child: CustomButton(
-                              text: _step < 3
+                              text: _step < 2
                                   ? S.of(context).continueButton
                                   : S.of(context).registerButton,
-                              onPressed: _step < 3
+                              onPressed: _step < 2
                                   ? () {
                                       if (!_validateCurrentStep()) return;
                                       setState(() => _step++);
-                                      if (_step == 1) _initCamera();
                                     }
                                   : _register,
                               backgroundColor:
                                   Theme.of(context).colorScheme.primary,
+                              textColor: Colors.white,
                               isLoading: _isLoading,
                             ),
                           ),
@@ -641,24 +538,17 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           child: Column(
             children: [
-              Row(
-                children: List.generate(_totalSteps, (i) {
-                  final active = i <= _step;
-                  return Expanded(
-                    child: Container(
-                      height: 3,
-                      margin: EdgeInsets.only(right: i == _totalSteps - 1 ? 0 : 6),
-                      decoration: BoxDecoration(
-                        color: active
-                            ? AppTheme.primaryColor
-                            : Colors.black.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  );
-                }),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  minHeight: 4,
+                  value: progress,
+                  backgroundColor: Colors.black.withValues(alpha: 0.08),
+                  valueColor:
+                      const AlwaysStoppedAnimation(AppTheme.primaryColor),
+                ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -679,13 +569,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                 ],
-              ),
-              LinearProgressIndicator(
-                value: progress,
-                minHeight: 2,
-                backgroundColor: Colors.black.withValues(alpha: 0.08),
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
               ),
             ],
           ),
@@ -723,8 +606,6 @@ class _RegisterPageState extends State<RegisterPage> {
       case 0:
         return S.of(context).yourNameTitle;
       case 1:
-        return S.of(context).takePhotoButton;
-      case 2:
         return S.of(context).contactTitle;
       default:
         return S.of(context).accountTitle;
@@ -736,8 +617,6 @@ class _RegisterPageState extends State<RegisterPage> {
       case 0:
         return 'Usa tu nombre real para personalizar tu perfil';
       case 1:
-        return 'Agrega una foto clara para generar confianza';
-      case 2:
         return 'Tu contacto será privado y solo visible en matches';
       default:
         return 'Crea tus credenciales para ingresar a Habitto';
@@ -782,34 +661,33 @@ class _RegisterPageState extends State<RegisterPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(children: [
-              Expanded(
-                  child: CustomTextField(
-                      controller: _firstNameController,
-                      hintText: S.of(context).firstNamePlaceholder,
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? S.of(context).requiredField
-                          : null)),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: CustomTextField(
-                      controller: _lastNameController,
-                      hintText: S.of(context).lastNamePlaceholder,
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? S.of(context).requiredField
-                          : null)),
-            ]),
+            CustomTextField(
+                controller: _firstNameController,
+                hintText: S.of(context).firstNamePlaceholder,
+                fillColor: _glassFieldColor,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? S.of(context).requiredField
+                    : null),
+            const SizedBox(height: 16),
+            CustomTextField(
+                controller: _lastNameController,
+                hintText: S.of(context).lastNamePlaceholder,
+                fillColor: _glassFieldColor,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? S.of(context).requiredField
+                    : null),
             const SizedBox(height: 12),
           ],
         );
-        return const SizedBox.shrink();
-      case 2:
+      case 1:
         return Form(
           key: _formKey,
-          child: Column(children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CustomTextField(
                 controller: _emailController,
                 hintText: S.of(context).emailPlaceholder,
+                fillColor: _glassFieldColor,
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) {
                   if (v == null || v.isEmpty) {
@@ -824,6 +702,7 @@ class _RegisterPageState extends State<RegisterPage> {
             CustomTextField(
                 controller: _phoneController,
                 hintText: S.of(context).phonePlaceholder,
+                fillColor: _glassFieldColor,
                 keyboardType: TextInputType.phone,
                 validator: (v) {
                   if (v == null || v.isEmpty) {
@@ -836,10 +715,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: _glassFieldColor,
                     borderRadius: BorderRadius.circular(12),
                     border:
-                        Border.all(color: Colors.black.withValues(alpha: 0.1))),
+                        Border.all(color: Colors.white.withValues(alpha: 0.5))),
                 child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                   value: _selectedUserType,
@@ -866,43 +745,48 @@ class _RegisterPageState extends State<RegisterPage> {
       default:
         return Form(
             key: _formKey,
-            child: Column(children: [
-              CustomTextField(
-                  controller: _usernameController,
-                  hintText: S.of(context).usernamePlaceholder,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return S.of(context).enterUsernameError;
-                    }
-                    return null;
-                  }),
-              const SizedBox(height: 16),
-              CustomTextField(
-                  controller: _passwordController,
-                  hintText: S.of(context).passwordPlaceholder,
-                  isPassword: true,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return S.of(context).enterPasswordError;
-                    }
-                    if (v.length < 6) {
-                      return S.of(context).passwordLengthError;
-                    }
-                    return null;
-                  }),
-              const SizedBox(height: 16),
-              CustomTextField(
-                  controller: _confirmPasswordController,
-                  hintText: S.of(context).confirmPasswordPlaceholder,
-                  isPassword: true,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return S.of(context).confirmPasswordError;
-                    }
-                    return null;
-                  }),
-              const SizedBox(height: 24),
-            ]));
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  CustomTextField(
+                      controller: _usernameController,
+                      hintText: S.of(context).usernamePlaceholder,
+                      fillColor: _glassFieldColor,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return S.of(context).enterUsernameError;
+                        }
+                        return null;
+                      }),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                      controller: _passwordController,
+                      hintText: S.of(context).passwordPlaceholder,
+                      fillColor: _glassFieldColor,
+                      isPassword: true,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return S.of(context).enterPasswordError;
+                        }
+                        if (v.length < 6) {
+                          return S.of(context).passwordLengthError;
+                        }
+                        return null;
+                      }),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                      controller: _confirmPasswordController,
+                      hintText: S.of(context).confirmPasswordPlaceholder,
+                      fillColor: _glassFieldColor,
+                      isPassword: true,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return S.of(context).confirmPasswordError;
+                        }
+                        return null;
+                      }),
+                  const SizedBox(height: 24),
+                ]));
     }
   }
 
