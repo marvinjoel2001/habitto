@@ -95,7 +95,6 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
 
   @override
   Widget build(BuildContext context) {
-    print('SwipePropertyCard: images length ${widget.images.length}');
     return Padding(
       padding: EdgeInsets.fromLTRB(
         widget.outerHorizontalPadding,
@@ -234,7 +233,7 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                   ),
 
                   Positioned(
-                    top: 36,
+                    top: 14,
                     left: 0,
                     right: 0,
                     child: Row(
@@ -321,8 +320,7 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                               children: [
                                 Expanded(
                                   child: Padding(
-                                    padding:
-                                        const EdgeInsets.only(left: 16.0),
+                                    padding: const EdgeInsets.only(left: 16.0),
                                     child: AutoSizeText(
                                       widget.title,
                                       maxLines: 3,

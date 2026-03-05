@@ -17,6 +17,7 @@ import '../../../../shared/widgets/property_card_skeleton.dart';
 import '../../../matching/data/services/matching_service.dart';
 import '../../../profile/presentation/pages/profile_page.dart' as profile;
 import '../../../properties/presentation/pages/properties_list_page.dart';
+import '../../../discover/presentation/pages/discover_page.dart';
 import '../../../chat/presentation/pages/match_requests_page.dart';
 import '../../../profile/presentation/pages/create_search_profile_page.dart';
 import '../../../chat/presentation/pages/chat_page.dart';
@@ -239,12 +240,14 @@ class _HomePageState extends State<HomePage> {
                 : _userMode == profile.UserMode.propietario
                     ? 'propietario'
                     : 'agente'),
-        PropertiesListPage(
-            userMode: _userMode == profile.UserMode.inquilino
-                ? 'inquilino'
-                : _userMode == profile.UserMode.propietario
-                    ? 'propietario'
-                    : 'agente'),
+        _userMode == profile.UserMode.inquilino
+            ? const DiscoverPage()
+            : PropertiesListPage(
+                userMode: _userMode == profile.UserMode.inquilino
+                    ? 'inquilino'
+                    : _userMode == profile.UserMode.propietario
+                        ? 'propietario'
+                        : 'agente'),
         const ChatPage(),
         profile.ProfilePage(onModeChanged: _onUserModeChanged),
       ];

@@ -58,8 +58,8 @@ void main() {
       // Wait for the widget to settle
       await tester.pumpAndSettle();
 
-      // Tap on the properties icon (index 1)
-      await tester.tap(find.byIcon(Icons.home_work_outlined));
+      // Tap on the discover icon (index 1)
+      await tester.tap(find.byIcon(Icons.explore_outlined));
       await tester.pumpAndSettle();
 
       // Verify that the correct index was tapped

@@ -93,6 +93,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
   Widget build(BuildContext context) {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
     const double navHeight = 70.0;
+    final strings = Localizations.of<S>(context, S);
 
     return SizedBox(
       height: navHeight + bottomPadding,
@@ -129,35 +130,48 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
             right: 0,
             height: navHeight,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildNavItem(
-                  context,
-                  0,
-                  Icons.favorite_border,
-                  Icons.favorite_border,
-                  S.of(context).menuMatchs,
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    0,
+                    Icons.favorite_border,
+                    Icons.favorite_border,
+                    strings?.menuMatchs ?? 'Matches',
+                  ),
                 ),
-                _buildNavItem(
-                  context,
-                  1,
-                  Icons.home_work_outlined,
-                  Icons.home_work_outlined,
-                  S.of(context).navProperties,
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    1,
+                    widget.userMode == 'inquilino'
+                        ? Icons.explore_outlined
+                        : Icons.home_work_outlined,
+                    widget.userMode == 'inquilino'
+                        ? Icons.explore
+                        : Icons.home_work_outlined,
+                    widget.userMode == 'inquilino'
+                        ? 'Descubre'
+                        : (strings?.navProperties ?? 'Propiedades'),
+                  ),
                 ),
-                _buildNavItem(
-                  context,
-                  2,
-                  Icons.chat_bubble_outline,
-                  Icons.chat_bubble_outline,
-                  S.of(context).navChat,
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    2,
+                    Icons.chat_bubble_outline,
+                    Icons.chat_bubble_outline,
+                    strings?.navChat ?? 'Chat',
+                  ),
                 ),
-                _buildNavItem(
-                  context,
-                  3,
-                  Icons.person_outline,
-                  Icons.person_outline,
-                  S.of(context).navProfile,
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    3,
+                    Icons.person_outline,
+                    Icons.person_outline,
+                    strings?.navProfile ?? 'Perfil',
+                  ),
                 ),
               ],
             ),
@@ -167,7 +181,6 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
     );
   }
 
-
   Widget _buildNavItem(
     BuildContext context,
     int index,
@@ -176,13 +189,16 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
     String label,
   ) {
     final isSelected = widget.currentIndex == index;
+    final strings = Localizations.of<S>(context, S);
     // High contrast for accessibility
     const activeColor = AppTheme.primaryColor;
     const inactiveColor = Colors.black54;
 
     return Semantics(
       button: true,
-      label: isSelected ? S.of(context).navItemActive(label) : label,
+      label: isSelected
+          ? (strings?.navItemActive(label) ?? 'Activo: $label')
+          : label,
       selected: isSelected,
       child: InkWell(
         onTap: () {
@@ -191,7 +207,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -199,14 +215,15 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation> {
               Icon(
                 isSelected ? activeIcon : inactiveIcon,
                 color: isSelected ? activeColor : inactiveColor,
-                size: 24,
+                size: 22,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 label,
+                textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   color: isSelected ? activeColor : inactiveColor,
-                  fontSize: isSelected ? 11 : 10,
+                  fontSize: isSelected ? 10 : 9,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
                 textAlign: TextAlign.center,

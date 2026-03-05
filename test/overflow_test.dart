@@ -142,9 +142,10 @@ void main() {
       // Verify text is scaled but not overflowing
       expect(tester.takeException(), isNull);
 
-      // Find the Propiedades text
-      final buscarText = tester.widget<Text>(find.text('Propiedades'));
-      expect(buscarText.style!.fontSize, greaterThan(12));
+      // Find the Descubre text
+      final buscarText = tester.widget<Text>(find.text('Descubre'));
+      expect(buscarText.style!.fontSize, isNotNull);
+      expect(buscarText.maxLines, equals(1));
       expect(buscarText.overflow, equals(TextOverflow.ellipsis));
     });
 

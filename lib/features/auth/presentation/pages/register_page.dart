@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:habitto/shared/theme/app_theme.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:camera/camera.dart';
-import 'dart:io';
 import '../../data/services/auth_service.dart';
 import '../../domain/entities/user.dart';
 import '../../../profile/domain/entities/profile.dart';
-import '../../../../shared/widgets/ai_chat_widget.dart';
 import '../../../../shared/widgets/custom_button.dart';
-import '../../../profile/data/services/profile_service.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../generated/l10n.dart';
 import '../../../profile/presentation/pages/create_search_profile_page.dart';
@@ -34,235 +28,11 @@ class _RegisterPageState extends State<RegisterPage> {
   final _phoneController = TextEditingController();
 
   final AuthService _authService = AuthService();
-  final ImagePicker _imagePicker = ImagePicker();
-  final ProfileService _profileService = ProfileService();
   bool _isLoading = false;
   String _selectedUserType = 'inquilino';
-  File? _selectedImage;
   int _step = 0;
-  CameraController? _cameraController;
-  bool _cameraReady = false;
-  List<CameraDescription> _cameras = const [];
-  bool _autoCapture = false;
   static const int _totalSteps = 3;
   Color get _glassFieldColor => Colors.white.withValues(alpha: 0.7);
-
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(S.of(context).imageSelectionError(e.toString()))),
-      );
-    }
-  }
-
-  Widget _buildCameraFull() {
-    return Stack(children: [
-      Positioned.fill(
-        child: _selectedImage != null
-            ? Image.file(_selectedImage!, fit: BoxFit.cover)
-            : (_cameraReady && _cameraController != null
-                ? CameraPreview(_cameraController!)
-                : Container(color: Colors.black.withValues(alpha: 0.1))),
-      ),
-      Positioned.fill(child: CustomPaint(painter: _FaceMaskPainter())),
-      if (_selectedImage != null)
-        Positioned(
-          top: 12,
-          left: 12,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: Colors.black.withValues(alpha: 0.1)),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.black),
-                  onPressed: () {
-                    setState(() {
-                      _selectedImage = null;
-                    });
-                  },
-                ),
-              ),
-            ),
-          ),
-        ),
-      Positioned(
-        top: 12,
-        right: 12,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.1)),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                IconButton(
-                  icon: const Icon(Icons.cameraswitch, color: Colors.black),
-                  onPressed: () async {
-                    final cams = _cameras;
-                    if (cams.isNotEmpty) {
-                      final current = _cameraController?.description;
-                      CameraLensDirection nextDir = CameraLensDirection.back;
-                      if (current != null &&
-                          current.lensDirection == CameraLensDirection.back) {
-                        nextDir = CameraLensDirection.front;
-                      }
-                      await _cameraController?.dispose();
-                      final idx =
-                          cams.indexWhere((c) => c.lensDirection == nextDir);
-                      final useIdx = idx >= 0 ? idx : 0;
-                      _cameraController = CameraController(
-                          cams[useIdx], ResolutionPreset.medium,
-                          enableAudio: false);
-                      await _cameraController!.initialize();
-                      setState(() {
-                        _cameraReady = true;
-                      });
-                    }
-                  },
-                ),
-                IconButton(
-                  icon: Icon(_autoCapture ? Icons.pause_circle : Icons.timer,
-                      color: Colors.black),
-                  onPressed: () async {
-                    setState(() {
-                      _autoCapture = !_autoCapture;
-                    });
-                    if (_autoCapture) {
-                      await Future.delayed(const Duration(seconds: 2));
-                      if (mounted && _autoCapture) {
-                        _captureSelfie();
-                        setState(() {
-                          _autoCapture = false;
-                        });
-                      }
-                    }
-                  },
-                ),
-                if (_selectedImage != null)
-                  IconButton(
-                    icon: const Icon(Icons.check_circle, color: Colors.black),
-                    onPressed: () {
-                      setState(() {
-                        _step = 2;
-                      });
-                    },
-                  ),
-              ]),
-            ),
-          ),
-        ),
-      ),
-      Positioned(
-        bottom: 84,
-        left: 12,
-        right: 12,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CustomButton(
-              text: S.of(context).takePhotoButton,
-              onPressed: _captureSelfie,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              textColor: Colors.white,
-            ),
-            const SizedBox(height: 10),
-            CustomButton(
-              text: S.of(context).galleryButton,
-              onPressed: _pickImage,
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              textColor: Colors.white,
-            ),
-            const SizedBox(height: 6),
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  setState(() => _step = 2);
-                },
-                child: Text(S.of(context).skipButton,
-                    style: const TextStyle(color: Colors.white)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ]);
-  }
-
-  Future<void> _initCamera() async {
-    final status = await Permission.camera.request();
-    if (!status.isGranted) {
-      setState(() {
-        _cameraReady = false;
-      });
-      return;
-    }
-    try {
-      _cameras = await availableCameras();
-      if (_cameras.isNotEmpty) {
-        final frontIndex = _cameras
-            .indexWhere((c) => c.lensDirection == CameraLensDirection.front);
-        final index = frontIndex >= 0 ? frontIndex : 0;
-        _cameraController = CameraController(
-            _cameras[index], ResolutionPreset.medium,
-            enableAudio: false);
-        await _cameraController!.initialize();
-        setState(() {
-          _cameraReady = true;
-        });
-      }
-    } catch (_) {
-      setState(() {
-        _cameraReady = false;
-      });
-    }
-  }
-
-  Future<void> _captureSelfie() async {
-    try {
-      if (_cameraController != null && _cameraReady) {
-        final xfile = await _cameraController!.takePicture();
-        setState(() {
-          _selectedImage = File(xfile.path);
-        });
-      } else {
-        final XFile? image = await _imagePicker.pickImage(
-            source: ImageSource.camera,
-            maxWidth: 800,
-            maxHeight: 800,
-            imageQuality: 85);
-        if (image != null) {
-          setState(() {
-            _selectedImage = File(image.path);
-          });
-        }
-      }
-    } catch (_) {}
-  }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
@@ -302,6 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
         profile,
         _passwordController.text,
       );
+      if (!mounted) return;
 
       if (response['success']) {
         // Después del registro exitoso, hacer login automático
@@ -309,6 +80,7 @@ class _RegisterPageState extends State<RegisterPage> {
           _usernameController.text,
           _passwordController.text,
         );
+        if (!mounted) return;
 
         if (loginResponse['success']) {
           if (_selectedUserType == 'inquilino') {
@@ -332,11 +104,14 @@ class _RegisterPageState extends State<RegisterPage> {
         _showError(_friendlyRegisterError(response['error']));
       }
     } catch (e) {
+      if (!mounted) return;
       _showError(S.of(context).errorMessage(e.toString()));
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -427,21 +202,18 @@ class _RegisterPageState extends State<RegisterPage> {
         child: SafeArea(
           child: Stack(
             children: [
-              if (_step == 1)
-                Positioned.fill(child: _buildCameraFull())
-              else
-                Center(
-                  child: _buildCardContainer(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildStepHeader(),
-                        const SizedBox(height: 16),
-                        _buildStepBody(),
-                      ],
-                    ),
+              Center(
+                child: _buildCardContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildStepHeader(),
+                      const SizedBox(height: 16),
+                      _buildStepBody(),
+                    ],
                   ),
                 ),
+              ),
               Positioned(
                 left: 20,
                 right: 20,
@@ -623,10 +395,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  Widget _buildProfileImageSection() {
-    return const SizedBox.shrink();
-  }
-
   Widget _buildCardContainer({required Widget child}) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -799,42 +567,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
-    _cameraController?.dispose();
     super.dispose();
   }
-}
-
-class _FaceMaskPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final overlay = Paint()..color = Colors.black.withValues(alpha: 0.55);
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    canvas.drawRect(rect, overlay);
-
-    // Marco ovalado tipo rostro
-    final faceWidth = size.width * 0.65;
-    final faceHeight = faceWidth * 1.2;
-    final faceRect = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2 - 10),
-      width: faceWidth,
-      height: faceHeight,
-    );
-
-    final clearPaint = Paint()
-      ..blendMode = BlendMode.clear
-      ..style = PaintingStyle.fill;
-    canvas.saveLayer(rect, Paint());
-    final path = Path()..addOval(faceRect);
-    canvas.drawPath(path, clearPaint);
-    canvas.restore();
-
-    final border = Paint()
-      ..color = AppTheme.primaryColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-    canvas.drawOval(faceRect, border);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

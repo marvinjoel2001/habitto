@@ -1,14 +1,13 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../../features/matching/data/services/matching_service.dart';
 import '../../../../features/properties/data/services/property_service.dart';
+import '../../../../features/properties/data/services/photo_service.dart';
 import '../../../../features/properties/domain/entities/property.dart';
+import '../../../../features/properties/domain/entities/photo.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/custom_network_image.dart';
+import '../../../../shared/widgets/swipe_property_card.dart';
 import '../../../../core/services/api_service.dart';
-import '../../../../core/services/token_storage.dart';
 import 'property_candidates_page.dart';
 import 'package:habitto/config/app_config.dart';
 
@@ -25,6 +24,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
   final MatchingService _matchingService = MatchingService();
   final PropertyService _propertyService = PropertyService();
   final ApiService _apiService = ApiService();
+  late final PhotoService _photoService = PhotoService(_apiService);
 
   final List<Map<String, dynamic>> _groupedRequests = [];
   final List<Property> _properties = [];
@@ -32,9 +32,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
   final Map<int, int> _viewsCounts = {};
   final Map<int, String> _lastViews = {};
 
-  final List<Map<String, dynamic>> _acceptedMatches = [];
-  final Set<String> _processedTenantEvents = {};
-  WebSocketChannel? _tenantNotificationsChannel;
+  final List<_TenantSwipeCardData> _tenantCards = [];
 
   bool _isLoading = true;
   String _error = '';
@@ -45,17 +43,10 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
   void initState() {
     super.initState();
     if (_isTenant) {
-      _loadTenantMatches();
-      _connectTenantNotifications();
+      _loadTenantSwipeDeck();
     } else {
       _loadOwnerDashboard();
     }
-  }
-
-  @override
-  void dispose() {
-    _tenantNotificationsChannel?.sink.close();
-    super.dispose();
   }
 
   Future<void> _loadOwnerDashboard() async {
@@ -78,7 +69,10 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
         return;
       }
 
-      final properties = propertiesResult['data'] as List<Property>? ?? [];
+      final propertiesData =
+          propertiesResult['data'] as Map<String, dynamic>? ?? {};
+      final properties =
+          propertiesData['properties'] as List<Property>? ?? <Property>[];
 
       final requestsResult = await _matchingService.getPendingMatchRequests();
       final requests = (requestsResult['data'] as List<dynamic>?) ?? [];
@@ -102,15 +96,32 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
       final viewsResult = await _apiService.get('/api/properties/views/');
       final Map<int, int> viewsCounts = {};
       final Map<int, String> lastViews = {};
-      final dynamic viewsData = viewsResult['data'];
-      final dynamic payload = (viewsData is Map && viewsData['data'] != null)
-          ? viewsData['data']
-          : viewsData;
-      final List<dynamic> viewItems = payload is List
-          ? payload
-          : (payload is Map && payload['results'] is List)
-              ? payload['results'] as List<dynamic>
+      List<dynamic> viewItems = <dynamic>[];
+      if (viewsResult['success'] == true) {
+        final dynamic viewsData = viewsResult['data'];
+        final dynamic payload = (viewsData is Map && viewsData['data'] != null)
+            ? viewsData['data']
+            : viewsData;
+        viewItems = payload is List
+            ? payload
+            : (payload is Map && payload['results'] is List)
+                ? payload['results'] as List<dynamic>
+                : <dynamic>[];
+      }
+      if (viewItems.isEmpty) {
+        final statsResult =
+            await _apiService.get('/api/properties/interaction_stats/');
+        if (statsResult['success'] == true) {
+          final dynamic statsData = statsResult['data'];
+          final dynamic payload =
+              (statsData is Map && statsData['data'] != null)
+                  ? statsData['data']
+                  : statsData;
+          viewItems = payload is Map && payload['by_property'] is List
+              ? payload['by_property'] as List<dynamic>
               : <dynamic>[];
+        }
+      }
 
       for (final item in viewItems) {
         if (item is! Map<String, dynamic>) continue;
@@ -155,7 +166,26 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
     }
   }
 
-  Future<void> _loadTenantMatches() async {
+  Future<Set<int>> _loadTenantLockedPropertyIds() async {
+    final Set<int> ids = {};
+    final pendingResult = await _matchingService.getMyMatches(
+        type: 'property', status: 'pending');
+    final acceptedResult = await _matchingService.getMyMatches(
+        type: 'property', status: 'accepted');
+    final combined = <dynamic>[
+      ...(pendingResult['data'] as List<dynamic>? ?? <dynamic>[]),
+      ...(acceptedResult['data'] as List<dynamic>? ?? <dynamic>[]),
+    ];
+    for (final item in combined) {
+      if (item is! Map<String, dynamic>) continue;
+      final sid = item['subject_id'];
+      final id = sid is int ? sid : int.tryParse(sid?.toString() ?? '');
+      if (id != null) ids.add(id);
+    }
+    return ids;
+  }
+
+  Future<void> _loadTenantSwipeDeck() async {
     try {
       if (!mounted) return;
       setState(() {
@@ -163,20 +193,47 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
         _error = '';
       });
 
-      final result = await _matchingService.getMyMatches(status: 'accepted');
-      final List<dynamic> matches =
-          (result['data'] as List<dynamic>?) ?? <dynamic>[];
-
-      final List<Map<String, dynamic>> normalized = matches
-          .whereType<Map<String, dynamic>>()
-          .map(_normalizeMatch)
+      final propsResult = await _propertyService.getProperties(
+        orderByMatch: true,
+        matchScore: 0,
+        pageSize: 80,
+      );
+      if (propsResult['success'] != true || propsResult['data'] == null) {
+        setState(() {
+          _error = propsResult['error']?.toString() ?? 'Error cargando matches';
+          _isLoading = false;
+        });
+        return;
+      }
+      final data = propsResult['data'] as Map<String, dynamic>;
+      final List<Property> properties =
+          data['properties'] as List<Property>? ?? <Property>[];
+      final hiddenIds = await _loadTenantLockedPropertyIds();
+      final available = properties
+          .where((p) => p.isActive && !hiddenIds.contains(p.id))
           .toList();
+      final cards = await Future.wait(
+        available.map((p) async {
+          final images = await _loadPropertyImages(p);
+          return _TenantSwipeCardData(
+            propertyId: p.id,
+            title: p.address.isNotEmpty ? p.address : 'Propiedad',
+            priceLabel: 'Bs ${p.price.toStringAsFixed(0)}',
+            tags: [
+              if (p.type.isNotEmpty) p.type,
+              '${p.bedrooms} hab',
+              '${p.bathrooms} baños',
+            ],
+            images: images,
+          );
+        }),
+      );
 
       if (!mounted) return;
       setState(() {
-        _acceptedMatches
+        _tenantCards
           ..clear()
-          ..addAll(_mergeTenantEvents(normalized));
+          ..addAll(cards);
         _isLoading = false;
       });
     } catch (e) {
@@ -188,98 +245,59 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
     }
   }
 
-  Future<void> _connectTenantNotifications() async {
-    final tokenStorage = TokenStorage();
-    final userId = await tokenStorage.getCurrentUserId();
-    final token = await tokenStorage.getAccessToken();
-    if (userId == null || token == null) return;
+  Future<List<String>> _loadPropertyImages(Property property) async {
+    final ordered = <String>[];
+    final seen = <String>{};
 
-    final uri = AppConfig.buildWsUri(
-      '/ws/tenant-notifications/$userId/',
-      token: token,
-    );
+    void addImage(String? raw) {
+      final cleaned = AppConfig.sanitizeUrl((raw ?? '').trim());
+      if (cleaned.isEmpty || seen.contains(cleaned)) return;
+      seen.add(cleaned);
+      ordered.add(cleaned);
+    }
 
-    _tenantNotificationsChannel = WebSocketChannel.connect(uri);
-    _tenantNotificationsChannel!.stream.listen((event) {
-      try {
-        final data = json.decode(event.toString()) as Map<String, dynamic>;
-        final type = data['type']?.toString() ?? '';
-        if (type != 'match_accepted_by_owner') return;
-        final id = data['notification_id']?.toString() ??
-            '${data['property_id']}-${data['timestamp']}';
-        if (_processedTenantEvents.contains(id)) return;
-        _processedTenantEvents.add(id);
-        final match = _normalizeMatch(data);
-        setState(() {
-          _acceptedMatches.insert(0, match);
-        });
-      } catch (_) {}
-    });
+    addImage(property.mainPhoto);
+    try {
+      final res = await _photoService.getPropertyPhotos(property.id);
+      if (res['success'] == true && res['data'] != null) {
+        final data = res['data'] as Map<String, dynamic>;
+        final photos = data['photos'] as List<Photo>? ?? <Photo>[];
+        for (final photo in photos) {
+          addImage(photo.image);
+        }
+      }
+    } catch (_) {}
+    return ordered;
   }
 
-  List<Map<String, dynamic>> _mergeTenantEvents(
-      List<Map<String, dynamic>> matches) {
-    final Map<int, Map<String, dynamic>> byPropertyId = {};
-    for (final match in matches) {
-      final int propertyId = match['propertyId'] ?? 0;
-      if (propertyId != 0) {
-        byPropertyId[propertyId] = match;
+  void _sendTenantLikeInBackground(int propertyId) async {
+    try {
+      final res = await _matchingService.likeProperty(propertyId);
+      if (res['success'] != true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(res['error']?.toString() ?? 'Error al dar like')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al procesar like')),
+        );
       }
     }
-    for (final match in _acceptedMatches) {
-      final int propertyId = match['propertyId'] ?? 0;
-      if (propertyId != 0 && !byPropertyId.containsKey(propertyId)) {
-        byPropertyId[propertyId] = match;
-      }
-    }
-    return byPropertyId.values.toList();
   }
 
-  Map<String, dynamic> _normalizeMatch(Map<String, dynamic> raw) {
-    final property = raw['property'] as Map<String, dynamic>? ?? {};
-    final int propertyId =
-        raw['property_id'] ?? property['id'] ?? raw['property'] ?? 0;
-    final String title = raw['property_title']?.toString() ??
-        property['title']?.toString() ??
-        property['address']?.toString() ??
-        'Propiedad';
-    final String address = raw['property_address']?.toString() ??
-        property['address']?.toString() ??
-        '';
-    final String status = raw['match_status']?.toString() ??
-        raw['status']?.toString() ??
-        'accepted';
-    final String acceptedAt = raw['accepted_at']?.toString() ??
-        raw['updated_at']?.toString() ??
-        raw['timestamp']?.toString() ??
-        '';
-    final Map<String, dynamic> ownerContact =
-        raw['owner_contact'] is Map<String, dynamic>
-            ? raw['owner_contact'] as Map<String, dynamic>
-            : {};
-    final Map<String, dynamic> ownerMap =
-        raw['owner'] is Map<String, dynamic> ? raw['owner'] : {};
-    final String ownerName = raw['owner_name']?.toString() ??
-        ownerMap['full_name']?.toString() ??
-        ownerMap['username']?.toString() ??
-        'Propietario';
-    final String email = ownerContact['email']?.toString() ??
-        ownerMap['email']?.toString() ??
-        '';
-    final String phone = ownerContact['phone']?.toString() ??
-        ownerMap['phone']?.toString() ??
-        '';
-
-    return {
-      'propertyId': propertyId,
-      'title': title,
-      'address': address,
-      'status': status,
-      'acceptedAt': acceptedAt,
-      'ownerName': ownerName,
-      'email': email,
-      'phone': phone,
-    };
+  void _sendTenantRejectInBackground(int propertyId) async {
+    try {
+      await _matchingService.rejectProperty(propertyId);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al procesar rechazo')),
+        );
+      }
+    }
   }
 
   String _getPropertyMainPhoto(Property property) {
@@ -300,6 +318,11 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
     }
   }
 
+  String getPropertyMainPhoto(Property property) =>
+      _getPropertyMainPhoto(property);
+
+  String formatDate(String raw) => _formatDate(raw);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -315,7 +338,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _isTenant ? _loadTenantMatches : _loadOwnerDashboard,
+            onPressed: _isTenant ? _loadTenantSwipeDeck : _loadOwnerDashboard,
           ),
         ],
       ),
@@ -329,12 +352,12 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
           : _error.isNotEmpty
               ? Center(child: Text(_error))
               : _isTenant
-                  ? _buildTenantMatches()
-                  : _buildOwnerMatches(),
+                  ? buildTenantMatches()
+                  : buildOwnerMatches(),
     );
   }
 
-  Widget _buildOwnerMatches() {
+  Widget buildOwnerMatches() {
     if (_properties.isEmpty) {
       return const Center(child: Text('No hay propiedades registradas'));
     }
@@ -381,7 +404,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                     topRight: Radius.circular(16),
                   ),
                   child: CustomNetworkImage(
-                    imageUrl: _getPropertyMainPhoto(property),
+                    imageUrl: getPropertyMainPhoto(property),
                     height: 160,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -430,13 +453,13 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          _buildMetricItem(
+                          buildMetricItem(
                             Icons.favorite_border,
                             'Matches activos',
                             '$pendingCount',
                           ),
                           const SizedBox(width: 12),
-                          _buildMetricItem(
+                          buildMetricItem(
                             Icons.visibility_outlined,
                             'Visibilidad',
                             '$viewsCount',
@@ -446,7 +469,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
                       if (lastView.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text(
-                          'Última vista: ${_formatDate(lastView)}',
+                          'Última vista: ${formatDate(lastView)}',
                           style: const TextStyle(
                               color: Colors.black54, fontSize: 12),
                         ),
@@ -462,7 +485,7 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
     );
   }
 
-  Widget _buildMetricItem(IconData icon, String label, String value) {
+  Widget buildMetricItem(IconData icon, String label, String value) {
     return Expanded(
       child: Row(
         children: [
@@ -486,99 +509,309 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
     );
   }
 
-  Widget _buildTenantMatches() {
-    if (_acceptedMatches.isEmpty) {
-      return const Center(child: Text('Aún no tienes matches aceptados'));
+  Widget buildTenantMatches() {
+    if (_tenantCards.isEmpty) {
+      return const Center(
+          child: Text('No hay propiedades nuevas para mostrar por ahora'));
     }
-    return ListView.builder(
-      itemCount: _acceptedMatches.length,
-      padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) {
-        final match = _acceptedMatches[index];
-        final email = match['email']?.toString() ?? '';
-        final phone = match['phone']?.toString() ?? '';
-        final contact =
-            [email, phone].where((value) => value.isNotEmpty).join(' • ');
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    return _TenantSwipeDeck(
+      cards: _tenantCards,
+      onLike: (card) {
+        _sendTenantLikeInBackground(card.propertyId);
+      },
+      onReject: (card) {
+        _sendTenantRejectInBackground(card.propertyId);
+      },
+    );
+  }
+}
+
+class _TenantSwipeCardData {
+  final int propertyId;
+  final String title;
+  final String priceLabel;
+  final List<String> tags;
+  final List<String> images;
+
+  const _TenantSwipeCardData({
+    required this.propertyId,
+    required this.title,
+    required this.priceLabel,
+    required this.tags,
+    required this.images,
+  });
+}
+
+typedef _TenantCardAction = void Function(_TenantSwipeCardData card);
+
+class _TenantSwipeDeck extends StatefulWidget {
+  final List<_TenantSwipeCardData> cards;
+  final _TenantCardAction onLike;
+  final _TenantCardAction onReject;
+
+  const _TenantSwipeDeck({
+    required this.cards,
+    required this.onLike,
+    required this.onReject,
+  });
+
+  @override
+  State<_TenantSwipeDeck> createState() => _TenantSwipeDeckState();
+}
+
+class _TenantSwipeDeckState extends State<_TenantSwipeDeck>
+    with SingleTickerProviderStateMixin {
+  late List<_TenantSwipeCardData> _queue;
+  double _dragDx = 0.0;
+  bool _isDragging = false;
+  late AnimationController _animController;
+  Animation<double>? _animDx;
+  bool _isAnimating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _queue = List<_TenantSwipeCardData>.from(widget.cards);
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _TenantSwipeDeck oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.cards != widget.cards) {
+      _queue = List<_TenantSwipeCardData>.from(widget.cards);
+      _dragDx = 0.0;
+      _isDragging = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _animateTo(double target) async {
+    _animController.stop();
+    final tween = Tween<double>(begin: _dragDx, end: target);
+    _animDx = tween.animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ))
+      ..addListener(() {
+        setState(() => _dragDx = _animDx!.value);
+      });
+    await _animController.forward(from: 0.0);
+  }
+
+  Future<void> _handleLike() async {
+    if (_queue.isEmpty || _isAnimating) return;
+    _isAnimating = true;
+    final width = MediaQuery.of(context).size.width;
+    final current = _queue.first;
+    await _animateTo(width * 1.2);
+    if (!mounted) return;
+    setState(() {
+      _queue.removeAt(0);
+      _dragDx = 0.0;
+      _isDragging = false;
+    });
+    widget.onLike(current);
+    _isAnimating = false;
+  }
+
+  Future<void> _handleReject() async {
+    if (_queue.isEmpty || _isAnimating) return;
+    _isAnimating = true;
+    final width = MediaQuery.of(context).size.width;
+    final current = _queue.first;
+    await _animateTo(-width * 1.2);
+    if (!mounted) return;
+    setState(() {
+      final moved = _queue.removeAt(0);
+      _queue.add(moved);
+      _dragDx = 0.0;
+      _isDragging = false;
+    });
+    widget.onReject(current);
+    _isAnimating = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_queue.isEmpty) {
+      return const Center(child: Text('Sin propiedades para swipe'));
+    }
+    final top = _queue.first;
+    final second = _queue.length > 1 ? _queue[1] : null;
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+    const actionsBottom = 74.0;
+    const actionRowHeight = 86.0;
+    const reserveExtra = 12.0;
+    final reservedBottom =
+        actionsBottom + actionRowHeight + reserveExtra + safeBottom;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardHeight = (constraints.maxHeight - reservedBottom)
+            .clamp(280.0, constraints.maxHeight);
+        return Stack(
+          children: [
+            Align(
+              alignment: Alignment.topCenter,
+              child: SizedBox(
+                height: cardHeight,
+                child: Stack(
                   children: [
-                    const Icon(Icons.verified_user_outlined,
-                        color: AppTheme.primaryColor, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        match['ownerName']?.toString() ?? 'Propietario',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                    if (second != null)
+                      Transform.translate(
+                        offset: const Offset(0, 14),
+                        child: Transform.scale(
+                          scale: 0.96,
+                          alignment: Alignment.topCenter,
+                          child: SwipePropertyCard(
+                            images: second.images,
+                            title: second.title,
+                            priceLabel: second.priceLabel,
+                            tags: second.tags,
+                            likeProgress: 0.0,
+                            outerHorizontalPadding: 4,
+                            outerTopPadding: 1,
+                            overlayBottomSpace: 52,
+                          ),
+                        ),
+                      ),
+                    Transform.translate(
+                      offset: Offset(_dragDx, 0),
+                      child: Transform.rotate(
+                        angle: _dragDx * 0.0009,
+                        child: GestureDetector(
+                          onHorizontalDragStart: (_) =>
+                              setState(() => _isDragging = true),
+                          onHorizontalDragUpdate: (details) {
+                            if (_isAnimating) return;
+                            setState(() => _dragDx += details.delta.dx);
+                          },
+                          onHorizontalDragEnd: (details) async {
+                            if (_isAnimating) return;
+                            final width = MediaQuery.of(context).size.width;
+                            final threshold = width * 0.35;
+                            final vx = details.velocity.pixelsPerSecond.dx;
+                            const velocityThreshold = 700;
+                            final shouldDismiss = _dragDx.abs() > threshold ||
+                                vx.abs() > velocityThreshold;
+                            if (!shouldDismiss) {
+                              await _animateTo(0.0);
+                              if (!mounted) return;
+                              setState(() {
+                                _dragDx = 0.0;
+                                _isDragging = false;
+                              });
+                              return;
+                            }
+                            final right = (_dragDx + vx * 0.001) > 0;
+                            if (right) {
+                              await _handleLike();
+                            } else {
+                              await _handleReject();
+                            }
+                          },
+                          child: SwipePropertyCard(
+                            images: top.images,
+                            title: top.title,
+                            priceLabel: top.priceLabel,
+                            tags: top.tags,
+                            likeProgress: _dragDx > 0
+                                ? (_dragDx /
+                                        (MediaQuery.of(context).size.width *
+                                            0.35))
+                                    .clamp(0.0, 1.0)
+                                : 0.0,
+                            isDragging: _isDragging,
+                            dragDx: _dragDx,
+                            outerHorizontalPadding: 4,
+                            outerTopPadding: 1,
+                            overlayBottomSpace: 52,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  match['title']?.toString() ?? 'Propiedad',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, color: Colors.black87),
-                ),
-                if ((match['address']?.toString() ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    match['address']?.toString() ?? '',
-                    style: const TextStyle(color: Colors.black54),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _buildTenantChip(
-                      'Estado',
-                      match['status']?.toString() ?? 'accepted',
-                    ),
-                    const SizedBox(width: 12),
-                    _buildTenantChip(
-                      'Aceptado',
-                      _formatDate(match['acceptedAt']?.toString() ?? ''),
-                    ),
-                  ],
-                ),
-                if (contact.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Contacto: $contact',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: actionsBottom + safeBottom,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _TenantActionButton(
+                    icon: Icons.close_rounded,
+                    borderColor: Colors.redAccent,
+                    iconColor: Colors.redAccent,
+                    size: 56,
+                    onTap: _isAnimating ? null : _handleReject,
+                  ),
+                  const SizedBox(width: 18),
+                  _TenantActionButton(
+                    icon: Icons.favorite,
+                    borderColor: AppTheme.primaryColor,
+                    iconColor: Colors.white,
+                    backgroundColor: AppTheme.primaryColor,
+                    size: 78,
+                    onTap: _isAnimating ? null : _handleLike,
+                  ),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
   }
+}
 
-  Widget _buildTenantChip(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        '$label: $value',
-        style: const TextStyle(
-          fontSize: 12,
-          color: AppTheme.primaryColor,
-          fontWeight: FontWeight.w600,
+class _TenantActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color borderColor;
+  final Color iconColor;
+  final Color? backgroundColor;
+  final double size;
+  final Future<void> Function()? onTap;
+
+  const _TenantActionButton({
+    required this.icon,
+    required this.borderColor,
+    required this.iconColor,
+    this.backgroundColor,
+    required this.size,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap == null ? null : () => onTap!.call(),
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: backgroundColor ?? Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: borderColor, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.16),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
+        child: Icon(icon, color: iconColor, size: size * 0.45),
       ),
     );
   }

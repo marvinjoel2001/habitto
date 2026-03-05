@@ -76,6 +76,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
     }
 
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
+    final strings = Localizations.of<S>(context, S);
 
     return Material(
       type: MaterialType.transparency,
@@ -140,7 +141,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                                   icon: Icons.rotate_left,
                                   color: Colors.amber,
                                   onTap: widget.onGoBack,
-                                  label: S.of(context).actionUndo,
+                                  label: strings?.actionUndo ?? 'Deshacer',
                                   buttonSize: buttonSize,
                                   iconSize: iconSize,
                                 ),
@@ -148,7 +149,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                                   icon: Icons.close,
                                   color: Colors.redAccent,
                                   onTap: widget.onSwipeLeft,
-                                  label: S.of(context).actionReject,
+                                  label: strings?.actionReject ?? 'Rechazar',
                                   buttonSize: buttonSize,
                                   iconSize: iconSize,
                                 ),
@@ -156,7 +157,7 @@ class _TenantFloatingMenuState extends State<TenantFloatingMenu>
                                   icon: Icons.favorite,
                                   color: AppTheme.secondaryColor,
                                   onTap: widget.onSwipeRight,
-                                  label: S.of(context).actionLike,
+                                  label: strings?.actionLike ?? 'Me gusta',
                                   buttonSize: buttonSize,
                                   iconSize: iconSize,
                                 ),

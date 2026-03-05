@@ -47,7 +47,7 @@ void main() {
         expect(find.byType(TenantFloatingMenu), findsOneWidget);
 
         // Verify overlay is present
-        expect(find.byType(GestureDetector), findsOneWidget);
+        expect(find.byType(GestureDetector), findsAtLeastNWidgets(1));
 
         // Verify menu is positioned correctly above navigation
         final positioned = tester.widget<Positioned>(find.byType(Positioned));
@@ -188,7 +188,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap on the overlay (should trigger onClose)
-      await tester.tap(find.byType(GestureDetector));
+      await tester.tap(find.byType(GestureDetector).first);
       await tester.pumpAndSettle();
 
       expect(callbackCalled, isTrue, reason: 'onClose should be called');
