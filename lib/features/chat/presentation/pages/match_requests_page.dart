@@ -21,6 +21,14 @@ class MatchRequestsPage extends StatefulWidget {
 }
 
 class _MatchRequestsPageState extends State<MatchRequestsPage> {
+  static const List<String> _fallbackCardImages = [
+    'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=1200&q=80',
+  ];
+
   final MatchingService _matchingService = MatchingService();
   final PropertyService _propertyService = PropertyService();
   final ApiService _apiService = ApiService();
@@ -267,6 +275,9 @@ class _MatchRequestsPageState extends State<MatchRequestsPage> {
         }
       }
     } catch (_) {}
+    if (ordered.isEmpty) {
+      ordered.add(_fallbackCardImages[property.id % _fallbackCardImages.length]);
+    }
     return ordered;
   }
 
@@ -650,7 +661,7 @@ class _TenantSwipeDeckState extends State<_TenantSwipeDeck>
     final safeBottom = MediaQuery.of(context).padding.bottom;
     const actionsBottom = 74.0;
     const actionRowHeight = 86.0;
-    const reserveExtra = 12.0;
+    const reserveExtra = 6.0;
     final reservedBottom =
         actionsBottom + actionRowHeight + reserveExtra + safeBottom;
     return LayoutBuilder(
@@ -679,7 +690,7 @@ class _TenantSwipeDeckState extends State<_TenantSwipeDeck>
                             likeProgress: 0.0,
                             outerHorizontalPadding: 4,
                             outerTopPadding: 1,
-                            overlayBottomSpace: 52,
+                            overlayBottomSpace: 30,
                           ),
                         ),
                       ),
@@ -733,7 +744,7 @@ class _TenantSwipeDeckState extends State<_TenantSwipeDeck>
                             dragDx: _dragDx,
                             outerHorizontalPadding: 4,
                             outerTopPadding: 1,
-                            overlayBottomSpace: 52,
+                            overlayBottomSpace: 30,
                           ),
                         ),
                       ),

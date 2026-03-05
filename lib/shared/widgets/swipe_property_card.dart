@@ -95,6 +95,9 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
 
   @override
   Widget build(BuildContext context) {
+    final visibleTags = widget.tags.where((t) => t.trim().isNotEmpty).toList();
+    final mainTags = visibleTags.take(3).toList();
+    final remainingTags = visibleTags.length - mainTags.length;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         widget.outerHorizontalPadding,
@@ -233,61 +236,30 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                   ),
 
                   Positioned(
-                    top: 14,
-                    left: 0,
-                    right: 0,
+                    top: 10,
+                    left: 10,
+                    right: 10,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         widget.images.isNotEmpty ? widget.images.length : 1,
                         (i) {
                           final active = i == _page;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: active ? 42 : 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: Colors.white
-                                  .withValues(alpha: active ? 0.9 : 0.6),
-                              borderRadius: BorderRadius.circular(20),
+                          return Expanded(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.white
+                                    .withValues(alpha: active ? 0.95 : 0.45),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
                             ),
                           );
                         },
                       ),
                     ),
                   ),
-
-                  // Chip superior (distancia) opcional
-                  if (widget.distanceKm != null)
-                    Positioned(
-                      top: 26,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.place_outlined,
-                                color: Colors.white, size: 16),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${widget.distanceKm!.toStringAsFixed(1)} km',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
 
                   Positioned(
                     left: 0,
@@ -307,8 +279,8 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.black.withValues(alpha: 0.0),
-                              Colors.black.withValues(alpha: 0.7),
-                              Colors.black.withValues(alpha: 0.96),
+                              Colors.black.withValues(alpha: 0.64),
+                              Colors.black.withValues(alpha: 0.92),
                             ],
                           ),
                         ),
@@ -323,14 +295,22 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                                     padding: const EdgeInsets.only(left: 16.0),
                                     child: AutoSizeText(
                                       widget.title,
-                                      maxLines: 3,
-                                      minFontSize: 15,
+                                      maxLines: 2,
+                                      minFontSize: 17,
                                       stepGranularity: 1,
                                       overflow: TextOverflow.visible,
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 24,
+                                        fontSize: 26,
                                         fontWeight: FontWeight.w800,
+                                        shadows: [
+                                          Shadow(
+                                            color:
+                                                Color.fromRGBO(0, 0, 0, 0.72),
+                                            blurRadius: 10,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -344,26 +324,39 @@ class _SwipePropertyCardState extends State<SwipePropertyCard> {
                                       color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
+                                      shadows: [
+                                        Shadow(
+                                          color: Color.fromRGBO(0, 0, 0, 0.78),
+                                          blurRadius: 8,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 10),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 16.0),
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: widget.tags
-                                    .map((t) => _GlassTag(label: t))
-                                    .toList(),
+                            if (mainTags.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    left: 16.0, right: 16.0),
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      ...mainTags.map((t) => Padding(
+                                            padding: const EdgeInsets.only(
+                                                right: 8.0),
+                                            child: _GlassTag(label: t),
+                                          )),
+                                      if (remainingTags > 0)
+                                        _GlassTag(label: '+$remainingTags'),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                            SizedBox(
-                                height: widget.overlayBottomSpace < 0
-                                    ? 16.0
-                                    : 16.0),
+                            const SizedBox(height: 12),
                           ],
                         ),
                       ),
@@ -469,13 +462,31 @@ class _GlassTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: Colors.black.withValues(alpha: 0.34),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.32)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Text(
         label,
-        style: const TextStyle(color: Colors.white, fontSize: 13),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          shadows: [
+            Shadow(
+              color: Color.fromRGBO(0, 0, 0, 0.75),
+              blurRadius: 6,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
       ),
     );
   }
